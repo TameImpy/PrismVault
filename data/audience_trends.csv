@@ -1,0 +1,52 @@
+topic,year,month,day_of_week,audience_index,segment
+gut health,2025,1,Monday,112,health enthusiasts
+gut health,2025,1,Wednesday,108,health enthusiasts
+gut health,2025,3,Monday,125,health enthusiasts
+gut health,2025,3,Tuesday,119,health enthusiasts
+gut health,2025,5,Monday,131,health enthusiasts
+gut health,2025,5,Thursday,118,health enthusiasts
+gut health,2025,7,Monday,110,health enthusiasts
+gut health,2025,9,Monday,142,health enthusiasts
+gut health,2025,9,Wednesday,135,health enthusiasts
+gut health,2025,1,Monday,95,parents
+gut health,2025,3,Tuesday,105,parents
+gut health,2025,5,Monday,115,parents
+gut health,2025,9,Monday,128,parents
+gut health,2025,9,Thursday,120,parents
+probiotics,2025,1,Monday,118,health enthusiasts
+probiotics,2025,3,Wednesday,122,health enthusiasts
+probiotics,2025,5,Tuesday,130,health enthusiasts
+probiotics,2025,9,Monday,138,health enthusiasts
+probiotics,2025,1,Monday,88,general audience
+probiotics,2025,5,Monday,95,general audience
+skincare,2025,1,Monday,115,beauty enthusiasts
+skincare,2025,2,Tuesday,120,beauty enthusiasts
+skincare,2025,3,Monday,118,beauty enthusiasts
+skincare,2025,6,Monday,135,beauty enthusiasts
+skincare,2025,9,Monday,128,beauty enthusiasts
+skincare,2025,11,Monday,140,beauty enthusiasts
+skincare,2025,11,Friday,145,beauty enthusiasts
+skincare,2025,1,Monday,92,men 25-34
+skincare,2025,6,Monday,105,men 25-34
+skincare,2025,11,Monday,110,men 25-34
+sustainable fashion,2025,1,Monday,105,conscious consumers
+sustainable fashion,2025,3,Monday,118,conscious consumers
+sustainable fashion,2025,4,Monday,135,conscious consumers
+sustainable fashion,2025,4,Wednesday,130,conscious consumers
+sustainable fashion,2025,9,Monday,142,conscious consumers
+sustainable fashion,2025,9,Tuesday,138,conscious consumers
+sustainable fashion,2025,11,Monday,125,conscious consumers
+sustainable fashion,2025,1,Monday,88,general audience
+sustainable fashion,2025,4,Monday,102,general audience
+sustainable fashion,2025,9,Monday,110,general audience
+sustainable fashion,2025,4,Monday,145,parents 30-50
+sustainable fashion,2025,9,Monday,150,parents 30-50
+sustainable fashion,2025,11,Monday,130,parents 30-50
+clean beauty,2025,2,Monday,112,beauty enthusiasts
+clean beauty,2025,5,Tuesday,125,beauty enthusiasts
+clean beauty,2025,8,Monday,118,beauty enthusiasts
+clean beauty,2025,11,Monday,132,beauty enthusiasts
+wellness,2025,1,Monday,140,health enthusiasts
+wellness,2025,1,Wednesday,135,health enthusiasts
+wellness,2025,5,Monday,128,health enthusiasts
+wellness,2025,9,Monday,145,health enthusiasts
