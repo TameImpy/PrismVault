@@ -5,11 +5,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-# Install dependencies
+# Install Python dependencies
 pip3 install -r requirements.txt
 
-# Run the app
-python3 -m streamlit run app.py
+# Install frontend dependencies
+cd frontend && npm install
+
+# Run the FastAPI backend (Terminal 1)
+uvicorn api.main:app --reload --port 8000
+
+# Run the Next.js frontend (Terminal 2)
+cd frontend && npm run dev
 
 # Run all tests
 python3 -m pytest tests/ -v
@@ -29,16 +35,29 @@ Python 3.9 (system Python on macOS) — do not use `dict | None` union syntax or
 
 ## Architecture
 
-This is a RAG-based Streamlit app that generates advertising strategy briefs by combining four data sources:
+This is a RAG-based app that generates advertising strategy briefs by combining four data sources. The frontend is a Next.js app (`frontend/`) and the backend is a FastAPI server (`api/main.py`) wrapping the existing Python pipeline.
+
+### Backend (FastAPI + Python `src/`)
 
 1. **Editorial transcripts** — editor interview JSON files in `data/transcripts/`, chunked and embedded into ChromaDB (`src/embeddings.py`, `src/vectorstore.py`). Queried by topic similarity.
 2. **Advertiser web research** — skill-based DuckDuckGo search + GPT-4o processing (`src/web_search.py`). Skills are defined as markdown files in `skills/`.
 3. **Audience data** — CSV-based engagement trends in `data/audience_trends.csv` (`src/audience.py`).
 4. **Google Trends** — live pytrends data with related queries and multi-timeframe analysis (`src/trends.py`).
 
+### API endpoint
+
+`POST /api/insights` — accepts `{topic, advertiser, include_google_trends}`, calls `generate_insights()`, returns the full result dict as JSON.
+
 ### Pipeline flow
 
-`app.py` → `synthesiser.generate_insights()` → gathers all four sources → assembles prompt from `src/prompts.py` templates → calls GPT-4o → returns dict with synthesis + all raw intermediate data for UI display.
+`api/main.py` → `synthesiser.generate_insights()` → gathers all four sources → assembles prompt from `src/prompts.py` templates → calls GPT-4o → returns dict with synthesis + all raw intermediate data for UI display.
+
+### Frontend (Next.js)
+
+- `/` — marketing landing page (Prism Deep Sea design system)
+- `/app` — insights tool (topic + advertiser inputs → calls `/api/insights` → renders results)
+- Design system: Prism Deep Sea tokens defined in `frontend/app/globals.css` using Tailwind v4 `@theme`
+- Components in `frontend/components/`: Navbar, Footer, GlassCard, Button, CollapsiblePanel, etc.
 
 ### Research skills system
 
