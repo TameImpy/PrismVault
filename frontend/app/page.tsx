@@ -19,17 +19,18 @@ export default function LandingPage() {
           <div className="lg:col-span-7">
             <StatusDot label="v2.4 Deployed" />
             <h1 className="font-headline text-6xl md:text-8xl font-extrabold tracking-tighter leading-[0.95] mb-8 mt-8">
-              Architecting <br />
-              <span className="text-accent-cyan italic">Data Clarity</span>
+              The <span className="text-accent-cyan italic">3D View</span> Of
+              <br />Your Audience
             </h1>
             <p className="text-xl md:text-2xl text-slate-400 max-w-2xl font-light leading-relaxed mb-12">
-              Experience the next generation of enterprise-grade security and
-              velocity. A prism of insight for the modern data architect.
+              Tap into our proprietary vault of deep editorial expertise,
+              behavioural data, panel research and more for unique insight and
+              guidance on how to reach and message your audience.
             </p>
             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-6">
               <Link href="/app">
                 <Button variant="primary" className="text-lg">
-                  Start Free Trial
+                  Explore Topic
                 </Button>
               </Link>
               <Button variant="secondary" className="text-lg">
