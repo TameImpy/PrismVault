@@ -102,6 +102,12 @@
   animation: skeleton-pulse 2s ease-in-out infinite;
 }
 
+/* Prevent long URLs/words from causing horizontal overflow on mobile */
+.break-words-anywhere {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 body {
   background: var(--color-surface);
   color: var(--color-on-surface);

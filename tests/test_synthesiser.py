@@ -12,6 +12,27 @@ def test_system_prompt_has_key_sections():
     assert "Editorial Insights" in SYSTEM_PROMPT
 
 
+def test_system_prompt_has_key_recommendations_section():
+    """SYSTEM_PROMPT should contain a Key Recommendations output section."""
+    assert "Key Recommendations" in SYSTEM_PROMPT
+
+
+def test_system_prompt_key_recommendations_is_first_section():
+    """Key Recommendations should appear before Advertiser Overview in SYSTEM_PROMPT."""
+    recs_pos = SYSTEM_PROMPT.index("Key Recommendations")
+    overview_pos = SYSTEM_PROMPT.index("Advertiser Overview")
+    assert recs_pos < overview_pos
+
+
+def test_system_prompt_key_recommendations_instructs_concise_numbered_list():
+    """Key Recommendations section should instruct the model to produce numbered, concise recommendations."""
+    recs_start = SYSTEM_PROMPT.index("Key Recommendations")
+    overview_start = SYSTEM_PROMPT.index("Advertiser Overview")
+    recs_section = SYSTEM_PROMPT[recs_start:overview_start]
+    assert "concise" in recs_section.lower()
+    assert "number" in recs_section.lower()
+
+
 def test_system_prompt_messaging_section_references_kpi():
     """The Messaging & Tone section should instruct the model to tailor recommendations to the KPI."""
     # Find the Messaging & Tone section and check it mentions KPI
