@@ -28,6 +28,7 @@ app.add_middleware(
 class InsightsRequest(BaseModel):
     topic: str
     advertiser: str
+    kpi: str
     include_google_trends: bool = True
 
 
@@ -39,6 +40,7 @@ def create_insights(req: InsightsRequest):
         result = generate_insights(
             topic=req.topic,
             advertiser=req.advertiser,
+            kpi=req.kpi,
             include_google_trends=req.include_google_trends,
         )
         return result

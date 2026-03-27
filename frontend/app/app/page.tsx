@@ -51,12 +51,15 @@ function SkeletonCard() {
 export default function InsightsTool() {
   const [topic, setTopic] = useState("");
   const [advertiser, setAdvertiser] = useState("");
+  const [kpi, setKpi] = useState("");
   const [includeTrends, setIncludeTrends] = useState(true);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<InsightsResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const canGenerate = topic.trim() !== "" && advertiser.trim() !== "";
+  const KPI_OPTIONS = ["Awareness", "Consideration", "Viewability", "Clicks"];
+
+  const canGenerate = topic.trim() !== "" && advertiser.trim() !== "" && kpi !== "";
 
   async function handleGenerate() {
     setLoading(true);
@@ -70,6 +73,7 @@ export default function InsightsTool() {
         body: JSON.stringify({
           topic: topic.trim(),
           advertiser: advertiser.trim(),
+          kpi,
           include_google_trends: includeTrends,
         }),
       });
@@ -107,7 +111,7 @@ export default function InsightsTool() {
 
           {/* Input panel */}
           <GlassCard className="mb-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               <div>
                 <label className="text-[10px] font-bold tracking-widest text-on-surface-variant uppercase mb-2 block">
                   Topic
@@ -131,6 +135,21 @@ export default function InsightsTool() {
                   placeholder="e.g. Yakult, The Ordinary, Patagonia"
                   className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-3 text-on-surface placeholder-slate-500 focus:outline-none focus:border-accent-cyan focus:shadow-[0_0_0_1px_rgba(31,137,223,0.3)] transition-all"
                 />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold tracking-widest text-on-surface-variant uppercase mb-2 block">
+                  KPI
+                </label>
+                <select
+                  value={kpi}
+                  onChange={(e) => setKpi(e.target.value)}
+                  className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-3 text-on-surface focus:outline-none focus:border-accent-cyan focus:shadow-[0_0_0_1px_rgba(31,137,223,0.3)] transition-all"
+                >
+                  <option value="" disabled>Select a KPI</option>
+                  {KPI_OPTIONS.map((option) => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
               </div>
             </div>
 

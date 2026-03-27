@@ -79,6 +79,7 @@ def test_insights_returns_200_with_valid_payload():
             json={
                 "topic": "sustainable fashion",
                 "advertiser": "EcoWear",
+                "kpi": "Consideration",
                 "include_google_trends": True,
             },
         )
@@ -96,6 +97,7 @@ def test_insights_response_body_matches_generate_insights_return_value():
             json={
                 "topic": "sustainable fashion",
                 "advertiser": "EcoWear",
+                "kpi": "Clicks",
                 "include_google_trends": True,
             },
         )
@@ -103,7 +105,7 @@ def test_insights_response_body_matches_generate_insights_return_value():
 
 
 def test_insights_passes_correct_arguments_to_generate_insights():
-    """POST /api/insights forwards topic, advertiser, and include_google_trends to generate_insights."""
+    """POST /api/insights forwards topic, advertiser, kpi, and include_google_trends to generate_insights."""
     client = TestClient(app)
     with patch("api.main.config") as mock_config, \
          patch("api.main.generate_insights", return_value=MOCK_INSIGHTS_RESULT) as mock_gen:
@@ -113,12 +115,14 @@ def test_insights_passes_correct_arguments_to_generate_insights():
             json={
                 "topic": "gut health",
                 "advertiser": "NutriCo",
+                "kpi": "Awareness",
                 "include_google_trends": False,
             },
         )
     mock_gen.assert_called_once_with(
         topic="gut health",
         advertiser="NutriCo",
+        kpi="Awareness",
         include_google_trends=False,
     )
 
@@ -131,11 +135,12 @@ def test_insights_include_google_trends_defaults_to_true():
         mock_config.OPENAI_API_KEY = "sk-test-key"
         client.post(
             "/api/insights",
-            json={"topic": "travel", "advertiser": "Airwaves"},
+            json={"topic": "travel", "advertiser": "Airwaves", "kpi": "Viewability"},
         )
     mock_gen.assert_called_once_with(
         topic="travel",
         advertiser="Airwaves",
+        kpi="Viewability",
         include_google_trends=True,
     )
 
@@ -153,7 +158,7 @@ def test_insights_returns_500_when_api_key_is_empty_string():
         mock_config.OPENAI_API_KEY = ""
         response = client.post(
             "/api/insights",
-            json={"topic": "travel", "advertiser": "Airwaves"},
+            json={"topic": "travel", "advertiser": "Airwaves", "kpi": "Clicks"},
         )
     assert response.status_code == 500
 
@@ -166,7 +171,7 @@ def test_insights_error_detail_mentions_api_key_when_missing():
         mock_config.OPENAI_API_KEY = ""
         response = client.post(
             "/api/insights",
-            json={"topic": "travel", "advertiser": "Airwaves"},
+            json={"topic": "travel", "advertiser": "Airwaves", "kpi": "Clicks"},
         )
     assert "OPENAI_API_KEY" in response.json()["detail"]
 
@@ -184,7 +189,7 @@ def test_insights_returns_500_when_generate_insights_raises():
         mock_config.OPENAI_API_KEY = "sk-test-key"
         response = client.post(
             "/api/insights",
-            json={"topic": "skincare", "advertiser": "GlowCo"},
+            json={"topic": "skincare", "advertiser": "GlowCo", "kpi": "Awareness"},
         )
     assert response.status_code == 500
 
@@ -197,7 +202,7 @@ def test_insights_error_detail_contains_exception_message():
         mock_config.OPENAI_API_KEY = "sk-test-key"
         response = client.post(
             "/api/insights",
-            json={"topic": "skincare", "advertiser": "GlowCo"},
+            json={"topic": "skincare", "advertiser": "GlowCo", "kpi": "Awareness"},
         )
     assert "ChromaDB unavailable" in response.json()["detail"]
 
@@ -210,7 +215,7 @@ def test_insights_returns_500_when_generate_insights_raises_value_error():
         mock_config.OPENAI_API_KEY = "sk-test-key"
         response = client.post(
             "/api/insights",
-            json={"topic": "skincare", "advertiser": "GlowCo"},
+            json={"topic": "skincare", "advertiser": "GlowCo", "kpi": "Awareness"},
         )
     assert response.status_code == 500
 
@@ -225,7 +230,7 @@ def test_insights_returns_422_when_topic_is_missing():
     client = TestClient(app)
     response = client.post(
         "/api/insights",
-        json={"advertiser": "BrandX"},
+        json={"advertiser": "BrandX", "kpi": "Clicks"},
     )
     assert response.status_code == 422
 
@@ -235,7 +240,17 @@ def test_insights_returns_422_when_advertiser_is_missing():
     client = TestClient(app)
     response = client.post(
         "/api/insights",
-        json={"topic": "wellness"},
+        json={"topic": "wellness", "kpi": "Clicks"},
+    )
+    assert response.status_code == 422
+
+
+def test_insights_returns_422_when_kpi_is_missing():
+    """POST /api/insights returns 422 when required field `kpi` is absent."""
+    client = TestClient(app)
+    response = client.post(
+        "/api/insights",
+        json={"topic": "wellness", "advertiser": "BrandX"},
     )
     assert response.status_code == 422
 
