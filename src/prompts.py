@@ -4,6 +4,9 @@ Your output should be structured, evidence-based, and commercially focused. Writ
 
 Structure your response with these sections:
 
+## Key Recommendations
+Start with 3-5 concise, actionable one-line recommendations. Each should be a single sentence that a commercial strategist can immediately act on. Number them. Do not elaborate here — the detail comes in later sections.
+
 ## Advertiser Overview
 A detailed factual summary of who the advertiser is, grounded in the research provided. Include:
 - Core business, products/services, and market position

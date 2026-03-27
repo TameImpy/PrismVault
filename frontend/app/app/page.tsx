@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import ReactMarkdown from "react-markdown";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import GlassCard from "@/components/GlassCard";
 import CollapsiblePanel from "@/components/CollapsiblePanel";
+import StatusDot from "@/components/StatusDot";
 
 interface Source {
   editor: string;
@@ -47,6 +49,62 @@ function SkeletonCard() {
     </div>
   );
 }
+
+interface ParsedSection {
+  title: string;
+  content: string;
+}
+
+function parseSections(markdown: string): ParsedSection[] {
+  const sections: ParsedSection[] = [];
+  const parts = markdown.split(/^## /m);
+
+  for (const part of parts) {
+    const trimmed = part.trim();
+    if (!trimmed) continue;
+
+    const newlineIndex = trimmed.indexOf("\n");
+    if (newlineIndex === -1) {
+      sections.push({ title: trimmed, content: "" });
+    } else {
+      sections.push({
+        title: trimmed.slice(0, newlineIndex).trim(),
+        content: trimmed.slice(newlineIndex + 1).trim(),
+      });
+    }
+  }
+
+  return sections;
+}
+
+const markdownComponents = {
+  a: ({ href, children, ...props }: React.ComponentPropsWithoutRef<"a">) => (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-accent-cyan hover:underline break-words"
+      {...props}
+    >
+      {children}
+    </a>
+  ),
+  p: ({ children, ...props }: React.ComponentPropsWithoutRef<"p">) => (
+    <p className="mb-4 last:mb-0" {...props}>{children}</p>
+  ),
+  ul: ({ children, ...props }: React.ComponentPropsWithoutRef<"ul">) => (
+    <ul className="list-disc list-inside space-y-1 mb-4 last:mb-0" {...props}>{children}</ul>
+  ),
+  ol: ({ children, ...props }: React.ComponentPropsWithoutRef<"ol">) => (
+    <ol className="list-decimal list-inside space-y-1 mb-4 last:mb-0" {...props}>{children}</ol>
+  ),
+  strong: ({ children, ...props }: React.ComponentPropsWithoutRef<"strong">) => (
+    <strong className="font-bold text-on-surface" {...props}>{children}</strong>
+  ),
+  li: ({ children, ...props }: React.ComponentPropsWithoutRef<"li">) => (
+    <li className="text-on-surface-variant" {...props}>{children}</li>
+  ),
+};
 
 export default function InsightsTool() {
   const [topic, setTopic] = useState("");
@@ -96,7 +154,7 @@ export default function InsightsTool() {
     <>
       <Navbar />
 
-      <main className="pt-32 pb-20 px-8 min-h-screen">
+      <main className="pt-32 pb-20 px-4 md:px-8 min-h-screen">
         <div className="max-w-5xl mx-auto">
           {/* Page header */}
           <div className="mb-12">
@@ -195,20 +253,40 @@ export default function InsightsTool() {
           )}
 
           {/* Results */}
-          {result && !loading && (
+          {result && !loading && (() => {
+            const sections = parseSections(result.content);
+            const keyRecs = sections.find((s) => s.title === "Key Recommendations");
+            const detailSections = sections.filter((s) => s.title !== "Key Recommendations");
+
+            return (
             <div className="space-y-6">
-              {/* Main synthesis */}
-              <GlassCard>
-                <div className="flex items-center space-x-2 mb-6">
-                  <span className="w-2 h-2 rounded-full bg-accent-cyan animate-pulse" />
-                  <span className="text-[10px] font-bold tracking-widest text-accent-cyan uppercase">
-                    GPT-4o Synthesis
-                  </span>
+              {/* Executive summary banner */}
+              {keyRecs && keyRecs.content && (
+                <div className="glass-card rounded-2xl p-6 border border-white/10 shadow-2xl border-l-4 border-l-accent-cyan">
+                  <div className="mb-4">
+                    <StatusDot label="Key Recommendations" />
+                  </div>
+                  <div className="text-on-surface-variant text-sm leading-relaxed break-words-anywhere">
+                    <ReactMarkdown components={markdownComponents}>
+                      {keyRecs.content}
+                    </ReactMarkdown>
+                  </div>
                 </div>
-                <div className="prose prose-invert prose-slate max-w-none text-on-surface leading-relaxed whitespace-pre-wrap">
-                  {result.content}
-                </div>
-              </GlassCard>
+              )}
+
+              {/* Detail section cards */}
+              {detailSections.map((section, i) => (
+                <GlassCard key={i}>
+                  <div className="mb-4">
+                    <StatusDot label={section.title} />
+                  </div>
+                  <div className="text-on-surface-variant text-sm leading-relaxed break-words-anywhere">
+                    <ReactMarkdown components={markdownComponents}>
+                      {section.content}
+                    </ReactMarkdown>
+                  </div>
+                </GlassCard>
+              ))}
 
               {/* Sources panel */}
               {result.sources && result.sources.length > 0 && (
@@ -275,7 +353,8 @@ export default function InsightsTool() {
                 </CollapsiblePanel>
               )}
             </div>
-          )}
+            );
+          })()}
 
           {/* Empty state */}
           {!result && !loading && !error && (
