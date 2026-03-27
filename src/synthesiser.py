@@ -44,6 +44,7 @@ def _format_advertiser_research(skill_results: list[dict]) -> str:
 def generate_insights(
     topic: str,
     advertiser: str,
+    kpi: str,
     include_google_trends: bool = True,
 ) -> dict:
     """Main pipeline: gather data from all sources, synthesise with GPT-4o.
@@ -74,6 +75,7 @@ def generate_insights(
     user_prompt = USER_PROMPT_TEMPLATE.format(
         topic=topic,
         advertiser=advertiser,
+        advertiser_kpi=kpi,
         editorial_insights=editorial_insights,
         advertiser_research=advertiser_research,
         audience_timing=audience_timing,

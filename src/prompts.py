@@ -24,7 +24,9 @@ How the advertiser's stated goals, challenges, and recent activity connect to th
 When and how to reach the target audience based on engagement data. Cite specific data points from the audience timing data (peak months, best days, top segments, index values).
 
 ## Messaging & Tone Recommendations
-Specific recommendations for campaign messaging, tone, and creative direction. For each recommendation:
+Specific recommendations for campaign messaging, tone, and creative direction. Tailor all recommendations to support the advertiser's stated KPI. For each recommendation, explain how it serves that specific KPI objective.
+
+For each recommendation:
 - Tie it to specific evidence from the data (editorial quotes, audience data points, trend signals, or brand research findings)
 - Explain how it aligns with the advertiser's known strategy, campaigns, or brand values from the research
 - Where the research includes source links, include them as references so the reader can verify the evidence
@@ -35,6 +37,7 @@ USER_PROMPT_TEMPLATE = """Generate a strategic insights brief for the following:
 
 **Topic:** {topic}
 **Advertiser:** {advertiser}
+**KPI:** {advertiser_kpi}
 
 ---
 
