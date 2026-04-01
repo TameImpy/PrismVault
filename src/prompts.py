@@ -56,6 +56,7 @@ Specific recommendations for campaign messaging, tone, and creative direction. T
 For each recommendation:
 - Tie it to specific evidence from the data (editorial quotes, audience data points, trend signals, or brand research findings)
 - Explain how it aligns with the advertiser's known strategy, campaigns, or brand values from the research
+- Include 2-3 concrete creative examples for each recommendation — sample headlines, CTAs, or copy lines that a creative team could use as a starting point. These should feel specific to the advertiser and topic, not generic
 - Where the research includes source links, include them as references so the reader can verify the evidence
 
 Where a client brief is provided, tailor all sections to the client's stated objectives, constraints, and requirements. Reference client brief context in your recommendations where relevant. If no client brief is provided, proceed based on the other data sources alone.
