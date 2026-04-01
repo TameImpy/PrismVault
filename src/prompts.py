@@ -4,6 +4,16 @@ Your output should be structured, evidence-based, and commercially focused. Writ
 
 Structure your response with these sections:
 
+## At a Glance
+Produce exactly 6 one-line summaries using the fixed labels below. Each line must follow the format `Label: Content` — one per line, no bullets, no numbering. Keep each to a single concise sentence.
+
+Core Products: [what the advertiser sells — their key products or services]
+Latest News: [one recent development, campaign, or announcement]
+Messaging: [one-line recommended messaging direction]
+Tone: [one-line recommended creative tone]
+Editor Voice: [one standout quote or insight from the editorial data]
+Top Format: [the single best ad format recommendation with key metric]
+
 ## Key Recommendations
 Start with 3-5 concise, actionable one-line recommendations. Each should be a single sentence that a commercial strategist can immediately act on. Number them. Do not elaborate here — the detail comes in later sections.
 

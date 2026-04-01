@@ -33,6 +33,31 @@ def test_system_prompt_key_recommendations_instructs_concise_numbered_list():
     assert "number" in recs_section.lower()
 
 
+def test_system_prompt_has_at_a_glance_section():
+    """SYSTEM_PROMPT should contain an At a Glance output section."""
+    assert "At a Glance" in SYSTEM_PROMPT
+
+
+def test_system_prompt_at_a_glance_is_before_key_recommendations():
+    """At a Glance should appear before Key Recommendations in SYSTEM_PROMPT."""
+    glance_pos = SYSTEM_PROMPT.index("At a Glance")
+    recs_pos = SYSTEM_PROMPT.index("Key Recommendations")
+    assert glance_pos < recs_pos
+
+
+def test_system_prompt_at_a_glance_has_fixed_labels():
+    """At a Glance section should reference all 6 fixed labels."""
+    glance_start = SYSTEM_PROMPT.index("At a Glance")
+    key_recs_start = SYSTEM_PROMPT.index("Key Recommendations")
+    glance_section = SYSTEM_PROMPT[glance_start:key_recs_start]
+    assert "Core Products" in glance_section
+    assert "Latest News" in glance_section
+    assert "Messaging" in glance_section
+    assert "Tone" in glance_section
+    assert "Editor Voice" in glance_section
+    assert "Top Format" in glance_section
+
+
 def test_system_prompt_has_recommended_products_section():
     """SYSTEM_PROMPT should contain a Recommended Products output section."""
     assert "Recommended Products" in SYSTEM_PROMPT
