@@ -8,3 +8,4 @@ dist/
 build/
 .streamlit/
 .DS_Store
+data/format_recommendations.csv

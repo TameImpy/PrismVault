@@ -35,6 +35,7 @@ interface InsightsResult {
   research_skills: SkillResult[];
   audience_timing: string;
   google_trends: string;
+  format_recommendations: string;
 }
 
 function SkeletonCard() {
@@ -349,6 +350,15 @@ export default function InsightsTool() {
                 <CollapsiblePanel title="Google Trends" defaultOpen={false}>
                   <p className="text-on-surface-variant text-sm leading-relaxed whitespace-pre-wrap">
                     {result.google_trends}
+                  </p>
+                </CollapsiblePanel>
+              )}
+
+              {/* Format Recommendations panel */}
+              {result.format_recommendations && (
+                <CollapsiblePanel title="Format Recommendations" defaultOpen={false}>
+                  <p className="text-on-surface-variant text-sm leading-relaxed whitespace-pre-wrap">
+                    {result.format_recommendations}
                   </p>
                 </CollapsiblePanel>
               )}

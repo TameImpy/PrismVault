@@ -33,6 +33,29 @@ def test_system_prompt_key_recommendations_instructs_concise_numbered_list():
     assert "number" in recs_section.lower()
 
 
+def test_system_prompt_has_recommended_products_section():
+    """SYSTEM_PROMPT should contain a Recommended Products output section."""
+    assert "Recommended Products" in SYSTEM_PROMPT
+
+
+def test_system_prompt_recommended_products_position():
+    """Recommended Products should appear after Audience Timing and before Messaging & Tone."""
+    recs_pos = SYSTEM_PROMPT.index("Recommended Products")
+    audience_pos = SYSTEM_PROMPT.index("Audience Timing")
+    messaging_pos = SYSTEM_PROMPT.index("Messaging & Tone")
+    assert audience_pos < recs_pos < messaging_pos
+
+
+def test_system_prompt_recommended_products_has_kpi_mapping():
+    """Recommended Products section should contain KPI-to-objective mapping."""
+    recs_start = SYSTEM_PROMPT.index("Recommended Products")
+    messaging_start = SYSTEM_PROMPT.index("Messaging & Tone")
+    recs_section = SYSTEM_PROMPT[recs_start:messaging_start]
+    assert "Awareness" in recs_section
+    assert "Clicks" in recs_section or "CTR" in recs_section
+    assert "Viewability" in recs_section
+
+
 def test_system_prompt_messaging_section_references_kpi():
     """The Messaging & Tone section should instruct the model to tailor recommendations to the KPI."""
     # Find the Messaging & Tone section and check it mentions KPI
@@ -49,6 +72,7 @@ def test_user_prompt_template_has_placeholders():
     assert "{audience_timing}" in USER_PROMPT_TEMPLATE
     assert "{google_trends}" in USER_PROMPT_TEMPLATE
     assert "{advertiser_kpi}" in USER_PROMPT_TEMPLATE
+    assert "{format_recommendations}" in USER_PROMPT_TEMPLATE
 
 
 def test_user_prompt_renders():
@@ -60,6 +84,7 @@ def test_user_prompt_renders():
         advertiser_research="some research",
         audience_timing="some timing",
         google_trends="some trends",
+        format_recommendations="some formats",
     )
     assert "test topic" in rendered
     assert "test brand" in rendered
