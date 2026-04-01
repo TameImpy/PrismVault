@@ -124,6 +124,7 @@ def test_insights_passes_correct_arguments_to_generate_insights():
         advertiser="NutriCo",
         kpi="Awareness",
         include_google_trends=False,
+        client_brief="",
     )
 
 
@@ -142,6 +143,7 @@ def test_insights_include_google_trends_defaults_to_true():
         advertiser="Airwaves",
         kpi="Viewability",
         include_google_trends=True,
+        client_brief="",
     )
 
 

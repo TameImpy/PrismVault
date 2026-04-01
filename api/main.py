@@ -30,6 +30,7 @@ class InsightsRequest(BaseModel):
     advertiser: str
     kpi: str
     include_google_trends: bool = True
+    client_brief: str = ""
 
 
 @app.post("/api/insights")
@@ -42,6 +43,7 @@ def create_insights(req: InsightsRequest):
             advertiser=req.advertiser,
             kpi=req.kpi,
             include_google_trends=req.include_google_trends,
+            client_brief=req.client_brief,
         )
         return result
     except Exception as e:
