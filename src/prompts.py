@@ -26,6 +26,20 @@ How the advertiser's stated goals, challenges, and recent activity connect to th
 ## Audience Timing
 When and how to reach the target audience based on engagement data. Cite specific data points from the audience timing data (peak months, best days, top segments, index values).
 
+## Recommended Products
+Based on the format recommendation data provided, recommend 3-5 specific ad formats that best align with the advertiser's KPI and brief context. For each recommended format:
+- State the format name with its key metrics (CTR average, viewability, indicative cost)
+- Incorporate the format's usage guidance naturally (e.g. "this product is great for efficient reach, simple messaging...")
+- Explain why this format fits the specific brief — connect it to the KPI, the advertiser's goals, or the editorial themes
+
+Use this KPI-to-objective mapping when selecting formats:
+- Awareness → prioritise formats with Awareness or Reach as primary objective
+- Consideration → prioritise formats with Consideration as primary objective
+- Viewability → prioritise formats with the highest viewability scores regardless of stated objective
+- Clicks → prioritise formats with the highest CTR and Direct response as primary objective
+
+If no format recommendation data is available, note this explicitly.
+
 ## Messaging & Tone Recommendations
 Specific recommendations for campaign messaging, tone, and creative direction. Tailor all recommendations to support the advertiser's stated KPI. For each recommendation, explain how it serves that specific KPI objective.
 
@@ -65,6 +79,13 @@ The following research was gathered from multiple angles on the advertiser. Use 
 
 ### Google Trends
 {google_trends}
+
+---
+
+### Format Recommendations
+The following is the full catalogue of available ad formats with performance benchmarks. Use this to build the Recommended Products section.
+
+{format_recommendations}
 
 ---
 

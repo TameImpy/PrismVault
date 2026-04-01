@@ -4,6 +4,7 @@ from src.vectorstore import search_transcripts
 from src.web_search import research_advertiser
 from src.audience import load_audience_data, get_topic_trends
 from src.trends import get_trend_data
+from src.formats import load_format_data
 from src.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
 
 
@@ -71,7 +72,10 @@ def generate_insights(
     else:
         google_trends = "Google Trends data not requested."
 
-    # 5. Assemble prompt
+    # 5. Load format recommendations
+    format_recommendations = load_format_data()
+
+    # 6. Assemble prompt
     user_prompt = USER_PROMPT_TEMPLATE.format(
         topic=topic,
         advertiser=advertiser,
@@ -80,9 +84,10 @@ def generate_insights(
         advertiser_research=advertiser_research,
         audience_timing=audience_timing,
         google_trends=google_trends,
+        format_recommendations=format_recommendations,
     )
 
-    # 6. Call GPT-4o
+    # 7. Call GPT-4o
     client = OpenAI(api_key=config.OPENAI_API_KEY)
     response = client.chat.completions.create(
         model=config.CHAT_MODEL,
@@ -102,4 +107,5 @@ def generate_insights(
         "research_skills": skill_results,
         "audience_timing": audience_timing,
         "google_trends": google_trends,
+        "format_recommendations": format_recommendations,
     }
