@@ -36,6 +36,7 @@ interface InsightsResult {
   audience_timing: string;
   google_trends: string;
   format_recommendations: string;
+  client_brief_summary: string;
 }
 
 function SkeletonCard() {
@@ -164,6 +165,7 @@ export default function InsightsTool() {
   const [topic, setTopic] = useState("");
   const [advertiser, setAdvertiser] = useState("");
   const [kpi, setKpi] = useState("");
+  const [clientBrief, setClientBrief] = useState("");
   const [includeTrends, setIncludeTrends] = useState(true);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<InsightsResult | null>(null);
@@ -187,6 +189,7 @@ export default function InsightsTool() {
           advertiser: advertiser.trim(),
           kpi,
           include_google_trends: includeTrends,
+          client_brief: clientBrief.trim(),
         }),
       });
 
@@ -263,6 +266,19 @@ export default function InsightsTool() {
                   ))}
                 </select>
               </div>
+            </div>
+
+            <div className="mb-6">
+              <label className="text-[10px] font-bold tracking-widest text-on-surface-variant uppercase mb-2 block">
+                Client Brief (optional)
+              </label>
+              <textarea
+                value={clientBrief}
+                onChange={(e) => setClientBrief(e.target.value)}
+                placeholder="e.g. Client wants to drive awareness among 25-34 women, launching a new skincare range in September, budget is mid-tier, open to digital and social formats"
+                rows={3}
+                className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-3 text-on-surface placeholder-slate-500 focus:outline-none focus:border-accent-cyan focus:shadow-[0_0_0_1px_rgba(31,137,223,0.3)] transition-all resize-y"
+              />
             </div>
 
             <div className="flex items-center justify-between">
@@ -445,6 +461,15 @@ export default function InsightsTool() {
                 <CollapsiblePanel title="Format Recommendations" defaultOpen={false}>
                   <p className="text-on-surface-variant text-sm leading-relaxed whitespace-pre-wrap">
                     {result.format_recommendations}
+                  </p>
+                </CollapsiblePanel>
+              )}
+
+              {/* Client Brief panel */}
+              {result.client_brief_summary && result.client_brief_summary !== "No client brief provided." && (
+                <CollapsiblePanel title="Client Brief" defaultOpen={false}>
+                  <p className="text-on-surface-variant text-sm leading-relaxed whitespace-pre-wrap">
+                    {result.client_brief_summary}
                   </p>
                 </CollapsiblePanel>
               )}

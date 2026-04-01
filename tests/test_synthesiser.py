@@ -58,6 +58,11 @@ def test_system_prompt_at_a_glance_has_fixed_labels():
     assert "Top Format" in glance_section
 
 
+def test_system_prompt_has_client_brief_instruction():
+    """SYSTEM_PROMPT should instruct GPT-4o to tailor sections to the client brief."""
+    assert "client brief" in SYSTEM_PROMPT.lower()
+
+
 def test_system_prompt_has_recommended_products_section():
     """SYSTEM_PROMPT should contain a Recommended Products output section."""
     assert "Recommended Products" in SYSTEM_PROMPT
@@ -98,6 +103,7 @@ def test_user_prompt_template_has_placeholders():
     assert "{google_trends}" in USER_PROMPT_TEMPLATE
     assert "{advertiser_kpi}" in USER_PROMPT_TEMPLATE
     assert "{format_recommendations}" in USER_PROMPT_TEMPLATE
+    assert "{client_brief}" in USER_PROMPT_TEMPLATE
 
 
 def test_user_prompt_renders():
@@ -110,6 +116,7 @@ def test_user_prompt_renders():
         audience_timing="some timing",
         google_trends="some trends",
         format_recommendations="some formats",
+        client_brief="some brief",
     )
     assert "test topic" in rendered
     assert "test brand" in rendered

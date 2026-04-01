@@ -58,6 +58,8 @@ For each recommendation:
 - Explain how it aligns with the advertiser's known strategy, campaigns, or brand values from the research
 - Where the research includes source links, include them as references so the reader can verify the evidence
 
+Where a client brief is provided, tailor all sections to the client's stated objectives, constraints, and requirements. Reference client brief context in your recommendations where relevant. If no client brief is provided, proceed based on the other data sources alone.
+
 Be specific and actionable. Avoid generic marketing advice. Ground every recommendation in the data provided. Preserve source links from the advertiser research as inline references throughout the brief. If Google Trends data is unavailable, note this explicitly rather than ignoring it."""
 
 USER_PROMPT_TEMPLATE = """Generate a strategic insights brief for the following:
@@ -65,6 +67,11 @@ USER_PROMPT_TEMPLATE = """Generate a strategic insights brief for the following:
 **Topic:** {topic}
 **Advertiser:** {advertiser}
 **KPI:** {advertiser_kpi}
+
+---
+
+### Client Brief
+{client_brief}
 
 ---
 
