@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
 import { useAnalytics } from "@/components/AnalyticsProvider";
 
 export default function Navbar() {
+  const { user, loading, logout } = useAuth();
   const { track } = useAnalytics();
 
   function trackNav(linkName: string) {
@@ -30,13 +32,39 @@ export default function Navbar() {
           >
             Features
           </Link>
-          <Link
-            href="/app"
-            onClick={() => trackNav("Launch App")}
-            className="refractive-gradient px-6 py-2.5 rounded-xl font-bold text-white shadow-lg active:scale-95 transition-transform inline-block"
-          >
-            Launch App
-          </Link>
+          {loading ? null : user ? (
+            <>
+              <span className="text-slate-300 font-semibold text-sm">
+                {user.name}
+              </span>
+              <button
+                onClick={() => {
+                  trackNav("Logout");
+                  logout();
+                }}
+                className="text-slate-400 font-semibold hover:text-white active:scale-95 transition-all"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                onClick={() => trackNav("Login")}
+                className="text-slate-400 font-semibold hover:text-white active:scale-95 transition-all"
+              >
+                Login
+              </Link>
+              <Link
+                href="/app"
+                onClick={() => trackNav("Launch App")}
+                className="refractive-gradient px-6 py-2.5 rounded-xl font-bold text-white shadow-lg active:scale-95 transition-transform inline-block"
+              >
+                Launch App
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </nav>

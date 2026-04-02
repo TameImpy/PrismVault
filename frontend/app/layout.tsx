@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Montserrat, Inter } from "next/font/google";
 import { AnalyticsProvider } from "@/components/AnalyticsProvider";
 import "./globals.css";
+import Providers from "./providers";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -32,7 +33,9 @@ export default function RootLayout({
       className={`dark ${montserrat.variable} ${inter.variable} antialiased`}
     >
       <body className="bg-surface text-on-surface font-body min-h-screen">
-        <AnalyticsProvider>{children}</AnalyticsProvider>
+        <Providers>
+          <AnalyticsProvider>{children}</AnalyticsProvider>
+        </Providers>
       </body>
     </html>
   );
