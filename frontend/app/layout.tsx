@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Montserrat, Inter } from "next/font/google";
+import { AnalyticsProvider } from "@/components/AnalyticsProvider";
 import "./globals.css";
+import Providers from "./providers";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -15,9 +17,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Prism Data Vault | Editorial Data Vault",
+  title: "Prism Plan | The 3D View Of Your Audience",
   description:
-    "Generate strategic advertising insights by combining editorial expertise, brand research, audience data, and market trends.",
+    "The 1st party planning tool combining behavioural data, editorial expertise, and brand research for tailored advertising recommendations.",
 };
 
 export default function RootLayout({
@@ -31,7 +33,9 @@ export default function RootLayout({
       className={`dark ${montserrat.variable} ${inter.variable} antialiased`}
     >
       <body className="bg-surface text-on-surface font-body min-h-screen">
-        {children}
+        <Providers>
+          <AnalyticsProvider>{children}</AnalyticsProvider>
+        </Providers>
       </body>
     </html>
   );

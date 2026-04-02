@@ -5,19 +5,32 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import sqlite3
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, field_validator
 
 import config
 from src.synthesiser import generate_insights
+from api.database import init_db
+from api.auth import router as auth_router, me_router, get_current_user
 
 LEADERBOARD_DB = os.path.join(os.path.dirname(__file__), "..", "data", "leaderboard.db")
 
-app = FastAPI(title="Editorial Data Vault API")
+
+@asynccontextmanager
+async def lifespan(app):
+    await init_db()
+    yield
+
+
+app = FastAPI(title="Editorial Data Vault API", lifespan=lifespan)
+
+app.include_router(auth_router)
+app.include_router(me_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -40,7 +53,7 @@ class InsightsRequest(BaseModel):
 
 
 @app.post("/api/insights")
-def create_insights(req: InsightsRequest):
+def create_insights(req: InsightsRequest, user: dict = Depends(get_current_user)):
     if not config.OPENAI_API_KEY:
         raise HTTPException(status_code=500, detail="Missing OPENAI_API_KEY on the server.")
     try:

@@ -14,12 +14,47 @@ PROJECT_ROOT = os.path.join(os.path.dirname(__file__), "..")
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
+import asyncio
 from unittest.mock import patch
 
+import pytest
 from fastapi.testclient import TestClient
 
 # Import the app *after* the sys.path fix so that `config` and `src.*` resolve.
 from api.main import app
+from api.database import init_db
+
+# Test database for auth
+TEST_DB = os.path.join(os.path.dirname(__file__), "test_api_users.db")
+
+
+@pytest.fixture(autouse=True)
+def fresh_db():
+    """Ensure a fresh database for each test."""
+    if os.path.exists(TEST_DB):
+        os.remove(TEST_DB)
+    asyncio.get_event_loop().run_until_complete(init_db(TEST_DB))
+    import api.auth as auth_module
+    import api.database as db_module
+    original_auth_db = getattr(auth_module, "DB_PATH", None)
+    original_db_default = db_module.DEFAULT_DB_PATH
+    auth_module.DB_PATH = TEST_DB
+    db_module.DEFAULT_DB_PATH = TEST_DB
+    yield
+    auth_module.DB_PATH = original_auth_db
+    db_module.DEFAULT_DB_PATH = original_db_default
+    if os.path.exists(TEST_DB):
+        os.remove(TEST_DB)
+
+
+def _authed_client():
+    """Return a TestClient with a valid auth cookie."""
+    client = TestClient(app)
+    client.post(
+        "/api/auth/signup",
+        json={"email": "test@example.com", "name": "Test User", "password": "password123"},
+    )
+    return client
 
 
 # ---------------------------------------------------------------------------
@@ -70,7 +105,7 @@ def test_health_returns_ok_body():
 
 def test_insights_returns_200_with_valid_payload():
     """POST /api/insights returns 200 when key is present and generate_insights succeeds."""
-    client = TestClient(app)
+    client = _authed_client()
     with patch("api.main.config") as mock_config, \
          patch("api.main.generate_insights", return_value=MOCK_INSIGHTS_RESULT) as mock_gen:
         mock_config.OPENAI_API_KEY = "sk-test-key"
@@ -88,7 +123,7 @@ def test_insights_returns_200_with_valid_payload():
 
 def test_insights_response_body_matches_generate_insights_return_value():
     """POST /api/insights returns the dict produced by generate_insights unchanged."""
-    client = TestClient(app)
+    client = _authed_client()
     with patch("api.main.config") as mock_config, \
          patch("api.main.generate_insights", return_value=MOCK_INSIGHTS_RESULT):
         mock_config.OPENAI_API_KEY = "sk-test-key"
@@ -106,7 +141,7 @@ def test_insights_response_body_matches_generate_insights_return_value():
 
 def test_insights_passes_correct_arguments_to_generate_insights():
     """POST /api/insights forwards topic, advertiser, kpi, and include_google_trends to generate_insights."""
-    client = TestClient(app)
+    client = _authed_client()
     with patch("api.main.config") as mock_config, \
          patch("api.main.generate_insights", return_value=MOCK_INSIGHTS_RESULT) as mock_gen:
         mock_config.OPENAI_API_KEY = "sk-test-key"
@@ -130,7 +165,7 @@ def test_insights_passes_correct_arguments_to_generate_insights():
 
 def test_insights_include_google_trends_defaults_to_true():
     """POST /api/insights uses include_google_trends=True when the field is omitted."""
-    client = TestClient(app)
+    client = _authed_client()
     with patch("api.main.config") as mock_config, \
          patch("api.main.generate_insights", return_value=MOCK_INSIGHTS_RESULT) as mock_gen:
         mock_config.OPENAI_API_KEY = "sk-test-key"
@@ -154,7 +189,7 @@ def test_insights_include_google_trends_defaults_to_true():
 
 def test_insights_returns_500_when_api_key_is_empty_string():
     """POST /api/insights returns 500 when OPENAI_API_KEY is an empty string."""
-    client = TestClient(app)
+    client = _authed_client()
     with patch("api.main.config") as mock_config, \
          patch("api.main.generate_insights", return_value=MOCK_INSIGHTS_RESULT):
         mock_config.OPENAI_API_KEY = ""
@@ -167,7 +202,7 @@ def test_insights_returns_500_when_api_key_is_empty_string():
 
 def test_insights_error_detail_mentions_api_key_when_missing():
     """POST /api/insights error detail names OPENAI_API_KEY when the key is absent."""
-    client = TestClient(app)
+    client = _authed_client()
     with patch("api.main.config") as mock_config, \
          patch("api.main.generate_insights", return_value=MOCK_INSIGHTS_RESULT):
         mock_config.OPENAI_API_KEY = ""
@@ -185,7 +220,7 @@ def test_insights_error_detail_mentions_api_key_when_missing():
 
 def test_insights_returns_500_when_generate_insights_raises():
     """POST /api/insights returns 500 when generate_insights raises any exception."""
-    client = TestClient(app)
+    client = _authed_client()
     with patch("api.main.config") as mock_config, \
          patch("api.main.generate_insights", side_effect=RuntimeError("ChromaDB unavailable")):
         mock_config.OPENAI_API_KEY = "sk-test-key"
@@ -198,7 +233,7 @@ def test_insights_returns_500_when_generate_insights_raises():
 
 def test_insights_error_detail_contains_exception_message():
     """POST /api/insights propagates the exception message in the error detail."""
-    client = TestClient(app)
+    client = _authed_client()
     with patch("api.main.config") as mock_config, \
          patch("api.main.generate_insights", side_effect=RuntimeError("ChromaDB unavailable")):
         mock_config.OPENAI_API_KEY = "sk-test-key"
@@ -211,7 +246,7 @@ def test_insights_error_detail_contains_exception_message():
 
 def test_insights_returns_500_when_generate_insights_raises_value_error():
     """POST /api/insights returns 500 for ValueError as well as RuntimeError."""
-    client = TestClient(app)
+    client = _authed_client()
     with patch("api.main.config") as mock_config, \
          patch("api.main.generate_insights", side_effect=ValueError("bad input")):
         mock_config.OPENAI_API_KEY = "sk-test-key"
@@ -229,7 +264,7 @@ def test_insights_returns_500_when_generate_insights_raises_value_error():
 
 def test_insights_returns_422_when_topic_is_missing():
     """POST /api/insights returns 422 when required field `topic` is absent."""
-    client = TestClient(app)
+    client = _authed_client()
     response = client.post(
         "/api/insights",
         json={"advertiser": "BrandX", "kpi": "Clicks"},
@@ -239,7 +274,7 @@ def test_insights_returns_422_when_topic_is_missing():
 
 def test_insights_returns_422_when_advertiser_is_missing():
     """POST /api/insights returns 422 when required field `advertiser` is absent."""
-    client = TestClient(app)
+    client = _authed_client()
     response = client.post(
         "/api/insights",
         json={"topic": "wellness", "kpi": "Clicks"},
@@ -249,7 +284,7 @@ def test_insights_returns_422_when_advertiser_is_missing():
 
 def test_insights_returns_422_when_kpi_is_missing():
     """POST /api/insights returns 422 when required field `kpi` is absent."""
-    client = TestClient(app)
+    client = _authed_client()
     response = client.post(
         "/api/insights",
         json={"topic": "wellness", "advertiser": "BrandX"},
@@ -259,13 +294,53 @@ def test_insights_returns_422_when_kpi_is_missing():
 
 def test_insights_returns_422_when_body_is_empty():
     """POST /api/insights returns 422 when the request body is an empty object."""
-    client = TestClient(app)
+    client = _authed_client()
     response = client.post("/api/insights", json={})
     assert response.status_code == 422
 
 
 def test_insights_returns_422_when_body_is_absent():
     """POST /api/insights returns 422 when no request body is sent at all."""
-    client = TestClient(app)
+    client = _authed_client()
     response = client.post("/api/insights")
     assert response.status_code == 422
+
+
+# ---------------------------------------------------------------------------
+# Authentication on insights endpoint
+# ---------------------------------------------------------------------------
+
+
+def test_insights_returns_401_without_auth():
+    """POST /api/insights without an auth cookie returns 401."""
+    client = TestClient(app)
+    response = client.post(
+        "/api/insights",
+        json={"topic": "travel", "advertiser": "Airwaves", "kpi": "Clicks"},
+    )
+    assert response.status_code == 401
+
+
+def test_insights_returns_200_with_auth():
+    """POST /api/insights with a valid auth cookie returns 200."""
+    client = TestClient(app)
+    # Create a user to get a valid cookie
+    client.post(
+        "/api/auth/signup",
+        json={"email": "authed@example.com", "name": "Authed", "password": "password123"},
+    )
+    with patch("api.main.config") as mock_config, \
+         patch("api.main.generate_insights", return_value=MOCK_INSIGHTS_RESULT):
+        mock_config.OPENAI_API_KEY = "sk-test-key"
+        response = client.post(
+            "/api/insights",
+            json={"topic": "travel", "advertiser": "Airwaves", "kpi": "Clicks"},
+        )
+    assert response.status_code == 200
+
+
+def test_health_returns_200_without_auth():
+    """GET /api/health remains accessible without auth."""
+    client = TestClient(app)
+    response = client.get("/api/health")
+    assert response.status_code == 200
