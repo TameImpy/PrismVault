@@ -221,6 +221,7 @@ export default function InsightsTool() {
       const res = await fetch("http://localhost:8000/api/insights", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           topic: topic.trim(),
           advertiser: advertiser.trim(),

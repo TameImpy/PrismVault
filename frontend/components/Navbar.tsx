@@ -1,6 +1,11 @@
+"use client";
+
 import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Navbar() {
+  const { user, loading, logout } = useAuth();
+
   return (
     <nav className="fixed top-0 w-full z-50 bg-[#0a0c10]/80 backdrop-blur-[20px] border-b border-white/5 shadow-2xl">
       <div className="flex justify-between items-center px-8 py-5 max-w-screen-2xl mx-auto">
@@ -40,15 +45,34 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center space-x-6">
-          <button className="text-slate-400 font-semibold hover:text-white active:scale-95 transition-all">
-            Login
-          </button>
-          <Link
-            href="/app"
-            className="refractive-gradient px-6 py-2.5 rounded-xl font-bold text-white shadow-lg active:scale-95 transition-transform inline-block"
-          >
-            Launch App
-          </Link>
+          {loading ? null : user ? (
+            <>
+              <span className="text-slate-300 font-semibold text-sm">
+                {user.name}
+              </span>
+              <button
+                onClick={logout}
+                className="text-slate-400 font-semibold hover:text-white active:scale-95 transition-all"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="text-slate-400 font-semibold hover:text-white active:scale-95 transition-all"
+              >
+                Login
+              </Link>
+              <Link
+                href="/app"
+                className="refractive-gradient px-6 py-2.5 rounded-xl font-bold text-white shadow-lg active:scale-95 transition-transform inline-block"
+              >
+                Launch App
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </nav>
