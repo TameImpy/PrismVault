@@ -32,6 +32,13 @@ export default function Navbar() {
           >
             Features
           </Link>
+          <Link
+            href="/tetris"
+            onClick={() => trackNav("Prism Play")}
+            className="hidden md:inline text-slate-400 hover:text-white transition-all duration-300 font-headline font-semibold tracking-tight"
+          >
+            Prism Play
+          </Link>
           {loading ? null : user ? (
             <>
               <span className="text-slate-300 font-semibold text-sm">
