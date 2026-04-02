@@ -248,12 +248,21 @@ export default function InsightsTool() {
     <>
       <Navbar />
 
-      <main className="pt-32 pb-20 px-4 md:px-8 min-h-screen">
+      <main className="pt-32 pb-20 px-4 md:px-8 min-h-screen relative">
+        {/* Decorative floating cube */}
+        <div className="absolute top-24 right-8 animate-float pointer-events-none opacity-20 hidden lg:block">
+          <img
+            src="/cube.png"
+            alt=""
+            className="w-24 h-24"
+          />
+        </div>
+
         <div className="max-w-5xl mx-auto">
           {/* Page header */}
           <div className="mb-12">
             <h1 className="font-headline text-4xl md:text-5xl font-extrabold tracking-tighter mb-4">
-              Editorial <span className="text-accent-cyan italic">Insights</span>
+              Prism <span className="text-accent-cyan italic">Plan</span>
             </h1>
             <p className="text-slate-400 text-lg max-w-2xl">
               Generate strategic advertising briefs by combining editorial expertise,

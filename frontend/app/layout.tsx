@@ -15,9 +15,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Prism Data Vault | Editorial Data Vault",
+  title: "Prism Plan | The 3D View Of Your Audience",
   description:
-    "Generate strategic advertising insights by combining editorial expertise, brand research, audience data, and market trends.",
+    "The 1st party planning tool combining behavioural data, editorial expertise, and brand research for tailored advertising recommendations.",
 };
 
 export default function RootLayout({
