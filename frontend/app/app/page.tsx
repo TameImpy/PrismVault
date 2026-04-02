@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import GlassCard from "@/components/GlassCard";
 import CollapsiblePanel from "@/components/CollapsiblePanel";
+import { useAnalytics } from "@/components/AnalyticsProvider";
 
 interface Source {
   editor: string;
@@ -207,6 +208,7 @@ export default function InsightsTool() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<InsightsResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { track } = useAnalytics();
 
   const KPI_OPTIONS = ["Awareness", "Consideration", "Viewability", "Clicks"];
 
@@ -216,6 +218,17 @@ export default function InsightsTool() {
     setLoading(true);
     setError(null);
     setResult(null);
+
+    const eventProps = {
+      topic: topic.trim(),
+      advertiser: advertiser.trim(),
+      kpi,
+      include_google_trends: includeTrends,
+      has_client_brief: clientBrief.trim() !== "",
+    };
+
+    track("Insights Requested", eventProps);
+    const startTime = Date.now();
 
     try {
       const res = await fetch("http://localhost:8000/api/insights", {
@@ -238,8 +251,17 @@ export default function InsightsTool() {
 
       const data: InsightsResult = await res.json();
       setResult(data);
+      track("Insights Generated", {
+        ...eventProps,
+        duration_ms: Date.now() - startTime,
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An unexpected error occurred");
+      const message = err instanceof Error ? err.message : "An unexpected error occurred";
+      setError(message);
+      track("Insights Failed", {
+        ...eventProps,
+        error_message: message,
+      });
     } finally {
       setLoading(false);
     }
@@ -249,12 +271,21 @@ export default function InsightsTool() {
     <>
       <Navbar />
 
-      <main className="pt-32 pb-20 px-4 md:px-8 min-h-screen">
+      <main className="pt-32 pb-20 px-4 md:px-8 min-h-screen relative">
+        {/* Decorative floating cube */}
+        <div className="absolute top-24 right-8 animate-float pointer-events-none opacity-20 hidden lg:block">
+          <img
+            src="/cube.png"
+            alt=""
+            className="w-24 h-24"
+          />
+        </div>
+
         <div className="max-w-5xl mx-auto">
           {/* Page header */}
           <div className="mb-12">
             <h1 className="font-headline text-4xl md:text-5xl font-extrabold tracking-tighter mb-4">
-              Editorial <span className="text-accent-cyan italic">Insights</span>
+              Prism <span className="text-accent-cyan italic">Plan</span>
             </h1>
             <p className="text-slate-400 text-lg max-w-2xl">
               Generate strategic advertising briefs by combining editorial expertise,
