@@ -32,6 +32,12 @@ export default function Navbar() {
             Insights Tool
           </Link>
           <Link
+            href="/tetris"
+            className="text-slate-400 hover:text-white transition-all duration-300"
+          >
+            Prism Play
+          </Link>
+          <Link
             href="/#resources"
             className="text-slate-400 hover:text-white transition-all duration-300"
           >
