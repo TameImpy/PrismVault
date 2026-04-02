@@ -16,7 +16,7 @@ export default function CollapsiblePanel({
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div className="glass-card rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
+    <div className="bg-surface-container rounded-2xl border border-white/5 overflow-hidden">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center justify-between p-6 text-left hover:bg-white/5 transition-colors"
