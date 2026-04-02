@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Montserrat, Inter } from "next/font/google";
+import { AnalyticsProvider } from "@/components/AnalyticsProvider";
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -31,7 +32,7 @@ export default function RootLayout({
       className={`dark ${montserrat.variable} ${inter.variable} antialiased`}
     >
       <body className="bg-surface text-on-surface font-body min-h-screen">
-        {children}
+        <AnalyticsProvider>{children}</AnalyticsProvider>
       </body>
     </html>
   );

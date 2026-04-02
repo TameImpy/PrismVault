@@ -1,11 +1,20 @@
+"use client";
+
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Button from "@/components/Button";
 import StatusDot from "@/components/StatusDot";
 import SectionHeading from "@/components/SectionHeading";
 import Link from "next/link";
+import { useAnalytics } from "@/components/AnalyticsProvider";
 
 export default function LandingPage() {
+  const { track } = useAnalytics();
+
+  function trackCta(ctaName: string) {
+    track("CTA Clicked", { cta_name: ctaName });
+  }
+
   return (
     <>
       <Navbar />
@@ -30,12 +39,12 @@ export default function LandingPage() {
               on every brief.
             </p>
             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-6">
-              <Link href="/app">
+              <Link href="/app" onClick={() => trackCta("Explore Topic")}>
                 <Button variant="primary" className="text-lg">
                   Explore Topic
                 </Button>
               </Link>
-              <Button variant="secondary" className="text-lg">
+              <Button variant="secondary" className="text-lg" onClick={() => trackCta("Watch Demo")}>
                 Watch Demo
               </Button>
             </div>
@@ -178,7 +187,7 @@ export default function LandingPage() {
             Turn editorial insight, audience data, and brand research into
             actionable strategy in seconds.
           </p>
-          <Link href="/app">
+          <Link href="/app" onClick={() => trackCta("Get Started")}>
             <Button variant="primary" className="text-xl px-12 py-6">
               Get Started
             </Button>
