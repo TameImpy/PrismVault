@@ -19,47 +19,17 @@ export default function Navbar() {
           className="text-2xl font-bold tracking-tighter text-white font-headline flex items-center gap-2"
         >
           <span className="w-2 h-6 bg-accent-cyan rounded-full" />
-          Prism Data Vault
+          Prism Plan
         </Link>
 
-        <div className="hidden md:flex items-center space-x-10 font-headline font-semibold tracking-tight">
-          <Link
-            href="/"
-            onClick={() => trackNav("Products")}
-            className="text-slate-400 hover:text-white transition-all duration-300"
-          >
-            Products
-          </Link>
-          <Link
-            href="/#pricing"
-            onClick={() => trackNav("Pricing")}
-            className="text-slate-400 hover:text-white transition-all duration-300"
-          >
-            Pricing
-          </Link>
-          <Link
-            href="/app"
-            onClick={() => trackNav("Insights Tool")}
-            className="text-accent-cyan border-b-2 border-accent-cyan pb-1 transition-all duration-300"
-          >
-            Insights Tool
-          </Link>
-          <Link
-            href="/#resources"
-            onClick={() => trackNav("Resources")}
-            className="text-slate-400 hover:text-white transition-all duration-300"
-          >
-            Resources
-          </Link>
-        </div>
-
         <div className="flex items-center space-x-6">
-          <button
-            onClick={() => trackNav("Login")}
-            className="text-slate-400 font-semibold hover:text-white active:scale-95 transition-all"
+          <Link
+            href="/#features"
+            onClick={() => trackNav("Features")}
+            className="hidden md:inline text-slate-400 hover:text-white transition-all duration-300 font-headline font-semibold tracking-tight"
           >
-            Login
-          </button>
+            Features
+          </Link>
           <Link
             href="/app"
             onClick={() => trackNav("Launch App")}
