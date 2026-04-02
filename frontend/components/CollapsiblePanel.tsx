@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, ReactNode } from "react";
+import { useAnalytics } from "@/components/AnalyticsProvider";
 
 interface CollapsiblePanelProps {
   title: string;
@@ -14,11 +15,20 @@ export default function CollapsiblePanel({
   defaultOpen = false,
 }: CollapsiblePanelProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
+  const { track } = useAnalytics();
+
+  function handleToggle() {
+    const nextOpen = !isOpen;
+    setIsOpen(nextOpen);
+    track(nextOpen ? "Panel Expanded" : "Panel Collapsed", {
+      panel_name: title,
+    });
+  }
 
   return (
     <div className="bg-surface-container rounded-2xl border border-white/5 overflow-hidden">
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleToggle}
         className="w-full flex items-center justify-between p-6 text-left hover:bg-white/5 transition-colors"
       >
         <h3 className="font-headline font-bold text-lg">{title}</h3>

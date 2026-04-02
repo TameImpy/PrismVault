@@ -1,11 +1,20 @@
+"use client";
+
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Button from "@/components/Button";
 import StatusDot from "@/components/StatusDot";
 import SectionHeading from "@/components/SectionHeading";
 import Link from "next/link";
+import { useAnalytics } from "@/components/AnalyticsProvider";
 
 export default function LandingPage() {
+  const { track } = useAnalytics();
+
+  function trackCta(ctaName: string) {
+    track("CTA Clicked", { cta_name: ctaName });
+  }
+
   return (
     <>
       <Navbar />
@@ -28,12 +37,12 @@ export default function LandingPage() {
               guidance on how to reach and message your audience.
             </p>
             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-6">
-              <Link href="/app">
+              <Link href="/app" onClick={() => trackCta("Explore Topic")}>
                 <Button variant="primary" className="text-lg">
                   Explore Topic
                 </Button>
               </Link>
-              <Button variant="secondary" className="text-lg">
+              <Button variant="secondary" className="text-lg" onClick={() => trackCta("Watch Demo")}>
                 Watch Demo
               </Button>
             </div>
@@ -200,7 +209,10 @@ export default function LandingPage() {
                   )
                 )}
               </ul>
-              <button className="w-full py-4 border border-white/10 rounded-xl font-bold hover:bg-surface-bright transition-colors">
+              <button
+                onClick={() => trackCta("Select Essential")}
+                className="w-full py-4 border border-white/10 rounded-xl font-bold hover:bg-surface-bright transition-colors"
+              >
                 Select Essential
               </button>
             </div>
@@ -235,7 +247,10 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <button className="w-full py-4 refractive-gradient rounded-xl font-bold text-white shadow-lg">
+              <button
+                onClick={() => trackCta("Scale Up Now")}
+                className="w-full py-4 refractive-gradient rounded-xl font-bold text-white shadow-lg"
+              >
                 Scale Up Now
               </button>
             </div>
@@ -268,7 +283,10 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <button className="w-full py-4 border border-white/10 rounded-xl font-bold hover:bg-surface-bright transition-colors">
+              <button
+                onClick={() => trackCta("Contact Sales")}
+                className="w-full py-4 border border-white/10 rounded-xl font-bold hover:bg-surface-bright transition-colors"
+              >
                 Contact Sales
               </button>
             </div>
@@ -288,12 +306,12 @@ export default function LandingPage() {
             architectural clarity.
           </p>
           <div className="inline-flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-6">
-            <Link href="/app">
+            <Link href="/app" onClick={() => trackCta("Get Started Free")}>
               <Button variant="primary" className="text-xl px-12 py-6">
                 Get Started Free
               </Button>
             </Link>
-            <Button variant="secondary" className="text-xl px-12 py-6 backdrop-blur-sm">
+            <Button variant="secondary" className="text-xl px-12 py-6 backdrop-blur-sm" onClick={() => trackCta("Talk to an Architect")}>
               Talk to an Architect
             </Button>
           </div>

@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import GlassCard from "@/components/GlassCard";
 import CollapsiblePanel from "@/components/CollapsiblePanel";
+import { useAnalytics } from "@/components/AnalyticsProvider";
 
 interface Source {
   editor: string;
@@ -207,6 +208,7 @@ export default function InsightsTool() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<InsightsResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { track } = useAnalytics();
 
   const KPI_OPTIONS = ["Awareness", "Consideration", "Viewability", "Clicks"];
 
@@ -216,6 +218,17 @@ export default function InsightsTool() {
     setLoading(true);
     setError(null);
     setResult(null);
+
+    const eventProps = {
+      topic: topic.trim(),
+      advertiser: advertiser.trim(),
+      kpi,
+      include_google_trends: includeTrends,
+      has_client_brief: clientBrief.trim() !== "",
+    };
+
+    track("Insights Requested", eventProps);
+    const startTime = Date.now();
 
     try {
       const res = await fetch("http://localhost:8000/api/insights", {
@@ -237,8 +250,17 @@ export default function InsightsTool() {
 
       const data: InsightsResult = await res.json();
       setResult(data);
+      track("Insights Generated", {
+        ...eventProps,
+        duration_ms: Date.now() - startTime,
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An unexpected error occurred");
+      const message = err instanceof Error ? err.message : "An unexpected error occurred";
+      setError(message);
+      track("Insights Failed", {
+        ...eventProps,
+        error_message: message,
+      });
     } finally {
       setLoading(false);
     }
