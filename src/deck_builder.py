@@ -33,6 +33,8 @@ def build_deck(slide_content, topic, advertiser):
     """
     prs = Presentation(TEMPLATE_PATH)
 
+    _fix_autofit(prs)
+
     _populate_title_slide(prs.slides[0], topic, advertiser, slide_content)
     _populate_stats_slide(prs.slides[1], slide_content)
     _populate_two_column_slide(prs.slides[2], slide_content)
@@ -43,6 +45,30 @@ def build_deck(slide_content, topic, advertiser):
     prs.save(buf)
     buf.seek(0)
     return buf
+
+
+def _fix_autofit(prs):
+    """Remove conflicting autofit elements from the template.
+
+    The template has both <a:spAutoFit/> and <a:normAutofit fontScale="62500"/>
+    inside every <a:bodyPr>. The OOXML spec requires at most one autofit child.
+    PowerPoint tolerates this in an unmodified template but flags it as corrupt
+    once python-pptx re-serialises the file with modified content.
+    We keep normAutofit (shrink text to fit) and remove spAutoFit.
+    """
+    from pptx.oxml.ns import qn
+
+    for slide in prs.slides:
+        for shape in slide.shapes:
+            if not shape.has_text_frame:
+                continue
+            bodyPr = shape.text_frame._txBody.find(qn("a:bodyPr"))
+            if bodyPr is None:
+                continue
+            sp_auto = bodyPr.find(qn("a:spAutoFit"))
+            norm_auto = bodyPr.find(qn("a:normAutofit"))
+            if sp_auto is not None and norm_auto is not None:
+                bodyPr.remove(sp_auto)
 
 
 def _apply_font(run, font_name=None, font_size=None, font_color=None, bold=None):
@@ -85,12 +111,14 @@ def _set_text(shape, text, font_name=None, font_size=None, font_color=None, bold
             new_p.remove(child)
         for child in new_p.findall(qn("a:br")):
             new_p.remove(child)
-        # Add a single run with the line text
-        from lxml import etree
-        r_elem = etree.SubElement(new_p, qn("a:r"))
-        t_elem = etree.SubElement(r_elem, qn("a:t"))
-        t_elem.text = line
-        t_elem.set("{http://www.w3.org/XML/1998/namespace}space", "preserve")
+        if line:
+            # Add a single run with the line text
+            from lxml import etree
+            r_elem = etree.SubElement(new_p, qn("a:r"))
+            t_elem = etree.SubElement(r_elem, qn("a:t"))
+            t_elem.text = line
+            t_elem.set("{http://www.w3.org/XML/1998/namespace}space", "preserve")
+        # Empty lines become empty paragraphs (visual spacing) — no run needed
         txBody.append(new_p)
 
     # Apply font formatting to all runs

@@ -208,6 +208,48 @@ def test_multiline_bullets_text_preserved_across_paragraphs():
         )
 
 
+def test_no_none_text_in_at_elements():
+    """Regression: empty lines (from '\\n\\n' spacing) must not produce <a:t/>
+    elements with None text — PowerPoint treats self-closing <a:t/> as corrupt."""
+    result = build_deck(SAMPLE_CONTENT, "gut health", "Yakult")
+    result.seek(0)
+    with zipfile.ZipFile(result) as zf:
+        for name in zf.namelist():
+            if not name.startswith("ppt/slides/slide") or not name.endswith(".xml"):
+                continue
+            xml_bytes = zf.read(name)
+            root = etree.fromstring(xml_bytes)
+            for r_elem in root.iter("{%s}r" % _A_NS):
+                t_elem = r_elem.find("{%s}t" % _A_NS)
+                if t_elem is not None:
+                    assert t_elem.text is not None, (
+                        "%s: <a:t> with None text inside <a:r> — "
+                        "produces self-closing <a:t/> which PowerPoint rejects" % name
+                    )
+
+
+def test_no_conflicting_autofit():
+    """Regression: bodyPr must not contain both spAutoFit and normAutofit."""
+    result = build_deck(SAMPLE_CONTENT, "gut health", "Yakult")
+    result.seek(0)
+    with zipfile.ZipFile(result) as zf:
+        for name in zf.namelist():
+            if not name.startswith("ppt/slides/slide") or not name.endswith(".xml"):
+                continue
+            xml_bytes = zf.read(name)
+            root = etree.fromstring(xml_bytes)
+            bp_tag = "{%s}bodyPr" % _A_NS
+            sp_tag = "{%s}spAutoFit" % _A_NS
+            norm_tag = "{%s}normAutofit" % _A_NS
+            for bodyPr in root.iter(bp_tag):
+                has_sp = bodyPr.find(sp_tag) is not None
+                has_norm = bodyPr.find(norm_tag) is not None
+                assert not (has_sp and has_norm), (
+                    "%s: bodyPr has both spAutoFit and normAutofit — "
+                    "OOXML requires at most one autofit element" % name
+                )
+
+
 # ---------------------------------------------------------------------------
 # API endpoint tests
 # ---------------------------------------------------------------------------
