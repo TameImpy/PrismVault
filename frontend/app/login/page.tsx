@@ -7,11 +7,13 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import GlassCard from "@/components/GlassCard";
 import Button from "@/components/Button";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/app";
+  const { login } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,18 +26,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:8000/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.detail || "Login failed");
-      }
-
+      await login(email, password);
       router.push(redirect);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Login failed");
@@ -98,7 +89,13 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <p className="text-slate-400 text-sm text-center mt-6">
+          <p className="text-slate-400 text-sm text-center mt-4">
+            <Link href="/forgot-password" className="text-accent-cyan hover:underline">
+              Forgot password?
+            </Link>
+          </p>
+
+          <p className="text-slate-400 text-sm text-center mt-3">
             Don&apos;t have an account?{" "}
             <Link href="/signup" className="text-accent-cyan hover:underline">
               Sign up

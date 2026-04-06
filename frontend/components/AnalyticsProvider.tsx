@@ -25,6 +25,7 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
       mixpanel.init(MIXPANEL_TOKEN, {
         track_pageview: false,
         persistence: "localStorage",
+        api_host: "https://api-eu.mixpanel.com",
       });
     }
   }, []);

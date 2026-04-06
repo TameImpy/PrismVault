@@ -14,7 +14,8 @@ from passlib.context import CryptContext
 from jose import jwt, JWTError
 
 import config
-from api.database import create_user, get_user_by_email, get_user_by_id
+from api.database import create_user, get_user_by_email, get_user_by_id, update_user_password
+from api.email_utils import send_email
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 me_router = APIRouter(tags=["auth"])
@@ -23,7 +24,9 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 ALGORITHM = "HS256"
 TOKEN_EXPIRE_DAYS = 7
+RESET_TOKEN_EXPIRE_HOURS = 1
 COOKIE_NAME = "access_token"
+FRONTEND_BASE_URL = os.environ.get("FRONTEND_BASE_URL", "http://localhost:3000")
 
 # Overridden in tests to point at a test database.
 DB_PATH = None
@@ -126,3 +129,70 @@ async def logout(response: Response):
 @me_router.get("/api/me")
 async def me(user: dict = Depends(get_current_user)):
     return user
+
+
+# ---------------------------------------------------------------------------
+# Password reset
+# ---------------------------------------------------------------------------
+
+
+def _create_reset_token(user_id):
+    """Create a JWT reset token with purpose claim and 1-hour expiry."""
+    expire = datetime.utcnow() + timedelta(hours=RESET_TOKEN_EXPIRE_HOURS)
+    return jwt.encode(
+        {"sub": str(user_id), "exp": expire, "purpose": "password_reset"},
+        config.JWT_SECRET,
+        algorithm=ALGORITHM,
+    )
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+
+@router.post("/forgot-password")
+async def forgot_password(req: ForgotPasswordRequest):
+    db_path = _get_db_path()
+    user = await get_user_by_email(req.email, db_path)
+    if user:
+        token = _create_reset_token(user["id"])
+        reset_link = "%s/reset-password?token=%s" % (FRONTEND_BASE_URL, token)
+        send_email(
+            to=user["email"],
+            subject="Reset your Prism Data Vault password",
+            body_html=(
+                "<p>Hi %s,</p>"
+                "<p>Click the link below to reset your password. This link expires in 1 hour.</p>"
+                "<p><a href=\"%s\">Reset your password</a></p>"
+                "<p>If you didn't request this, you can safely ignore this email.</p>"
+            ) % (user["name"], reset_link),
+        )
+    # Always return 200 to prevent email enumeration
+    return {"detail": "If an account exists with that email, we've sent a reset link."}
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    password: str
+
+
+@router.post("/reset-password")
+async def reset_password(req: ResetPasswordRequest):
+    # Verify token
+    try:
+        payload = jwt.decode(req.token, config.JWT_SECRET, algorithms=[ALGORITHM])
+        if payload.get("purpose") != "password_reset":
+            raise HTTPException(status_code=400, detail="Invalid reset token.")
+        user_id = int(payload["sub"])
+    except (JWTError, KeyError, ValueError):
+        raise HTTPException(status_code=400, detail="Invalid or expired reset link.")
+
+    # Validate password
+    if len(req.password) < 8:
+        raise HTTPException(status_code=422, detail="Password must be at least 8 characters.")
+
+    # Update password
+    db_path = _get_db_path()
+    hashed = pwd_context.hash(req.password)
+    await update_user_password(user_id, hashed, db_path)
+    return {"detail": "Password reset successfully."}

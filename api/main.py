@@ -9,14 +9,21 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Optional
 
+import re
+
 from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, field_validator
 
 import config
 from src.synthesiser import generate_insights
-from api.database import init_db
+from src.email_drafter import draft_email
+from src.slide_content import generate_slide_content
+from src.deck_builder import build_deck
+from api.database import init_db, get_email_samples
 from api.auth import router as auth_router, me_router, get_current_user
+from api.email_samples import router as email_samples_router
 
 LEADERBOARD_DB = os.path.join(os.path.dirname(__file__), "..", "data", "leaderboard.db")
 
@@ -31,6 +38,7 @@ app = FastAPI(title="Editorial Data Vault API", lifespan=lifespan)
 
 app.include_router(auth_router)
 app.include_router(me_router)
+app.include_router(email_samples_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -41,6 +49,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition"],
 )
 
 
@@ -65,6 +74,72 @@ def create_insights(req: InsightsRequest, user: dict = Depends(get_current_user)
             client_brief=req.client_brief,
         )
         return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class DraftEmailRequest(BaseModel):
+    content: str
+    topic: str
+    advertiser: str
+    kpi: str
+
+
+@app.post("/api/draft-email")
+async def create_draft_email(req: DraftEmailRequest, user: dict = Depends(get_current_user)):
+    if not config.OPENAI_API_KEY:
+        raise HTTPException(status_code=500, detail="Missing OPENAI_API_KEY on the server.")
+    try:
+        samples = await get_email_samples(user["id"])
+        writing_samples = [s["content"] for s in samples]
+        result = draft_email(
+            brief_content=req.content,
+            topic=req.topic,
+            advertiser=req.advertiser,
+            kpi=req.kpi,
+            writing_samples=writing_samples,
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class DownloadDeckRequest(BaseModel):
+    content: str
+    topic: str
+    advertiser: str
+    kpi: str
+
+
+def _sanitize_filename(text):
+    """Replace spaces with underscores and remove special characters."""
+    return re.sub(r'[^\w\-]', '', text.replace(' ', '_'))
+
+
+@app.post("/api/download-deck")
+async def download_deck(req: DownloadDeckRequest, user: dict = Depends(get_current_user)):
+    if not config.OPENAI_API_KEY:
+        raise HTTPException(status_code=500, detail="Missing OPENAI_API_KEY on the server.")
+    try:
+        slide_content = generate_slide_content(
+            brief_content=req.content,
+            topic=req.topic,
+            advertiser=req.advertiser,
+            kpi=req.kpi,
+        )
+        slide_content["kpi"] = req.kpi
+        buf = build_deck(slide_content, req.topic, req.advertiser)
+
+        filename = "Prism_Plan_%s_%s.pptx" % (
+            _sanitize_filename(req.advertiser),
+            _sanitize_filename(req.topic),
+        )
+
+        return StreamingResponse(
+            buf,
+            media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            headers={"Content-Disposition": 'attachment; filename="%s"' % filename},
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

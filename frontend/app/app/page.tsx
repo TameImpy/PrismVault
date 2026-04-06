@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import GlassCard from "@/components/GlassCard";
 import CollapsiblePanel from "@/components/CollapsiblePanel";
+import WritingSamplesModal from "@/components/WritingSamplesModal";
+import DraftEmailModal from "@/components/DraftEmailModal";
 import { useAnalytics } from "@/components/AnalyticsProvider";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Source {
   editor: string;
@@ -200,6 +204,15 @@ function parseGlanceCards(sectionContent: string): GlanceCard[] {
 }
 
 export default function InsightsTool() {
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.replace("/login?redirect=/app");
+    }
+  }, [authLoading, user, router]);
+
   const [topic, setTopic] = useState("");
   const [advertiser, setAdvertiser] = useState("");
   const [kpi, setKpi] = useState("");
@@ -208,9 +221,27 @@ export default function InsightsTool() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<InsightsResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [samplesModalOpen, setSamplesModalOpen] = useState(false);
+  const [draftModalOpen, setDraftModalOpen] = useState(false);
+  const [sampleCount, setSampleCount] = useState(0);
+  const [deckLoading, setDeckLoading] = useState(false);
   const { track } = useAnalytics();
 
+  const handleSampleCountChange = useCallback((count: number) => {
+    setSampleCount(count);
+  }, []);
+
+  // Fetch sample count on mount
+  useEffect(() => {
+    fetch("http://localhost:8000/api/email-samples", { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => setSampleCount(Array.isArray(data) ? data.length : 0))
+      .catch(() => {});
+  }, []);
+
   const KPI_OPTIONS = ["Awareness", "Consideration", "Viewability", "Clicks"];
+
+  if (authLoading || !user) return null;
 
   const canGenerate = topic.trim() !== "" && advertiser.trim() !== "" && kpi !== "";
 
@@ -245,6 +276,10 @@ export default function InsightsTool() {
       });
 
       if (!res.ok) {
+        if (res.status === 401) {
+          router.push("/login?redirect=/app");
+          return;
+        }
         const data = await res.json().catch(() => null);
         throw new Error(data?.detail || `Server error: ${res.status}`);
       }
@@ -550,6 +585,98 @@ export default function InsightsTool() {
             </div>
             );
           })()}
+
+          {/* Export actions */}
+          {result && !loading && (
+            <div className="flex items-center gap-4 mt-6">
+              <button
+                onClick={() => {
+                  track("Draft Email Clicked", {
+                    has_samples: sampleCount > 0,
+                    sample_count: sampleCount,
+                  });
+                  setDraftModalOpen(true);
+                }}
+                className="refractive-gradient px-6 py-3 rounded-xl font-bold text-white shadow-lg active:scale-95 transition-all"
+              >
+                Draft Email
+              </button>
+              <button
+                onClick={async () => {
+                  track("Download Deck Clicked", { topic, advertiser, kpi });
+                  setDeckLoading(true);
+                  const startTime = Date.now();
+                  try {
+                    const res = await fetch("http://localhost:8000/api/download-deck", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      credentials: "include",
+                      body: JSON.stringify({
+                        content: result.content,
+                        topic: topic.trim(),
+                        advertiser: advertiser.trim(),
+                        kpi,
+                      }),
+                    });
+                    if (!res.ok) {
+                      const data = await res.json().catch(() => null);
+                      throw new Error(data?.detail || "Failed to generate deck");
+                    }
+                    const blob = await res.blob();
+                    const filename = res.headers.get("content-disposition")
+                      ?.match(/filename="(.+)"/)?.[1] || "Prism_Plan_Deck.pptx";
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    track("Deck Generated", {
+                      topic, advertiser, kpi,
+                      duration_ms: Date.now() - startTime,
+                    });
+                  } catch (err) {
+                    const message = err instanceof Error ? err.message : "Failed to generate deck";
+                    setError(message);
+                    track("Deck Download Failed", { error_message: message });
+                  } finally {
+                    setDeckLoading(false);
+                  }
+                }}
+                disabled={deckLoading}
+                className="refractive-gradient px-6 py-3 rounded-xl font-bold text-white shadow-lg active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {deckLoading ? "Generating..." : "Download Deck"}
+              </button>
+              <button
+                onClick={() => setSamplesModalOpen(true)}
+                className="text-sm text-on-surface-variant hover:text-accent-cyan transition-colors"
+              >
+                Writing style: {sampleCount} sample{sampleCount !== 1 ? "s" : ""}
+              </button>
+            </div>
+          )}
+
+          <DraftEmailModal
+            open={draftModalOpen}
+            onClose={() => setDraftModalOpen(false)}
+            briefContent={result?.content || ""}
+            topic={topic}
+            advertiser={advertiser}
+            kpi={kpi}
+            sampleCount={sampleCount}
+            onSampleCountChange={handleSampleCountChange}
+            track={track}
+          />
+
+          <WritingSamplesModal
+            open={samplesModalOpen}
+            onClose={() => setSamplesModalOpen(false)}
+            onSampleCountChange={handleSampleCountChange}
+            track={track}
+          />
 
           {/* Empty state */}
           {!result && !loading && !error && (

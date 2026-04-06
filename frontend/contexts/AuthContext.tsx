@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import mixpanel from "mixpanel-browser";
 
 interface User {
   id: number;
@@ -20,6 +21,14 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 const API_BASE = "http://localhost:8000";
+const MIXPANEL_TOKEN = process.env.NEXT_PUBLIC_MIXPANEL_TOKEN;
+
+function identifyUser(user: User) {
+  if (MIXPANEL_TOKEN) {
+    mixpanel.identify(String(user.id));
+    mixpanel.people.set({ $email: user.email, $name: user.name });
+  }
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -32,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (res.ok) return res.json();
         return null;
       })
-      .then((data) => setUser(data))
+      .then((data) => { setUser(data); if (data) identifyUser(data); })
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
   }, []);
@@ -50,6 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const data = await res.json();
     setUser(data);
+    identifyUser(data);
   }, []);
 
   const signup = useCallback(async (email: string, name: string, password: string) => {
@@ -65,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const data = await res.json();
     setUser(data);
+    identifyUser(data);
   }, []);
 
   const logout = useCallback(async () => {
