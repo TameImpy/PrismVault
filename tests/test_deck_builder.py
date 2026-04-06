@@ -115,6 +115,100 @@ def test_closing_slide_contains_cta():
 
 
 # ---------------------------------------------------------------------------
+# Regression tests: newline handling in <a:t> XML elements
+# ---------------------------------------------------------------------------
+
+import zipfile
+from lxml import etree
+
+_A_NS = "http://schemas.openxmlformats.org/drawingml/2006/main"
+_AT_TAG = "{%s}t" % _A_NS
+
+
+def _all_at_texts(pptx_buf):
+    """Return every string value held in an <a:t> element across all slides."""
+    pptx_buf.seek(0)
+    texts = []
+    with zipfile.ZipFile(pptx_buf) as zf:
+        slide_names = [n for n in zf.namelist() if n.startswith("ppt/slides/slide")]
+        for name in slide_names:
+            xml_bytes = zf.read(name)
+            root = etree.fromstring(xml_bytes)
+            for elem in root.iter(_AT_TAG):
+                if elem.text:
+                    texts.append(elem.text)
+    pptx_buf.seek(0)
+    return texts
+
+
+def test_no_literal_newline_in_at_elements():
+    """Regression: _set_text must never embed a literal '\\n' inside an <a:t> element.
+
+    Slide 4 uses '\\n\\n'.join() for messaging items and slide 5 uses '\\n\\n'.join()
+    for products — both are multi-line inputs that previously triggered the bug.
+    Slide 3 uses '\\n'.join() for bullet lists. All must be clean.
+    """
+    result = build_deck(SAMPLE_CONTENT, "gut health", "Yakult")
+    at_texts = _all_at_texts(result)
+
+    assert at_texts, "Expected at least one <a:t> element in the deck"
+
+    for text in at_texts:
+        assert "\n" not in text, (
+            "Found a literal newline inside an <a:t> element — "
+            "PowerPoint treats this as corrupt XML. Value: %r" % text
+        )
+
+
+def test_multiline_messaging_items_text_preserved_across_paragraphs():
+    """Regression: multi-line messaging content must appear across separate paragraphs
+    with no data loss — all headline/detail pairs must be findable in the slide text.
+    """
+    result = build_deck(SAMPLE_CONTENT, "gut health", "Yakult")
+    prs = Presentation(result)
+    slide = prs.slides[3]  # Slide 4: Messaging & Tone
+
+    # Gather text across all paragraphs in every shape on the slide
+    all_para_texts = []
+    for shape in slide.shapes:
+        if shape.has_text_frame:
+            for para in shape.text_frame.paragraphs:
+                all_para_texts.append(para.text)
+
+    combined = "\n".join(all_para_texts)
+
+    for item in SAMPLE_CONTENT["messaging_items"]:
+        assert item["headline"] in combined, (
+            "Headline %r missing from slide 4 text after newline fix" % item["headline"]
+        )
+        assert item["detail"] in combined, (
+            "Detail %r missing from slide 4 text after newline fix" % item["detail"]
+        )
+
+
+def test_multiline_bullets_text_preserved_across_paragraphs():
+    """Regression: bullet lists joined with '\\n' must produce one paragraph per bullet
+    with no data loss — every bullet string must appear in slide 3's paragraph text.
+    """
+    result = build_deck(SAMPLE_CONTENT, "gut health", "Yakult")
+    prs = Presentation(result)
+    slide = prs.slides[2]  # Slide 3: Two-column
+
+    all_para_texts = []
+    for shape in slide.shapes:
+        if shape.has_text_frame:
+            for para in shape.text_frame.paragraphs:
+                all_para_texts.append(para.text)
+
+    combined = "\n".join(all_para_texts)
+
+    for bullet in SAMPLE_CONTENT["left_bullets"] + SAMPLE_CONTENT["right_bullets"]:
+        assert bullet in combined, (
+            "Bullet %r missing from slide 3 text after newline fix" % bullet
+        )
+
+
+# ---------------------------------------------------------------------------
 # API endpoint tests
 # ---------------------------------------------------------------------------
 

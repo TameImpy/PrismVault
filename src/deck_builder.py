@@ -45,18 +45,8 @@ def build_deck(slide_content, topic, advertiser):
     return buf
 
 
-def _set_text(shape, text, font_name=None, font_size=None, font_color=None, bold=None):
-    """Replace all text in a shape's text frame, preserving the first run's format."""
-    tf = shape.text_frame
-    for para in tf.paragraphs:
-        for run in para.runs:
-            run.text = ""
-    # Set text on first paragraph's first run
-    if tf.paragraphs[0].runs:
-        run = tf.paragraphs[0].runs[0]
-    else:
-        run = tf.paragraphs[0].add_run()
-    run.text = text
+def _apply_font(run, font_name=None, font_size=None, font_color=None, bold=None):
+    """Apply font formatting to a run."""
     if font_name:
         run.font.name = font_name
     if font_size:
@@ -65,6 +55,48 @@ def _set_text(shape, text, font_name=None, font_size=None, font_color=None, bold
         run.font.color.rgb = font_color
     if bold is not None:
         run.font.bold = bold
+
+
+def _set_text(shape, text, font_name=None, font_size=None, font_color=None, bold=None):
+    """Replace all text in a shape's text frame.
+
+    Handles newlines by creating proper OOXML paragraph elements instead of
+    embedding literal '\\n' in a single run, which PowerPoint treats as corrupt.
+    """
+    from copy import deepcopy
+    from pptx.oxml.ns import qn
+
+    tf = shape.text_frame
+    txBody = tf._txBody
+
+    # Capture the first paragraph element as a formatting template
+    first_para_elem = txBody.findall(qn("a:p"))[0]
+
+    # Remove all existing paragraphs
+    for p in txBody.findall(qn("a:p")):
+        txBody.remove(p)
+
+    # Split on newlines and create one <a:p> per line
+    lines = text.split("\n")
+    for line in lines:
+        new_p = deepcopy(first_para_elem)
+        # Remove all runs and breaks from the copied paragraph
+        for child in new_p.findall(qn("a:r")):
+            new_p.remove(child)
+        for child in new_p.findall(qn("a:br")):
+            new_p.remove(child)
+        # Add a single run with the line text
+        from lxml import etree
+        r_elem = etree.SubElement(new_p, qn("a:r"))
+        t_elem = etree.SubElement(r_elem, qn("a:t"))
+        t_elem.text = line
+        t_elem.set("{http://www.w3.org/XML/1998/namespace}space", "preserve")
+        txBody.append(new_p)
+
+    # Apply font formatting to all runs
+    for para in tf.paragraphs:
+        for run in para.runs:
+            _apply_font(run, font_name, font_size, font_color, bold)
 
 
 def _get_text_shapes(slide):
