@@ -3,9 +3,20 @@ import config
 from src.embeddings import get_embeddings
 
 
+def _get_client():
+    """Return a ChromaDB client — CloudClient if cloud vars are set, else PersistentClient."""
+    if config.CHROMA_CLOUD_API_KEY:
+        return chromadb.CloudClient(
+            api_key=config.CHROMA_CLOUD_API_KEY,
+            tenant=config.CHROMA_CLOUD_TENANT or None,
+            database=config.CHROMA_CLOUD_DATABASE or None,
+        )
+    return chromadb.PersistentClient(path=config.CHROMA_PERSIST_DIR)
+
+
 def get_collection():
     """Get or create the editorial_transcripts collection with cosine similarity."""
-    client = chromadb.PersistentClient(path=config.CHROMA_PERSIST_DIR)
+    client = _get_client()
     collection = client.get_or_create_collection(
         name="editorial_transcripts",
         metadata={"hnsw:space": "cosine"},

@@ -51,9 +51,7 @@ def test_send_email_sends_when_smtp_configured(mock_smtplib):
 
 from fastapi.testclient import TestClient
 from api.main import app
-from api.database import init_db
-
-API_TEST_DB = os.path.join(os.path.dirname(__file__), "test_reset_api.db")
+from api.database import get_user_by_email
 
 
 def run(coro):
@@ -61,33 +59,13 @@ def run(coro):
 
 
 @pytest.fixture()
-def api_client():
-    import api.auth as auth_module
-    import api.database as db_module
-    import api.email_samples as samples_module
-
-    if os.path.exists(API_TEST_DB):
-        os.remove(API_TEST_DB)
-    run(init_db(API_TEST_DB))
-
-    old_auth = auth_module.DB_PATH
-    old_db = db_module.DEFAULT_DB_PATH
-    old_samples = samples_module.DB_PATH
-    auth_module.DB_PATH = API_TEST_DB
-    db_module.DEFAULT_DB_PATH = API_TEST_DB
-    samples_module.DB_PATH = API_TEST_DB
-
+def api_client(db_url):
+    """TestClient backed by the db_url fixture for test isolation."""
     # Ensure SMTP is not configured for tests
     for key in ("SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD"):
         os.environ.pop(key, None)
 
     yield TestClient(app)
-
-    auth_module.DB_PATH = old_auth
-    db_module.DEFAULT_DB_PATH = old_db
-    samples_module.DB_PATH = old_samples
-    if os.path.exists(API_TEST_DB):
-        os.remove(API_TEST_DB)
 
 
 def _signup(client, email="reset@example.com", password="password123"):
@@ -125,8 +103,7 @@ def test_reset_password_full_roundtrip(api_client):
 
     # Generate a reset token directly (simulating what forgot-password does)
     from api.auth import _create_reset_token
-    from api.database import get_user_by_email
-    user = run(get_user_by_email("roundtrip@example.com", API_TEST_DB))
+    user = run(get_user_by_email("roundtrip@example.com"))
     token = _create_reset_token(user["id"])
 
     # Reset password

@@ -133,43 +133,14 @@ def test_parse_email_handles_no_subject():
 # API endpoint tests
 # ---------------------------------------------------------------------------
 
-import os
-import asyncio
 from fastapi.testclient import TestClient
 from api.main import app
-from api.database import init_db
-
-API_TEST_DB = os.path.join(os.path.dirname(__file__), "test_drafter_api.db")
-
-
-def run(coro):
-    return asyncio.get_event_loop().run_until_complete(coro)
 
 
 @pytest.fixture()
-def api_client():
-    import api.auth as auth_module
-    import api.database as db_module
-    import api.email_samples as samples_module
-
-    if os.path.exists(API_TEST_DB):
-        os.remove(API_TEST_DB)
-    run(init_db(API_TEST_DB))
-
-    old_auth = auth_module.DB_PATH
-    old_db = db_module.DEFAULT_DB_PATH
-    old_samples = samples_module.DB_PATH
-    auth_module.DB_PATH = API_TEST_DB
-    db_module.DEFAULT_DB_PATH = API_TEST_DB
-    samples_module.DB_PATH = API_TEST_DB
-
+def api_client(db_url):
+    """TestClient backed by the db_url fixture for test isolation."""
     yield TestClient(app)
-
-    auth_module.DB_PATH = old_auth
-    db_module.DEFAULT_DB_PATH = old_db
-    samples_module.DB_PATH = old_samples
-    if os.path.exists(API_TEST_DB):
-        os.remove(API_TEST_DB)
 
 
 def test_api_draft_email_returns_401_without_auth(api_client):

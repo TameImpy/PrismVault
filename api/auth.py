@@ -28,18 +28,6 @@ RESET_TOKEN_EXPIRE_HOURS = 1
 COOKIE_NAME = "access_token"
 FRONTEND_BASE_URL = os.environ.get("FRONTEND_BASE_URL", "http://localhost:3000")
 
-# Overridden in tests to point at a test database.
-DB_PATH = None
-
-
-def _get_db_path():
-    """Return the database path, using the override if set."""
-    if DB_PATH is not None:
-        return DB_PATH
-    from api.database import DEFAULT_DB_PATH
-    return DEFAULT_DB_PATH
-
-
 def _create_token(user_id):
     """Create a JWT token for the given user ID."""
     expire = datetime.utcnow() + timedelta(days=TOKEN_EXPIRE_DAYS)
@@ -72,13 +60,12 @@ async def signup(req: SignupRequest, response: Response):
     if not req.email.strip() or "@" not in req.email:
         raise HTTPException(status_code=422, detail="Valid email is required.")
 
-    db_path = _get_db_path()
-    existing = await get_user_by_email(req.email, db_path)
+    existing = await get_user_by_email(req.email)
     if existing:
         raise HTTPException(status_code=409, detail="An account with this email already exists.")
 
     hashed = pwd_context.hash(req.password)
-    user = await create_user(req.email, req.name, hashed, db_path)
+    user = await create_user(req.email, req.name, hashed)
     token = _create_token(user["id"])
     _set_cookie(response, token)
     return {"id": user["id"], "email": user["email"], "name": user["name"]}
@@ -96,8 +83,7 @@ async def get_current_user(request: Request):
     except (JWTError, KeyError, ValueError):
         raise HTTPException(status_code=401, detail="Invalid or expired token.")
 
-    db_path = _get_db_path()
-    user = await get_user_by_id(user_id, db_path)
+    user = await get_user_by_id(user_id)
     if not user:
         raise HTTPException(status_code=401, detail="User not found.")
     return {"id": user["id"], "email": user["email"], "name": user["name"]}
@@ -110,8 +96,7 @@ class LoginRequest(BaseModel):
 
 @router.post("/login")
 async def login(req: LoginRequest, response: Response):
-    db_path = _get_db_path()
-    user = await get_user_by_email(req.email, db_path)
+    user = await get_user_by_email(req.email)
     if not user or not pwd_context.verify(req.password, user["hashed_password"]):
         raise HTTPException(status_code=401, detail="Invalid email or password.")
 
@@ -152,8 +137,7 @@ class ForgotPasswordRequest(BaseModel):
 
 @router.post("/forgot-password")
 async def forgot_password(req: ForgotPasswordRequest):
-    db_path = _get_db_path()
-    user = await get_user_by_email(req.email, db_path)
+    user = await get_user_by_email(req.email)
     if user:
         token = _create_reset_token(user["id"])
         reset_link = "%s/reset-password?token=%s" % (FRONTEND_BASE_URL, token)
@@ -192,7 +176,6 @@ async def reset_password(req: ResetPasswordRequest):
         raise HTTPException(status_code=422, detail="Password must be at least 8 characters.")
 
     # Update password
-    db_path = _get_db_path()
     hashed = pwd_context.hash(req.password)
-    await update_user_password(user_id, hashed, db_path)
+    await update_user_password(user_id, hashed)
     return {"detail": "Password reset successfully."}

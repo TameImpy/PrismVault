@@ -12,7 +12,7 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 import pytest
-from api.database import init_db, create_user, create_email_sample, get_email_samples, delete_email_sample
+from api.database import create_user, create_email_sample, get_email_samples, delete_email_sample
 
 
 def run(coro):
@@ -20,17 +20,9 @@ def run(coro):
     return asyncio.get_event_loop().run_until_complete(coro)
 
 
-@pytest.fixture(autouse=True)
-def fresh_db(tmp_path):
-    """Initialise a fresh database for each test."""
-    db_path = str(tmp_path / "test_samples.db")
-    run(init_db(db_path))
-    yield db_path
-
-
-def _make_user(db_path, email="alice@example.com"):
+def _make_user(email="alice@example.com"):
     """Helper to create a user and return the user dict."""
-    return run(create_user(email, "Alice", "hashed_pw", db_path))
+    return run(create_user(email, "Alice", "hashed_pw"))
 
 
 # ---------------------------------------------------------------------------
@@ -38,62 +30,62 @@ def _make_user(db_path, email="alice@example.com"):
 # ---------------------------------------------------------------------------
 
 
-def test_create_sample_and_retrieve(fresh_db):
+def test_create_sample_and_retrieve(db_url):
     """A created email sample can be retrieved for that user."""
-    user = _make_user(fresh_db)
-    sample = run(create_email_sample(user["id"], "Hi, I wanted to reach out about...", fresh_db))
+    user = _make_user()
+    sample = run(create_email_sample(user["id"], "Hi, I wanted to reach out about..."))
     assert sample["content"] == "Hi, I wanted to reach out about..."
     assert sample["user_id"] == user["id"]
     assert "id" in sample
     assert "created_at" in sample
 
-    samples = run(get_email_samples(user["id"], fresh_db))
+    samples = run(get_email_samples(user["id"]))
     assert len(samples) == 1
     assert samples[0]["content"] == "Hi, I wanted to reach out about..."
 
 
-def test_samples_isolated_per_user(fresh_db):
+def test_samples_isolated_per_user(db_url):
     """Each user can only see their own samples."""
-    alice = _make_user(fresh_db, "alice@example.com")
-    bob = _make_user(fresh_db, "bob@example.com")
-    run(create_email_sample(alice["id"], "Alice's email", fresh_db))
-    run(create_email_sample(bob["id"], "Bob's email", fresh_db))
+    alice = _make_user("alice@example.com")
+    bob = _make_user("bob@example.com")
+    run(create_email_sample(alice["id"], "Alice's email"))
+    run(create_email_sample(bob["id"], "Bob's email"))
 
-    alice_samples = run(get_email_samples(alice["id"], fresh_db))
-    bob_samples = run(get_email_samples(bob["id"], fresh_db))
+    alice_samples = run(get_email_samples(alice["id"]))
+    bob_samples = run(get_email_samples(bob["id"]))
     assert len(alice_samples) == 1
     assert alice_samples[0]["content"] == "Alice's email"
     assert len(bob_samples) == 1
     assert bob_samples[0]["content"] == "Bob's email"
 
 
-def test_max_5_samples_enforced(fresh_db):
+def test_max_5_samples_enforced(db_url):
     """Creating a 6th sample raises ValueError."""
-    user = _make_user(fresh_db)
+    user = _make_user()
     for i in range(5):
-        run(create_email_sample(user["id"], "Sample %d" % i, fresh_db))
+        run(create_email_sample(user["id"], "Sample %d" % i))
     with pytest.raises(ValueError, match="Maximum"):
-        run(create_email_sample(user["id"], "One too many", fresh_db))
+        run(create_email_sample(user["id"], "One too many"))
 
 
-def test_delete_own_sample(fresh_db):
+def test_delete_own_sample(db_url):
     """A user can delete their own sample."""
-    user = _make_user(fresh_db)
-    sample = run(create_email_sample(user["id"], "Delete me", fresh_db))
-    deleted = run(delete_email_sample(sample["id"], user["id"], fresh_db))
+    user = _make_user()
+    sample = run(create_email_sample(user["id"], "Delete me"))
+    deleted = run(delete_email_sample(sample["id"], user["id"]))
     assert deleted is True
-    assert len(run(get_email_samples(user["id"], fresh_db))) == 0
+    assert len(run(get_email_samples(user["id"]))) == 0
 
 
-def test_cannot_delete_other_users_sample(fresh_db):
+def test_cannot_delete_other_users_sample(db_url):
     """Deleting another user's sample returns False and leaves it intact."""
-    alice = _make_user(fresh_db, "alice@example.com")
-    bob = _make_user(fresh_db, "bob@example.com")
-    sample = run(create_email_sample(alice["id"], "Alice's email", fresh_db))
+    alice = _make_user("alice@example.com")
+    bob = _make_user("bob@example.com")
+    sample = run(create_email_sample(alice["id"], "Alice's email"))
 
-    deleted = run(delete_email_sample(sample["id"], bob["id"], fresh_db))
+    deleted = run(delete_email_sample(sample["id"], bob["id"]))
     assert deleted is False
-    assert len(run(get_email_samples(alice["id"], fresh_db))) == 1
+    assert len(run(get_email_samples(alice["id"]))) == 1
 
 
 # ---------------------------------------------------------------------------
@@ -103,35 +95,11 @@ def test_cannot_delete_other_users_sample(fresh_db):
 from fastapi.testclient import TestClient
 from api.main import app
 
-# Use a separate temp DB for API tests.
-API_TEST_DB = os.path.join(os.path.dirname(__file__), "test_samples_api.db")
-
 
 @pytest.fixture()
-def api_client():
-    """TestClient with a fresh database, patched for test isolation."""
-    import api.auth as auth_module
-    import api.database as db_module
-    import api.email_samples as samples_module
-
-    if os.path.exists(API_TEST_DB):
-        os.remove(API_TEST_DB)
-    run(init_db(API_TEST_DB))
-
-    old_auth = auth_module.DB_PATH
-    old_db = db_module.DEFAULT_DB_PATH
-    old_samples = samples_module.DB_PATH
-    auth_module.DB_PATH = API_TEST_DB
-    db_module.DEFAULT_DB_PATH = API_TEST_DB
-    samples_module.DB_PATH = API_TEST_DB
-
+def api_client(db_url):
+    """TestClient backed by the db_url fixture for test isolation."""
     yield TestClient(app)
-
-    auth_module.DB_PATH = old_auth
-    db_module.DEFAULT_DB_PATH = old_db
-    samples_module.DB_PATH = old_samples
-    if os.path.exists(API_TEST_DB):
-        os.remove(API_TEST_DB)
 
 
 def _signup(client, email="test@example.com"):

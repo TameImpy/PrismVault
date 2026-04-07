@@ -14,7 +14,6 @@ PROJECT_ROOT = os.path.join(os.path.dirname(__file__), "..")
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-import asyncio
 from unittest.mock import patch
 
 import pytest
@@ -22,29 +21,18 @@ from fastapi.testclient import TestClient
 
 # Import the app *after* the sys.path fix so that `config` and `src.*` resolve.
 from api.main import app
-from api.database import init_db
-
-# Test database for auth
-TEST_DB = os.path.join(os.path.dirname(__file__), "test_api_users.db")
 
 
 @pytest.fixture(autouse=True)
-def fresh_db():
-    """Ensure a fresh database for each test."""
-    if os.path.exists(TEST_DB):
-        os.remove(TEST_DB)
-    asyncio.get_event_loop().run_until_complete(init_db(TEST_DB))
-    import api.auth as auth_module
-    import api.database as db_module
-    original_auth_db = getattr(auth_module, "DB_PATH", None)
-    original_db_default = db_module.DEFAULT_DB_PATH
-    auth_module.DB_PATH = TEST_DB
-    db_module.DEFAULT_DB_PATH = TEST_DB
+def _fresh_db(db_url):
+    """Ensure a fresh database for each test via the shared db_url fixture."""
     yield
-    auth_module.DB_PATH = original_auth_db
-    db_module.DEFAULT_DB_PATH = original_db_default
-    if os.path.exists(TEST_DB):
-        os.remove(TEST_DB)
+
+
+@pytest.fixture()
+def client(db_url):
+    """Return a TestClient backed by a fresh database."""
+    return TestClient(app)
 
 
 def _authed_client():
