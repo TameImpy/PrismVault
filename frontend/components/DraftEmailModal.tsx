@@ -14,8 +14,6 @@ interface DraftEmailModalProps {
   track?: (event: string, properties?: Record<string, unknown>) => void;
 }
 
-const API_BASE = "http://localhost:8000";
-
 export default function DraftEmailModal({
   open,
   onClose,
@@ -43,7 +41,7 @@ export default function DraftEmailModal({
     setCopied(false);
     const startTime = Date.now();
     try {
-      const res = await fetch(`${API_BASE}/api/draft-email`, {
+      const res = await fetch(`/api/draft-email`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -83,7 +81,7 @@ export default function DraftEmailModal({
     setSavingOnboard(true);
     setError("");
     try {
-      const res = await fetch(`${API_BASE}/api/email-samples`, {
+      const res = await fetch(`/api/email-samples`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

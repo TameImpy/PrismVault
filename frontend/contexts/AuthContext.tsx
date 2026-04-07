@@ -20,7 +20,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-const API_BASE = "http://localhost:8000";
 const MIXPANEL_TOKEN = process.env.NEXT_PUBLIC_MIXPANEL_TOKEN;
 
 function identifyUser(user: User) {
@@ -36,7 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/me`, { credentials: "include" })
+    fetch(`/api/me`, { credentials: "include" })
       .then((res) => {
         if (res.ok) return res.json();
         return null;
@@ -47,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const res = await fetch(`${API_BASE}/api/auth/login`, {
+    const res = await fetch(`/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -63,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signup = useCallback(async (email: string, name: string, password: string) => {
-    const res = await fetch(`${API_BASE}/api/auth/signup`, {
+    const res = await fetch(`/api/auth/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -79,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    await fetch(`${API_BASE}/api/auth/logout`, {
+    await fetch(`/api/auth/logout`, {
       method: "POST",
       credentials: "include",
     });

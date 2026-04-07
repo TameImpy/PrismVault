@@ -15,8 +15,6 @@ interface WritingSamplesModalProps {
   track?: (event: string, properties?: Record<string, unknown>) => void;
 }
 
-const API_BASE = "http://localhost:8000";
-
 export default function WritingSamplesModal({
   open,
   onClose,
@@ -30,7 +28,7 @@ export default function WritingSamplesModal({
 
   const fetchSamples = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/email-samples`, {
+      const res = await fetch(`/api/email-samples`, {
         credentials: "include",
       });
       if (res.ok) {
@@ -54,7 +52,7 @@ export default function WritingSamplesModal({
     setError("");
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/email-samples`, {
+      const res = await fetch(`/api/email-samples`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -76,7 +74,7 @@ export default function WritingSamplesModal({
 
   async function handleDelete(id: number) {
     try {
-      await fetch(`${API_BASE}/api/email-samples/${id}`, {
+      await fetch(`/api/email-samples/${id}`, {
         method: "DELETE",
         credentials: "include",
       });

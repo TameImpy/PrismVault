@@ -21,7 +21,7 @@ npm run test:watch   # Watch mode
 - **Route protection**: Dual approach — `proxy.ts` (server-side cookie check) + `useAuth()` guard in protected pages (client-side).
 - **Analytics**: Use `useAnalytics()` from `components/AnalyticsProvider.tsx` for event tracking. Mixpanel is EU-hosted.
 - **Design system**: Prism Deep Sea tokens in `app/globals.css` via Tailwind v4 `@theme`. See `PRISM DESIGN.MD` at project root.
-- **API calls**: All fetch requests to the backend must include `credentials: "include"` for cookie auth. Backend is at `http://localhost:8000`.
+- **API calls**: All fetch requests to the backend must use relative paths (`/api/...`) and include `credentials: "include"` for cookie auth. Next.js rewrites proxy these to the backend.
 
 ## Troubleshooting
 - Delete `.next/` if stale build errors appear after file renames/deletions

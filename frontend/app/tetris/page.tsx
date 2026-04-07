@@ -9,8 +9,6 @@ import PiecePreview from "@/components/tetris/PiecePreview";
 import Leaderboard from "@/components/tetris/Leaderboard";
 import { useTetris } from "@/components/tetris/useTetris";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
 const CONTROLS = [
   { key: "←  →", action: "Move" },
   { key: "↑", action: "Rotate" },
@@ -96,7 +94,7 @@ export default function TetrisPage() {
       setSubmittedScore(true);
 
       if (playerName) {
-        fetch(`${API_BASE}/api/leaderboard`, {
+        fetch(`/api/leaderboard`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

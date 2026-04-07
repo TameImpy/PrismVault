@@ -233,7 +233,7 @@ export default function InsightsTool() {
 
   // Fetch sample count on mount
   useEffect(() => {
-    fetch("http://localhost:8000/api/email-samples", { credentials: "include" })
+    fetch("/api/email-samples", { credentials: "include" })
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => setSampleCount(Array.isArray(data) ? data.length : 0))
       .catch(() => {});
@@ -262,7 +262,7 @@ export default function InsightsTool() {
     const startTime = Date.now();
 
     try {
-      const res = await fetch("http://localhost:8000/api/insights", {
+      const res = await fetch("/api/insights", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -607,7 +607,7 @@ export default function InsightsTool() {
                   setDeckLoading(true);
                   const startTime = Date.now();
                   try {
-                    const res = await fetch("http://localhost:8000/api/download-deck", {
+                    const res = await fetch("/api/download-deck", {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
                       credentials: "include",

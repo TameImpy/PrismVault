@@ -35,11 +35,14 @@ python3 ingest.py
 ### Backend
 Requires a `.env` file at root with:
 - `OPENAI_API_KEY` (required)
-- `JWT_SECRET` (defaults to `"change-me-in-production"` — change for any non-local use)
+- `JWT_SECRET` (required — no default, app will not start without it)
+- `DATABASE_URL` (defaults to `sqlite:///users.db` for local dev)
 
 Optional overrides: `CHROMA_PERSIST_DIR`, `EMBEDDING_MODEL`, `CHAT_MODEL`, `CHUNK_SIZE`, `CHUNK_OVERLAP`.
 
-Python 3.9 (system Python on macOS) — do not use `dict | None` union syntax or other 3.10+ features.
+Optional Chroma Cloud: `CHROMA_CLOUD_API_KEY`, `CHROMA_CLOUD_TENANT`, `CHROMA_CLOUD_DATABASE` (leave empty for local ChromaDB).
+
+Python 3.11 for production (Railway via `runtime.txt`). Local macOS system Python 3.9 also works — do not use `dict | None` union syntax or other 3.10+ features.
 
 ### Frontend
 Requires `frontend/.env.local` with:

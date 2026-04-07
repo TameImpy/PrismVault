@@ -22,8 +22,6 @@ interface LeaderboardProps {
   refreshKey: number; // increment to trigger refresh
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
 export default function Leaderboard({ playerName, refreshKey }: LeaderboardProps) {
   const [data, setData] = useState<LeaderboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -32,7 +30,7 @@ export default function Leaderboard({ playerName, refreshKey }: LeaderboardProps
     try {
       setLoading(true);
       const params = playerName ? `?player_name=${encodeURIComponent(playerName)}` : "";
-      const res = await fetch(`${API_BASE}/api/leaderboard${params}`);
+      const res = await fetch(`/api/leaderboard${params}`);
       if (res.ok) {
         setData(await res.json());
       }
