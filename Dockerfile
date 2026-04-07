@@ -13,4 +13,4 @@ COPY . .
 ENV PORT=8000
 
 # Run migration then start the server
-CMD python scripts/migrate.py && python -m uvicorn api.main:app --host 0.0.0.0 --port $PORT
+CMD ["sh", "-c", "python scripts/migrate.py && python -m uvicorn api.main:app --host 0.0.0.0 --port $PORT"]
