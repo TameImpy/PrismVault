@@ -31,7 +31,7 @@ def db_url(tmp_path):
     import api.database as db_module
 
     db_path = str(tmp_path / "test.db")
-    url = "sqlite:///%s" % db_path
+    url = "sqlite+aiosqlite:///%s" % db_path
 
     old_url = config.DATABASE_URL
     old_db = db_module.database

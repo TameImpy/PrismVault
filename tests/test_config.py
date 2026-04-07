@@ -45,15 +45,21 @@ def _reload_config(env_overrides=None):
 
 
 def test_database_url_from_env():
-    """DATABASE_URL should be read from environment."""
+    """DATABASE_URL should be normalised to include the async driver."""
     cfg = _reload_config({"DATABASE_URL": "postgresql://localhost/test"})
-    assert cfg.DATABASE_URL == "postgresql://localhost/test"
+    assert cfg.DATABASE_URL == "postgresql+asyncpg://localhost/test"
+
+
+def test_database_url_postgres_prefix():
+    """postgres:// (Railway format) should be normalised to postgresql+asyncpg://."""
+    cfg = _reload_config({"DATABASE_URL": "postgres://user:pass@host/db"})
+    assert cfg.DATABASE_URL == "postgresql+asyncpg://user:pass@host/db"
 
 
 def test_database_url_defaults_to_sqlite():
-    """DATABASE_URL should default to sqlite:///users.db for local dev."""
+    """DATABASE_URL should default to sqlite+aiosqlite:///users.db for local dev."""
     cfg = _reload_config({"DATABASE_URL": None})
-    assert cfg.DATABASE_URL == "sqlite:///users.db"
+    assert cfg.DATABASE_URL == "sqlite+aiosqlite:///users.db"
 
 
 def test_jwt_secret_raises_if_not_set():

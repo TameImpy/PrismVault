@@ -4,7 +4,16 @@ from dotenv import load_dotenv
 load_dotenv()
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///users.db")
+_raw_db_url = os.getenv("DATABASE_URL", "sqlite:///users.db")
+# Railway provides postgres:// but databases+asyncpg needs postgresql+asyncpg://
+if _raw_db_url.startswith("postgres://"):
+    DATABASE_URL = _raw_db_url.replace("postgres://", "postgresql+asyncpg://", 1)
+elif _raw_db_url.startswith("postgresql://"):
+    DATABASE_URL = _raw_db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+elif _raw_db_url.startswith("sqlite:///"):
+    DATABASE_URL = _raw_db_url.replace("sqlite:///", "sqlite+aiosqlite:///", 1)
+else:
+    DATABASE_URL = _raw_db_url
 CHROMA_PERSIST_DIR = os.getenv("CHROMA_PERSIST_DIR", "./db")
 CHROMA_CLOUD_API_KEY = os.getenv("CHROMA_CLOUD_API_KEY", "")
 CHROMA_CLOUD_TENANT = os.getenv("CHROMA_CLOUD_TENANT", "")

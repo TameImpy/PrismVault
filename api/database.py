@@ -28,29 +28,34 @@ async def disconnect():
 # Schema
 # ---------------------------------------------------------------------------
 
+_is_postgres = config.DATABASE_URL.startswith("postgresql")
+
+# Postgres uses SERIAL for auto-increment; SQLite uses INTEGER PRIMARY KEY AUTOINCREMENT.
+_PK = "SERIAL PRIMARY KEY" if _is_postgres else "INTEGER PRIMARY KEY AUTOINCREMENT"
+
 CREATE_USERS = """
 CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id %s,
     email TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
     hashed_password TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )
-"""
+""" % _PK
 
 CREATE_EMAIL_SAMPLES = """
 CREATE TABLE IF NOT EXISTS email_samples (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id %s,
     user_id INTEGER NOT NULL,
     content TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
 )
-"""
+""" % _PK
 
 CREATE_SCORES = """
 CREATE TABLE IF NOT EXISTS scores (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id %s,
     player_name TEXT NOT NULL,
     score INTEGER NOT NULL,
     lines INTEGER NOT NULL,
@@ -58,7 +63,7 @@ CREATE TABLE IF NOT EXISTS scores (
     user_id TEXT,
     created_at TEXT NOT NULL
 )
-"""
+""" % _PK
 
 
 async def init_db():
