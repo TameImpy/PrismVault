@@ -17,4 +17,5 @@ COPY . .
 # ENV PORT=8000
 
 # Run migration then start the server
-CMD ["sh", "-c", "python scripts/migrate.py; echo 'Migration exit code:' $?; echo 'Starting uvicorn on port' $PORT; exec python -m uvicorn api.main:app --host 0.0.0.0 --port ${PORT:-8000} --log-level info 2>&1"]
+EXPOSE 8000
+CMD ["sh", "start.sh"]
