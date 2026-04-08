@@ -95,10 +95,22 @@ def _row_to_dict(row):
     return dict(row._mapping)
 
 
+async def _insert_returning_id(query, values):
+    """Execute an INSERT and return the new row's id.
+
+    Postgres requires RETURNING id to get the auto-generated key.
+    SQLite's execute() returns lastrowid automatically.
+    """
+    if _is_postgres:
+        row = await database.fetch_one(query + " RETURNING id", values)
+        return row._mapping["id"]
+    return await database.execute(query, values)
+
+
 async def create_user(email, name, hashed_password):
     """Insert a new user and return the created user dict."""
     query = "INSERT INTO users (email, name, hashed_password) VALUES (:email, :name, :hashed_password)"
-    user_id = await database.execute(query, {"email": email, "name": name, "hashed_password": hashed_password})
+    user_id = await _insert_returning_id(query, {"email": email, "name": name, "hashed_password": hashed_password})
     row = await database.fetch_one("SELECT id, email, name, created_at FROM users WHERE id = :id", {"id": user_id})
     return _row_to_dict(row)
 
@@ -144,7 +156,7 @@ async def create_email_sample(user_id, content):
     )
     if row._mapping["cnt"] >= MAX_EMAIL_SAMPLES:
         raise ValueError("Maximum of %d email samples reached." % MAX_EMAIL_SAMPLES)
-    sample_id = await database.execute(
+    sample_id = await _insert_returning_id(
         "INSERT INTO email_samples (user_id, content) VALUES (:user_id, :content)",
         {"user_id": user_id, "content": content},
     )
@@ -189,7 +201,7 @@ async def delete_email_sample(sample_id, user_id):
 
 async def submit_score(player_name, score, lines, level, user_id, created_at):
     """Insert a leaderboard score and return the row dict with rank."""
-    row_id = await database.execute(
+    row_id = await _insert_returning_id(
         "INSERT INTO scores (player_name, score, lines, level, user_id, created_at) "
         "VALUES (:player_name, :score, :lines, :level, :user_id, :created_at)",
         {
