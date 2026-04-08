@@ -42,12 +42,17 @@ app.include_router(auth_router)
 app.include_router(me_router)
 app.include_router(email_samples_router)
 
+_frontend_url = os.environ.get("FRONTEND_BASE_URL", "")
+_cors_origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+if _frontend_url:
+    _cors_origins.append(_frontend_url)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -27,6 +27,7 @@ TOKEN_EXPIRE_DAYS = 7
 RESET_TOKEN_EXPIRE_HOURS = 1
 COOKIE_NAME = "access_token"
 FRONTEND_BASE_URL = os.environ.get("FRONTEND_BASE_URL", "http://localhost:3000")
+_SECURE_COOKIES = FRONTEND_BASE_URL.startswith("https")
 
 def _create_token(user_id):
     """Create a JWT token for the given user ID."""
@@ -40,6 +41,7 @@ def _set_cookie(response, token):
         key=COOKIE_NAME,
         value=token,
         httponly=True,
+        secure=_SECURE_COOKIES,
         samesite="lax",
         max_age=TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
     )
