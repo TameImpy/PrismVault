@@ -1,12 +1,17 @@
 #!/bin/sh
-set -e
 
-echo "=== Environment ==="
-echo "PORT=${PORT:-not set}"
-echo "DATABASE_URL is set: $([ -n "$DATABASE_URL" ] && echo yes || echo no)"
-
+echo "=== PORT is: ${PORT:-not set} ==="
 echo "=== Running migrations ==="
 python scripts/migrate.py
-
-echo "=== Starting uvicorn on port ${PORT:-8000} ==="
-exec python -m uvicorn api.main:app --host 0.0.0.0 --port "${PORT:-8000}" --log-level info
+echo "=== Migration done, testing import ==="
+python -c "
+import traceback
+try:
+    import api.main
+    print('Import OK')
+except Exception:
+    traceback.print_exc()
+    exit(1)
+"
+echo "=== Starting uvicorn ==="
+python -m uvicorn api.main:app --host 0.0.0.0 --port "${PORT:-8000}" --log-level info
