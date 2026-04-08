@@ -6,8 +6,9 @@ from databases import Database
 
 import config
 
-# Shared database instance — connect/disconnect managed via FastAPI lifespan.
-database = Database(config.DATABASE_URL)
+# Shared database instance — created lazily in connect() to avoid
+# binding the asyncpg pool to the wrong event loop at import time.
+database = None
 
 # ---------------------------------------------------------------------------
 # Lifecycle
@@ -15,13 +16,22 @@ database = Database(config.DATABASE_URL)
 
 
 async def connect():
-    """Connect the database pool. Call on app startup."""
+    """Create the database instance and connect the pool. Call on app startup."""
+    global database
+    # Always create a fresh instance to avoid event loop mismatches
+    database = Database(config.DATABASE_URL)
     await database.connect()
 
 
 async def disconnect():
     """Disconnect the database pool. Call on app shutdown."""
-    await database.disconnect()
+    global database
+    if database:
+        try:
+            await database.disconnect()
+        except Exception:
+            pass
+        database = None
 
 
 # ---------------------------------------------------------------------------

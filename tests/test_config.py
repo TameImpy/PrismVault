@@ -28,7 +28,8 @@ def _reload_config(env_overrides=None):
         else:
             os.environ[k] = v
 
-    # Force reimport with load_dotenv disabled so .env doesn't interfere
+    # Save and remove the original config module
+    original_config = sys.modules.get("config")
     if "config" in sys.modules:
         del sys.modules["config"]
     try:
@@ -36,12 +37,17 @@ def _reload_config(env_overrides=None):
             import config
             return config
     finally:
-        # Restore originals
+        # Restore env vars
         for k, original in saved.items():
             if original is None:
                 os.environ.pop(k, None)
             else:
                 os.environ[k] = original
+        # Restore the original config module so other tests aren't affected
+        if original_config is not None:
+            sys.modules["config"] = original_config
+        elif "config" in sys.modules:
+            del sys.modules["config"]
 
 
 def test_database_url_from_env():

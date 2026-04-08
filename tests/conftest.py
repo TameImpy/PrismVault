@@ -1,8 +1,8 @@
 """
 Shared test fixtures for database-dependent tests.
 
-Swaps the database module's shared `database` instance to point at a
-temporary SQLite file before each test, then restores it after.
+Sets config.DATABASE_URL to a temp SQLite file, then calls connect()
+which creates the database instance. Restores after.
 """
 import asyncio
 import os
@@ -13,7 +13,6 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 import pytest
-from databases import Database
 
 
 def _run(coro):
@@ -22,11 +21,7 @@ def _run(coro):
 
 @pytest.fixture()
 def db_url(tmp_path):
-    """Provide a fresh SQLite database URL and swap the database module to use it.
-
-    Usage: add `db_url` to any test or fixture that needs a clean database.
-    The api.database module is patched for the duration of the test.
-    """
+    """Provide a fresh SQLite database URL and swap the database module to use it."""
     import config
     import api.database as db_module
 
@@ -35,14 +30,17 @@ def db_url(tmp_path):
 
     old_url = config.DATABASE_URL
     old_db = db_module.database
-    config.DATABASE_URL = url
-    db_module.database = Database(url)
 
+    # Set URL before connect() — connect() reads config.DATABASE_URL
+    config.DATABASE_URL = url
     _run(db_module.connect())
     _run(db_module.init_db())
 
     yield url
 
-    _run(db_module.disconnect())
+    try:
+        _run(db_module.disconnect())
+    except Exception:
+        pass
     config.DATABASE_URL = old_url
     db_module.database = old_db
