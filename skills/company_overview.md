@@ -6,6 +6,7 @@ queries:
   - '"{brand}" who are what do they do'
   - '"{brand}" products services customers market'
 max_results_per_query: 3
+timelimit: null
 ---
 
 Analyse the following search results about {brand} and produce a detailed factual overview:

@@ -2,6 +2,7 @@ import glob
 import os
 import re
 import time
+from datetime import datetime
 
 import yaml
 from ddgs import DDGS
@@ -40,6 +41,7 @@ def load_skills() -> list[dict]:
             "description": meta.get("description", ""),
             "queries": meta.get("queries", []),
             "max_results_per_query": meta.get("max_results_per_query", 3),
+            "timelimit": meta.get("timelimit", "y"),
             "prompt": prompt_body,
             "file": os.path.basename(path),
         })
@@ -47,12 +49,12 @@ def load_skills() -> list[dict]:
     return skills
 
 
-def _run_search(query: str, max_results: int) -> list[dict]:
+def _run_search(query, max_results, timelimit="y"):
     """Run a single DuckDuckGo search with retries for transient failures."""
     for attempt in range(SEARCH_RETRIES):
         try:
             ddgs = DDGS()
-            return list(ddgs.text(query, max_results=max_results))
+            return list(ddgs.text(query, max_results=max_results, timelimit=timelimit))
         except Exception as e:
             if attempt < SEARCH_RETRIES - 1:
                 time.sleep(SEARCH_RETRY_DELAY)
@@ -72,12 +74,14 @@ def run_skill(skill: dict, brand_name: str) -> dict:
     skill_name = skill["name"]
     all_results = []
 
+    timelimit = skill.get("timelimit", "y")
+
     try:
         for i, query_template in enumerate(skill["queries"]):
             if i > 0:
                 time.sleep(SEARCH_DELAY)
-            query = query_template.replace("{brand}", brand_name)
-            results = _run_search(query, skill["max_results_per_query"])
+            query = query_template.replace("{brand}", brand_name).replace("{year}", str(datetime.now().year))
+            results = _run_search(query, skill["max_results_per_query"], timelimit=timelimit)
             all_results.extend(results)
     except Exception as e:
         return {
