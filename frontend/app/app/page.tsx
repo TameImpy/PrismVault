@@ -40,6 +40,7 @@ interface InsightsResult {
   audience_timing: string;
   google_trends: string;
   format_recommendations: string;
+  campaign_history: string;
   client_brief_summary: string;
 }
 
@@ -544,6 +545,15 @@ export default function InsightsTool() {
                       </div>
                     ))}
                   </div>
+                </CollapsiblePanel>
+              )}
+
+              {/* Campaign History panel */}
+              {result.campaign_history && result.campaign_history !== "No previous campaign data found for this advertiser." && (
+                <CollapsiblePanel title="Campaign History" defaultOpen={false}>
+                  <p className="text-on-surface-variant text-sm leading-relaxed whitespace-pre-wrap">
+                    {result.campaign_history}
+                  </p>
                 </CollapsiblePanel>
               )}
 

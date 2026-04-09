@@ -27,6 +27,9 @@ A detailed factual summary of who the advertiser is, grounded in the research pr
 - Any relevant parent company or group context
 Draw from ALL the advertiser research sections (company overview, strategy, recent news). Do not speculate beyond what the research supports. Include source links where the research provides them.
 
+## Previous Campaign History
+If the advertiser has previous campaign history with us, summarise the relationship: how many campaigns, which categories, overall performance, and what worked best. Reference specific past campaigns when making recommendations — e.g. suggest building on formats or categories that performed well previously. Note how recently they last worked with us to frame the relationship (active partner vs. returning client). If no campaign history is available, note this and proceed based on other data sources.
+
 ## Editorial Insights
 Key themes and opportunities identified from editor interviews. Reference specific editors and publications.
 
@@ -104,6 +107,13 @@ The following research was gathered from multiple angles on the advertiser. Use 
 The following is the full catalogue of available ad formats with performance benchmarks. Use this to build the Recommended Products section.
 
 {format_recommendations}
+
+---
+
+### Campaign History
+The following is the advertiser's previous campaign history with us. Use this to build the Previous Campaign History section and to inform recommendations.
+
+{campaign_history}
 
 ---
 

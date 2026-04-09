@@ -58,6 +58,15 @@ def test_system_prompt_at_a_glance_has_fixed_labels():
     assert "Top Format" in glance_section
 
 
+def test_system_prompt_has_campaign_history_section():
+    """SYSTEM_PROMPT should contain a Previous Campaign History section after Advertiser Overview."""
+    assert "Previous Campaign History" in SYSTEM_PROMPT
+    history_pos = SYSTEM_PROMPT.index("Previous Campaign History")
+    overview_pos = SYSTEM_PROMPT.index("Advertiser Overview")
+    editorial_pos = SYSTEM_PROMPT.index("Editorial Insights")
+    assert overview_pos < history_pos < editorial_pos
+
+
 def test_system_prompt_has_client_brief_instruction():
     """SYSTEM_PROMPT should instruct GPT-4o to tailor sections to the client brief."""
     assert "client brief" in SYSTEM_PROMPT.lower()
@@ -103,6 +112,7 @@ def test_user_prompt_template_has_placeholders():
     assert "{google_trends}" in USER_PROMPT_TEMPLATE
     assert "{advertiser_kpi}" in USER_PROMPT_TEMPLATE
     assert "{format_recommendations}" in USER_PROMPT_TEMPLATE
+    assert "{campaign_history}" in USER_PROMPT_TEMPLATE
     assert "{client_brief}" in USER_PROMPT_TEMPLATE
 
 
@@ -116,6 +126,7 @@ def test_user_prompt_renders():
         audience_timing="some timing",
         google_trends="some trends",
         format_recommendations="some formats",
+        campaign_history="some history",
         client_brief="some brief",
     )
     assert "test topic" in rendered
@@ -135,6 +146,7 @@ def test_generate_insights_accepts_kpi_and_injects_into_prompt():
          patch("src.synthesiser.research_advertiser", return_value=[]), \
          patch("src.synthesiser.load_audience_data") as mock_load, \
          patch("src.synthesiser.get_topic_trends", return_value="No data"), \
+         patch("src.synthesiser.get_campaign_summary", return_value={"summary": "No previous campaign data found for this advertiser.", "campaigns": []}), \
          patch("src.synthesiser.OpenAI") as mock_openai_cls:
 
         mock_search.return_value = {"documents": [[]], "metadatas": [[]], "distances": [[]]}
@@ -144,11 +156,12 @@ def test_generate_insights_accepts_kpi_and_injects_into_prompt():
         mock_openai_cls.return_value = mock_client
 
         from src.synthesiser import generate_insights
-        generate_insights(topic="test", advertiser="TestCo", kpi="Clicks", include_google_trends=False)
+        result = generate_insights(topic="test", advertiser="TestCo", kpi="Clicks", include_google_trends=False)
 
         call_args = mock_client.chat.completions.create.call_args
         user_prompt = call_args[1]["messages"][1]["content"]
         assert "Clicks" in user_prompt
+        assert "campaign_history" in result
 
 
 def test_format_editorial_insights_empty():

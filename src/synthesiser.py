@@ -6,6 +6,7 @@ from src.audience import load_audience_data, get_topic_trends
 from src.trends import get_trend_data
 from src.brief import summarise_brief
 from src.formats import load_format_data
+from src.campaign_history import get_campaign_summary
 from src.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
 
 
@@ -77,10 +78,14 @@ def generate_insights(
     # 5. Load format recommendations
     format_recommendations = load_format_data()
 
-    # 6. Summarise client brief if provided
+    # 6. Look up previous campaign history
+    campaign_result = get_campaign_summary(advertiser)
+    campaign_history = campaign_result["summary"]
+
+    # 7. Summarise client brief if provided
     client_brief_summary = summarise_brief(client_brief)
 
-    # 7. Assemble prompt
+    # 8. Assemble prompt
     user_prompt = USER_PROMPT_TEMPLATE.format(
         topic=topic,
         advertiser=advertiser,
@@ -90,10 +95,11 @@ def generate_insights(
         audience_timing=audience_timing,
         google_trends=google_trends,
         format_recommendations=format_recommendations,
+        campaign_history=campaign_history,
         client_brief=client_brief_summary,
     )
 
-    # 8. Call GPT-4o
+    # 9. Call GPT-4o
     client = OpenAI(api_key=config.OPENAI_API_KEY)
     response = client.chat.completions.create(
         model=config.CHAT_MODEL,
@@ -114,5 +120,6 @@ def generate_insights(
         "audience_timing": audience_timing,
         "google_trends": google_trends,
         "format_recommendations": format_recommendations,
+        "campaign_history": campaign_history,
         "client_brief_summary": client_brief_summary,
     }
