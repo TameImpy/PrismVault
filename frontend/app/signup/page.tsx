@@ -25,7 +25,7 @@ export default function SignupPage() {
 
     try {
       await signup(email, name, password);
-      router.push("/app");
+      window.location.href = "/app";
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Signup failed");
     } finally {
