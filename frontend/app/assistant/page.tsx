@@ -193,8 +193,15 @@ export default function AssistantPage() {
           {messages.map((msg, i) => (
             <div
               key={i}
-              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start items-start gap-3"}`}
             >
+              {msg.role === "assistant" && (
+                <img
+                  src="/prism-assistant-avatar.png"
+                  alt="Prism Assistant"
+                  className="w-8 h-8 rounded-full flex-shrink-0 mt-1"
+                />
+              )}
               <div
                 className={`max-w-[80%] rounded-2xl px-5 py-3 ${
                   msg.role === "user"
