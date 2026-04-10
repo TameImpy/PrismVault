@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
+import { formatAssistantMessage } from "@/lib/formatAssistantMessage";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import GlassCard from "@/components/GlassCard";
@@ -204,7 +205,7 @@ export default function AssistantPage() {
               >
                 {msg.role === "assistant" ? (
                   <div className="prose prose-invert prose-sm max-w-none prose-p:mb-3 prose-ul:my-3 prose-li:my-1 prose-headings:mt-4 prose-headings:mb-2">
-                    <ReactMarkdown>{msg.content || "..."}</ReactMarkdown>
+                    <ReactMarkdown>{formatAssistantMessage(msg.content) || "..."}</ReactMarkdown>
                   </div>
                 ) : (
                   <p className="text-sm">{msg.content}</p>
