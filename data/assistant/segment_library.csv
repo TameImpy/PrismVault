@@ -1,0 +1,902 @@
+﻿Name,Size, Dashboard Code,Include/Exclude,Segment Category,Segment Frequency,Segment Time Period,Segment Name,Segment Description
+18-24 year olds,941539,AP_b is 1002,Include,Demographics - Age,Survey,Survey,18-24 year olds,We define these users as those who are 18-24 years old
+18-30 year olds,3381664,AP_b is 1026,Include,Demographics - Age,Survey,Survey,18-30 year olds,We define these users as those who are 18-30 years old
+18-40 year olds,105,AP_b is 1030,Include,Demographics - Age,Survey,Survey,18-40 year olds,We define these users as those who are 18-40 years old
+20-50 year olds,2733627,AP_b is 1031,Include,Demographics - Age,Survey,Survey,20-50 year olds,We define these users as those who are 20-50 years old
+25-34 year olds,571465,AP_b is 1006,Include,Demographics - Age,Survey,Survey,25-34 year olds,We define these users as those who are 25-34 years old
+25-44 Females,2866425, AP_a & AP_b ,Include,Demographics Custom,Survey,Survey,25-44 Females,We define these users as those who are 25-44 females
+25-44 Males,201110, AP_a & AP_b ,Include,Demographics Custom,Survey,Survey,25-44 Males,We define these users as those who are 25-44 males
+35+ Females,7787352, AP_a & AP_b ,Include,Demographics Custom,Survey,Survey,35+ Females,We define these users as those who are 35+ females
+35+ Males,4490689, AP_a & AP_b ,Include,Demographics Custom,Survey,Survey,35+ Males,We define these users as those who are 35+ males
+35+ Pet owners,6661260, AP_b & AP_x ,Include,Demographics Custom,Survey,Survey,35+ Pet owners,We define these users as those who are 35+ pet owners
+35+ with children in HH,4897211, AP_b & AP_d ,Include,Demographics Custom,Survey,Survey,35+ with children in HH,We define these users as those who are 35+ with children in the household
+35-44 year olds,1627286,AP_b is 1010,Include,Demographics - Age,Survey,Survey,35-44 year olds,We define these users as those who are 35-44 years old
+45-54 year olds,1227660,AP_b is 1013,Include,Demographics - Age,Survey,Survey,45-54 year olds,We define these users as those who are 45-54 years old
+55+ Females,4956978, AP_a & AP_b ,Include,Demographics Custom,Survey,Survey,55+ Females,We define these users as those who are 55+ females
+55+ Males,4842095, AP_a & AP_b ,Include,Demographics Custom,Survey,Survey,55+ Males,We define these users as those who are 55+ males
+55-64 year olds,2724569,AP_b is 1017,Include,Demographics - Age,Survey,Survey,55-64 year olds,We define these users as those who are 55-64 years old
+65+,5438878,AP_b is 1020,Include,Demographics - Age,Survey,Survey,65+,We define these users as those who are 65+
+ABC1,6648589, AP_c & AP_f ,Include,Demographics Custom,Survey,Survey,ABC1,We define these users as those who are employed and have a medium to high income
+ABC1 35+,6218803, AP_b & AP_c & AP_f ,Include,Demographics Custom,Survey,Survey,ABC1 35+,"We define these users as those who are 35+, employed and have a medium to high income"
+Action film fans,636366,AP_x is 15876,Include,Arts & Entertainment,Survey,Survey,Action film fans,We define these users as those who enjoy watching action films
+Activity/sporting/skiing holiday goers,646285,AP_x is 15146,Include,Holiday intenders,Survey,Survey,Activity/sporting/skiing holiday goers,We define these users as those who prefer going on activity/sporting/skiing holidays
+Adventure film fans,1065724,AP_x is 15877,Include,Arts & Entertainment,Survey,Survey,Adventure film fans,We define these users as those who enjoy watching adventure films
+Affluent females,3089377, AP_a & AP_c ,Include,Demographics Custom,Survey,Survey,Affluent females,We define these users as those who are females with a high income
+Affluent males,3880558, AP_a & AP_c ,Include,Demographics Custom,Survey,Survey,Affluent males,We define these users as those who are males with a high income
+Affordable haircare product users,2395448,AP_x is 15885,Include,Beauty,Survey,Survey,Affordable haircare product users,We define these users as those who tend to chose affordable products for their haircare regime
+Aldi shoppers,2512699,AP_x is 14219,Include,Food & Drink,Survey,Survey,Aldi shoppers,We define these users as those who prefer to shop at Aldi
+Amazon music subscribers,4175229,AP_x is 15429,Include,Arts & Entertainment,Survey,Survey,Amazon music subscribers,We define these users as those who are subscribed to Amazon Music
+Amazon prime subscribers,1890652,AP_x is 10472,Include,Arts & Entertainment,Survey,Survey,Amazon prime subscribers,We define these users as those who are subscribed to Amazon Prime
+Apple music subscribers,836300,AP_x is 15432,Include,Arts & Entertainment,Survey,Survey,Apple music subscribers,We define these users as those who are subscribed to Apple music
+Apple TV subscribers,0,AP_x is 15408,Include,Arts & Entertainment,Survey,Survey,Apple TV subscribers,We define these users as those who are subscribed to Apple TV
+Arts & Entertainment - Audible & Podcast fans (O & All Time),260901,Permutive is 32224,Include,Arts & Entertainment,Occasional,All Time,Audible & Podcast fans content fans,We define these users as those who regularly browse Audible & Podcast content
+Arts & Entertainment - Avengers (O & All time),76918,Permutive is 7428,Include,Arts & Entertainment,Occasional,All Time,Avengers content fans,We define these users as those who regularly browse Avengers content
+Arts & Entertainment - Avengers (R & All time),19765,Permutive is 7429,Include,Arts & Entertainment,Regular,All Time,Avengers content fans,We define these users as those who regularly browse Avengers content
+Arts & Entertainment - Bafta Fans (O & All time),389919,Permutive is 25965,Include,Arts & Entertainment,Occasional,All Time,Bafta  content fans,We define these users as those who regularly browse Bafta content
+Arts & Entertainment - Bake Off Fans (O & All time),453547,Permutive is 6892,Include,Arts & Entertainment,Occasional,All Time,Bake Off  content fans,We define these users as those who regularly browse Bake Off content
+"Arts & Entertainment - Breaking Bad Fans (O & All time) [Lookalike: 92.7% similarity, including seed]",232924,Permutive is 21774,Include,Arts & Entertainment,Occasional,All Time,Breaking Bad  content fans,We define these users as those who regularly browse Breaking Bad content
+Arts & Entertainment - British TV/Film (R & All time),11480622,Permutive is 19639,Include,Arts & Entertainment,Regular,All Time,British TV/Film content fans,We define these users as those who regularly browse British TV/Film content
+Arts & Entertainment - Celebrity/Reality (R & All time),460794,Permutive is 7751,Include,Arts & Entertainment,Regular,All Time,Celebrity/Reality content fans,We define these users as those who regularly browse Celebrity Reality content
+Arts & Entertainment - Channel 4 fans (O & All time),1103175,Permutive is 16499,Include,Arts & Entertainment,Occasional,All Time,Channel 4 fans content fans,We define these users as those who regularly browse Channel 4 content
+Arts & Entertainment - Cinema Goers (O & All Time),728677,Permutive is 27110,Include,Arts & Entertainment,Occasional,All Time,Cinema Goers Cinema goers,We define these users as those who regularly browse  new movie release content
+Arts & Entertainment - Comedy (O & All time),826383,Permutive is 12621,Include,Arts & Entertainment,Occasional,All Time,Comedy content fans,We define these users as those who regularly browse Comedy content
+Arts & Entertainment - Crafters 1P (O & All time),1174593,Permutive is 33207,Include,Arts & Entertainment,Occasional,All Time,Crafters 1P enthusiasts,We define these users as those who regularly browse Craft content
+Arts & entertainment - Crime (O & All Time),8620649,Permutive is 49633,Include,Arts & entertainment,Occasional,All Time,Crime content fans,We define these users as those who regularly browse Crime content
+Arts & Entertainment - Culture Seekers (R & All time),2595074,Permutive is 7778,Include,Arts & Entertainment,Regular,All Time,Culture Seekers Culture seekers,"We define these users as those who regularly browse  arts, drama or music content"
+Arts & Entertainment - David Attenborough (O & All time),253191,Permutive is 8274,Include,Arts & Entertainment,Occasional,All Time,David Attenborough content fans,We define these users as those who regularly browse David Attenborough content
+"Arts & Entertainment - Discovery+ (R & All time) [Lookalike: 94.1% similarity, including seed]",338082,Permutive is 129663,Include,Arts & Entertainment,Regular,All Time,Discovery+ content fans,We define these users as those who regularly browse Discovery+ content across our websites
+Arts & Entertainment - Doctor Who (O & All Time),844161,Permutive is 6149,Include,Arts & Entertainment,Occasional,All Time,Doctor Who content fans,We define these users as those who regularly browse Doctor Who content
+Arts & Entertainment - Documentary (O & All time),1360806,Permutive is 6499,Include,Arts & Entertainment,Occasional,All Time,Documentary content fans,We define these users as those who regularly browse Documentary content
+"Arts & Entertainment - Documentary (R & 90 Days) [Lookalike: 95.2% similarity, including seed]",192332,Permutive is 124462,Include,Arts & Entertainment,Regular,90 Days,Documentary content fans,We define these users as those who regularly browse documentary films content across our websites
+Arts & Entertainment - Drama (O & All Time),14134852,Permutive is 31499,Include,Arts & Entertainment,Occasional,All Time,Drama content fans,We define these users as those who regularly browse Drama content
+Arts & Entertainment - Entertainment (R & 90 Days),534575,Permutive is 124264,Include,Arts & Entertainment,Regular,90 Days,Entertainment content fans,"We define these users as those who regularly browse the ""Entertainment"" section on Radio Times"
+Arts & Entertainment - Factual TV Shows (O & All Time),5695270,Permutive is 43746,Include,Arts & Entertainment,Occasional,All Time,Factual TV Shows content fans,We define these users as those who regularly browse Factual TV Shows content
+Arts & Entertainment - Family Films (R & All Time),186059,Permutive is 117047,Include,Arts & Entertainment,Regular,All Time,Family Films content fans,We define these users as those who regularly browse family films content across our websites
+Arts & Entertainment - Fantasy (O & All time),1874898,Permutive is 16117,Include,Arts & Entertainment,Occasional,All Time,Fantasy content fans,We define these users as those who regularly browse Fantasy content
+Arts & Entertainment - Film (O & All time),2948333,Permutive is 6158,Include,Arts & Entertainment,Occasional,All Time,Film content fans,We define these users as those who regularly browse Film content
+Arts & Entertainment - Film fans (R & All time),4021410,Permutive is 6457,Include,Arts & Entertainment,Regular,All Time,Film fans content fans,We define these users as those who regularly browse Film content
+Arts & Entertainment - First World War (O & All time),70142,Permutive is 8049,Include,Arts & Entertainment,Occasional,All Time,First World War content fans,We define these users as those who regularly browse First World War content
+Arts & Entertainment - Game of Thrones (O & All time),41712,Permutive is 9929,Include,Arts & Entertainment,Occasional,All Time,Game of Thrones content fans,We define these users as those who regularly browse Game of Thrones content
+Arts & Entertainment - Gone Fishing Fans (O & All time),32054,Permutive is 14307,Include,Arts & Entertainment,Occasional,All Time,Gone Fishing  content fans,We define these users as those who regularly browse Gone Fishing content
+Arts & Entertainment - History Extra Reading Fans (O & All Time),62,Permutive is 122084,Include,Arts & Entertainment,Occasional,All Time,History Extra Reading  fans,"We define these users as those who occassinoally browse the ""Reading List"" on History Extra website"
+Arts & Entertainment - History TV fans (R & All Time),1207729,Permutive is 31100,Include,Arts & Entertainment,Regular,All Time,History TV fans content fans,We define these users as those who regularly browse History TV content
+Arts & Entertainment - ITV Hub (O & All Time),4713,Permutive is 28402,Include,Arts & Entertainment,Occasional,All Time,ITV Hub content fans,We define these users as those who regularly browse ITV Hub content
+Arts & Entertainment - Live Sports Events (R & All time),313174,Permutive is 116910,Include,Arts & Entertainment,Regular,All Time,Live Sports Events content fans,We define these users as those who regularly browse live sports events content across our websites
+Arts & Entertainment - Love Island (O & All time),1244690,Permutive is 7671,Include,Arts & Entertainment,Occasional,All Time,Love Island content fans,We define these users as those who regularly browse Love Island content
+Arts & Entertainment - Mamma Mia (O & All time),259,Permutive is 7564,Include,Arts & Entertainment,Occasional,All Time,Mamma Mia content fans,We define these users as those who regularly browse Mamma Mia content
+Arts & Entertainment - Marvel (O & All time),2195910,Permutive is 9706,Include,Arts & Entertainment,Occasional,All Time,Marvel content fans,We define these users as those who regularly browse Marvel content
+Arts & Entertainment - Motorsport (O & All Time),530892,Permutive is 61601,Include,Arts & Entertainment,Occasional,All Time,Motorsport content fans,We define these users as those who regularly browse Motorsport content
+Arts & Entertainment - Musicals (O & All Time),4886498,Permutive is 28324,Include,Arts & Entertainment,Occasional,All Time,Musicals content fans,We define these users as those who regularly browse Musicals content
+Arts & Entertainment - Netflix (O & All time),4655476,Permutive is 7737,Include,Arts & Entertainment,Occasional,All Time,Netflix content fans,We define these users as those who regularly browse Netflix content
+Arts & Entertainment - On Demand & Listings (R & All time),59985,Permutive is 6868,Include,Arts & Entertainment,Regular,All Time,On Demand & Listings content fans,We define these users as those who regularly browse On Demand & listings content
+Arts & Entertainment - On Demand fans & listings (O & All time),121189,Permutive is 6874,Include,Arts & Entertainment,Occasional,All Time,On Demand fans & listings content fans,We define these users as those who regularly browse On Demand & listings content
+Arts & Entertainment - On Demand fans (O & All time).,5169976,Permutive is 13436,Include,Arts & Entertainment,Occasional,All Time,On Demand fans content fans,We define these users as those who regularly browse On Demand content
+Arts & Entertainment - Period Drama Fans (O & All time),797020,Permutive is 6885,Include,Arts & Entertainment,Occasional,All Time,Period Drama  content fans,We define these users as those who regularly browse Period Drama content
+Arts & Entertainment - Queen's Jubilee (R & All Time),156290,Permutive is 101057,Include,Arts & Entertainment,Regular,All Time,Queen's Jubilee content fans,We define these users as those regularly browsing for Queen's Jubilee content across our websites
+Arts & Entertainment - Radio 1 fans (O & all time),19614,Permutive is 7530,Include,Arts & Entertainment,Occasional,All Time,Radio 1 fans content fans,We define these users as those who regularly browse Radio 1 content
+Arts & Entertainment - Radio Fans (O & all time),200252,Permutive is 7531,Include,Arts & Entertainment,Occasional,All Time,Radio  content fans,We define these users as those who regularly browse Radio content
+Arts & Entertainment - Radiotimes Fans (O & All time),47886205,Permutive is 6246,Include,Arts & Entertainment,Occasional,All Time,Radiotimes  users,We define these users as those who regularly browse Radio Times content
+Arts & Entertainment - Real life based TV Shows (O & All Time),1287334,Permutive is 31554,Include,Arts & Entertainment,Occasional,All Time,Real life based TV Shows content fans,We define these users as those who regularly browse Real life based TV Shows content
+Arts & Entertainment - Romans (O & All time),1310251,Permutive is 8052,Include,Arts & Entertainment,Occasional,All Time,Romans content fans,We define these users as those who regularly browse Romans content
+Arts & Entertainment - RT Listings (R & All time),1703268,Permutive is 23285,Include,Arts & Entertainment,Regular,All Time,RT Listings content fans,We define these users as those who regularly browse RT Listings content
+Arts & Entertainment - Sci-fi (O & All Time),72347593,Permutive is 28286,Include,Arts & Entertainment,Occasional,All Time,Sci-fi content fans,We define these users as those who regularly browse Sci-fi content
+Arts & Entertainment - Sky (O & All time),193063,Permutive is 8314,Include,Arts & Entertainment,Occasional,All Time,Sky content fans,We define these users as those who regularly browse Sky content
+Arts & Entertainment - Soaps (O & All time),2787628,Permutive is 6161,Include,Arts & Entertainment,Occasional,All Time,Soaps content fans,We define these users as those who regularly browse Soaps content
+Arts & Entertainment - Sport Enthusiasts (R & All Time),2097810,Permutive is 27547,Include,Arts & Entertainment,Regular,All Time,Sport Enthusiasts enthusiasts,We define these users as those who regularly browse Sport content
+Arts & Entertainment - The Crown (O & All time),474047,Permutive is 20583,Include,Arts & Entertainment,Occasional,All Time,The Crown content fans,We define these users as those who regularly browse The Crown content
+Arts & Entertainment - The Favourite (O & All time),58978,Permutive is 20580,Include,Arts & Entertainment,Occasional,All Time,The Favourite content fans,We define these users as those who regularly browse The Favourite content
+Arts & Entertainment - The Oscars Fans (O & All time),430,Permutive is 6882,Include,Arts & Entertainment,Occasional,All Time,The Oscars  content fans,We define these users as those who regularly browse The Oscars content
+Arts & Entertainment - The Royal Wedding Fans (O & All time),452355,Permutive is 7086,Include,Arts & Entertainment,Occasional,All Time,The Royal Wedding  content fans,We define these users as those who regularly browse The Royal Wedding content
+Arts & Entertainment - The Walking Dead (O & All time),70830,Permutive is 20749,Include,Arts & Entertainment,Occasional,All Time,The Walking Dead content fans,We define these users as those who regularly browse The Walking Dead content
+"Arts & Entertainment - Traces (R & All Time) [Lookalike: 58.6% similarity, including seed]",0,Permutive is 98452,Include,Arts & Entertainment,Regular,All Time,Traces content fans,We define these users as those who regularly browse Traces TV showcontent
+"Arts & entertainment - True Crime (R & All Time) [Lookalike: 93.3% similarity, including seed]",1109952,Permutive is 123160,Include,Arts & entertainment,Regular,All Time,True Crime content fans,We define these users as thow who regularly browse True Crime TV and Film content across our websites
+Arts & Entertainment - TV (O & All time),31990788,Permutive is 6160,Include,Arts & Entertainment,Occasional,All Time,TV content fans,We define these users as those who regularly browse TV content
+Arts & Entertainment - TV Listings (O & All time),5980329,Permutive is 6869,Include,Arts & Entertainment,Occasional,All Time,TV Listings content fans,We define these users as those who regularly browse TV Listings content
+"Arts & Entertainment - TV/Film Reviewers (R & All Time) [Lookalike: 89.0% similarity, including seed]",771038,Permutive is 56787,Include,Arts & Entertainment,Regular,All Time,TV/Film Reviewers reviewers,We define these users as those who regularly browse TV/film reviews
+Arts & Entertainment - UKTV fans (O & All time),23373,Permutive is 7400,Include,Arts & Entertainment,Occasional,All Time,UKTV fans content fans,We define these users as those who regularly browse UKTV content
+Arts & Entertainment - Weekend Evening Viewing (O & All time),371023,Permutive is 6501,Include,Arts & Entertainment,Occasional,All Time,Weekend Evening Viewing content fans,We define these users as those who regularly browse Weekend Evening Viewing content
+Arts & Entertainment - World Cup (O & All time),291983,Permutive is 7616,Include,Arts & Entertainment,Occasional,All Time,World Cup content fans,We define these users as those who regularly browse World Cup content
+Arts & Entertainment - World Cup Listings (O & All time),80027,Permutive is 7634,Include,Arts & Entertainment,Occasional,All Time,World Cup Listings fans,We define these users as those who regularly browse World Cup Listings content
+Arts & Entertainment - World War 2 (O & All time),188163,Permutive is 8051,Include,Arts & Entertainment,Occasional,All Time,World War 2 content fans,We define these users as those who regularly browse World War 2 content
+Arts & Entertainment -Awards Fans (O & All time),4177575,Permutive is 136573,Include,Arts & Entertainment,Occasional,All Time,Awards  content fans,We define these users as those who occasionally browse Arts & Entertainment Awards content across our websites
+Asda shoppers,1938772,AP_x is 14223,Include,Food & Drink,Survey,Survey,Asda shoppers,We define these users as those who prefer to shop at Asda
+Auto - 4x4s (O & All time),379130,Permutive is 10327,Include,Auto,Occasional,All Time,4x4s content fans/reviewers,We define these users as those who regularly browse 4x4 content or reviews
+Auto - Alfa Romeo (O & All time),106499,Permutive is 10072,Include,Auto,Occasional,All Time,Alfa Romeo content fans/reviewers,We define these users as those who regularly browse Alfa Romeo content or reviews
+Auto - Audi (O & All time),2485192,Permutive is 10075,Include,Auto,Occasional,All Time,Audi content fans/reviewers,We define these users as those who regularly browse Audi content or reviews
+Auto - Auto Intender (R & 30 Days),777043,Permutive is 12921,Include,Auto,Regular,30 Days,Auto Intender intender,We define these users as those who regularly browse Auto car reviews
+Auto - Autonomous (O & All Time),28491,Permutive is 8101,Include,Auto,Occasional,All Time,Autonomous content fans/reviewers,We define these users as those who regularly browse Autonomous content or reviews
+Auto - BMW (O & All Time),1117490,Permutive is 6084,Include,Auto,Occasional,All Time,BMW content fans/reviewers,We define these users as those who regularly browse BMW content or reviews
+Auto - Car Intenders (O & All time),1121965,Permutive is 10145,Include,Auto,Occasional,All Time,Car Intenders intender,We define these users as those who regularly browse Auto car reviews
+Auto - Citroen (O & All Time),1901429,Permutive is 10409,Include,Auto,Occasional,All Time,Citroen content fans/reviewers,We define these users as those who regularly browse Citroen content or reviews
+Auto - City-Car (O & All time),613333,Permutive is 10323,Include,Auto,Occasional,All Time,City-Car content fans/reviewers,We define these users as those who regularly browse City-Car content or reviews
+Auto - Convertibles (O & All time),491747,Permutive is 10328,Include,Auto,Occasional,All Time,Convertibles content fans/reviewers,We define these users as those who regularly browse Convertible content or reviews
+Auto - Coupes (O & All time),485247,Permutive is 10329,Include,Auto,Occasional,All Time,Coupes content fans/reviewers,We define these users as those who regularly browse Coupe content or reviews
+Auto - Electric Cars (R & All Time),1464137,Permutive is 31394,Include,Auto,Regular,All Time,Electric Cars content fans/reviewers,We define these users as those who regularly browse Electric Car content or reviews
+Auto - Estates (O & All time),551611,Permutive is 10330,Include,Auto,Occasional,All Time,Estates content fans/reviewers,We define these users as those who regularly browse Estate car content or reviews
+Auto - Executives (O & All time),1248431,Permutive is 10331,Include,Auto,Occasional,All Time,Executives content fans/reviewers,We define these users as those who regularly browse Executive car content or reviews
+Auto - F1 (O & All Time),1094454,Permutive is 13438,Include,Auto,Occasional,All Time,F1 fans,We define these users as those who regularly browse F1 content or reviews
+Auto - Family Car Buyers (O & All time),305118,Permutive is 7665,Include,Auto,Occasional,All Time,Family Car Buyers buyers,We define these users as those who regularly browse Family car reviews
+Auto - Fiat (O & All Time),1059911,Permutive is 10415,Include,Auto,Occasional,All Time,Fiat content fans/reviewers,We define these users as those who regularly browse Fiat content or reviews
+Auto - Ford (O & All Time),579020,Permutive is 6085,Include,Auto,Occasional,All Time,Ford content fans/reviewers,We define these users as those who regularly browse Ford content or reviews
+"Auto - Ford Edge (O & All Time) [Lookalike: 82.5% similarity, including seed]",18369,Permutive is 13704,Include,Auto,Occasional,All Time,Ford Edge content fans/reviewers,We define these users as those who regularly browse Ford Edge content or reviews
+Auto - Hatchback (O & All time),2255511,Permutive is 10321,Include,Auto,Occasional,All Time,Hatchback content fans/reviewers,We define these users as those who regularly browse Hatchback content or reviews
+Auto - Honda (O & All Time),747926,Permutive is 10407,Include,Auto,Occasional,All Time,Honda content fans/reviewers,We define these users as those who regularly browse Honda content or reviews
+Auto - Hot Hatches (O & All time),1416649,Permutive is 10332,Include,Auto,Occasional,All Time,Hot Hatches content fans/reviewers,We define these users as those who regularly browse Hot Hatches content or reviews
+Auto - Hybrids/EVs/Future (O & All time),1128773,Permutive is 10952,Include,Auto,Occasional,All Time,Hybrids/EVs/Future content fans/reviewers,We define these users as those who regularly browse Hybrids/EVs content or reviews
+Auto - Hyundai (O & All Time),240554,Permutive is 10374,Include,Auto,Occasional,All Time,Hyundai content fans/reviewers,We define these users as those who regularly browse Hyundai content or reviews
+Auto - Jaguar (O & All Time),2533998,Permutive is 19801,Include,Auto,Occasional,All Time,Jaguar content fans/reviewers,We define these users as those who regularly browse Jaguar content or reviews
+Auto - Jeremy Clarkson (R & All Time),44345,Permutive is 72599,Include,Auto,Regular,All Time,Jeremy Clarkson content fans,We define these users as those who regularly browse Jeremy Clarkson content
+Auto - Kia (O & All Time),1322806,Permutive is 10372,Include,Auto,Occasional,All Time,Kia content fans/reviewers,We define these users as those who regularly browse Kia content or reviews
+Auto - Land Rover (O & All Time),266231,Permutive is 10379,Include,Auto,Occasional,All Time,Land Rover content fans/reviewers,We define these users as those who regularly browse Land Rover content or reviews
+Auto - Large SUVs (O & All time),4209053,Permutive is 10333,Include,Auto,Occasional,All Time,Large SUVs content fans/reviewers,We define these users as those who regularly browse Large SUVs content or reviews
+Auto - Luxury Cars (O & All time),1745855,Permutive is 10334,Include,Auto,Occasional,All Time,Luxury Cars content fans/reviewers,We define these users as those who regularly browse Luxury Cars content or reviews
+Auto - Mazda (O & All Time),176056,Permutive is 10411,Include,Auto,Occasional,All Time,Mazda content fans/reviewers,We define these users as those who regularly browse Mazda content or reviews
+Auto - Mercedes-Benz (O & All Time),314293,Permutive is 10362,Include,Auto,Occasional,All Time,Mercedes-Benz content fans/reviewers,We define these users as those who regularly browse Mercedes-Benz content or reviews
+Auto - MPVs (O & All time),269913,Permutive is 10326,Include,Auto,Occasional,All Time,MPVs content fans/reviewers,We define these users as those who regularly browse MPVs content or reviews
+Auto - Nissan (O & All Time),837194,Permutive is 10368,Include,Auto,Occasional,All Time,Nissan content fans/reviewers,We define these users as those who regularly browse Nissan content or reviews
+Auto - Peugeot (O & All Time),1352166,Permutive is 10377,Include,Auto,Occasional,All Time,Peugeot content fans/reviewers,We define these users as those who regularly browse Peugeot content or reviews
+Auto - Porsche (R & All Time),207017,Permutive is 7613,Include,Auto,Regular,All Time,Porsche content fans/reviewers,We define these users as those who regularly browse Porsche content or reviews
+Auto - Renault (O & All time),441413,Permutive is 9891,Include,Auto,Occasional,All Time,Renault content fans/reviewers,We define these users as those who regularly browse Renault content or reviews
+Auto - Saloons (O & All time),7158346,Permutive is 10335,Include,Auto,Occasional,All Time,Saloons content fans/reviewers,We define these users as those who regularly browse Saloons content or reviews
+Auto - SEAT (O & All Time),230021,Permutive is 10405,Include,Auto,Occasional,All Time,SEAT content fans/reviewers,We define these users as those who regularly browse SEAT content or reviews
+Auto - Skoda (O & All Time),145309,Permutive is 10384,Include,Auto,Occasional,All Time,Skoda content fans/reviewers,We define these users as those who regularly browse Skoda content or reviews
+Auto - Small SUV (O & All time),2486086,Permutive is 10322,Include,Auto,Occasional,All Time,Small SUV content fans/reviewers,We define these users as those who regularly browse Small SUV content or reviews
+Auto - Sports Cars (O & All time),789756,Permutive is 10336,Include,Auto,Occasional,All Time,Sports Cars enthusiasts,We define these users as those who regularly browse Sports car content
+Auto - Supermini (O & All time),729685,Permutive is 10324,Include,Auto,Occasional,All Time,Supermini content fans/reviewers,We define these users as those who regularly browse Supermini content or reviews
+Auto - SUV (O & All time),449740,Permutive is 9840,Include,Auto,Occasional,All Time,SUV content fans/reviewers,We define these users as those who regularly browse SUV content or reviews
+Auto - Suzuki (O & All time),0,Permutive is 10146,Include,Auto,Occasional,All Time,Suzuki content fans/reviewers,We define these users as those who regularly browse Suzuki content or reviews
+Auto - Top Gear Fans (O & All time),1973075,Permutive is 6243,Include,Auto,Occasional,All Time,Top Gear  users,We define these users as those who regularly browse Top Gear content
+Auto - Toyota (O & All Time),270469,Permutive is 10370,Include,Auto,Occasional,All Time,Toyota content fans/reviewers,We define these users as those who regularly browse Toyota content or reviews
+Auto - Vauxhall (O & All Time),220080,Permutive is 10360,Include,Auto,Occasional,All Time,Vauxhall content fans/reviewers,We define these users as those who regularly browse Vauxhall content or reviews
+Auto - Vintage/Classic Cars (O & All Time),2728828,Permutive is 43654,Include,Auto,Occasional,All Time,Vintage/Classic Cars content fans/reviewers,We define these users as those who regularly browse Vintage Classic Cars content or reviews
+Auto - Volvo (O & All Time),219296,Permutive is 10413,Include,Auto,Occasional,All Time,Volvo content fans/reviewers,We define these users as those who regularly browse Volvo content or reviews
+Auto - VW (O & All Time),910389,Permutive is 10357,Include,Auto,Occasional,All Time,VW content fans/reviewers,We define these users as those who regularly browse VW content or reviews
+Auto intenders,1599326,AP_x is 15457,Include,Auto,Survey,Survey,Auto intenders,We define these users as those who intend on purchasing a new car
+Auto intenders - £15-30k spenders,3766485,AP_x is 15491,Include,Auto,Survey,Survey,Auto intenders - £15-30k spenders,We define these users as those who plan to spend between £15-30k on a car
+Auto intenders - £30-50k spenders,2682988,AP_x is 15492,Include,Auto,Survey,Survey,Auto intenders - £30-50k spenders,We define these users as those who plan to spend between £30-50k on a car
+Auto intenders - £50-75k spenders,1044784,AP_x is 15493,Include,Auto,Survey,Survey,Auto intenders - £50-75k spenders,We define these users as those who plan to spend between £50k-75k on a car 
+Auto intenders - £5-15k spenders,5702044,AP_x is 15490,Include,Auto,Survey,Survey,Auto intenders - £5-15k spenders,We define these users as those who plan to spend between £5-15k on a car
+Auto intenders - £75k+ spenders,242146,AP_x is 15494,Include,Auto,Survey,Survey,Auto intenders - £75k+ spenders,We define these users as those who plan to spend more than £75k on a car
+Auto intenders - less than £5k,1220837,AP_x is 15489,Include,Auto,Survey,Survey,Auto intenders - less than £5k,We define these users as those who plan to spend less than £5k on a car
+Auto intenders - next 18 months,457073, AP_x is 15424,Include,Auto,Survey,Survey,Auto intenders - next 18 months,We define these users as those who intend on purchasing a new car in the next 18 months
+Auto intenders - next 2-3 years,2947574, AP_x is 15425,Include,Auto,Survey,Survey,Auto intenders - next 2-3 years,We define these users as those who intend on purchasing a new car in the next 2-3 years
+Auto intenders - next 3 months,391075, AP_x is 15422,Include,Auto,Survey,Survey,Auto intenders - next 3 months,We define these users as those who intend on purchasing a new car in the next 3 months
+Auto intenders - next 6 months,725679, AP_x is 15423,Include,Auto,Survey,Survey,Auto intenders - next 6 months,We define these users as those who intend on purchasing a new car in the next 6 months
+Bakers - Daily,2677828,AP_x is 15855,Include,Food & Drink,Survey,Survey,Bakers - Daily,We define these users as those who bake more than once a week
+Bakers - Monthly,2637444,AP_x is 15857,Include,Food & Drink,Survey,Survey,Bakers - Monthly,We define these users as those who bake 1 to 2 times a month
+Bakers - Weekly,1825056,AP_x is 15856,Include,Food & Drink,Survey,Survey,Bakers - Weekly,We define these users as those who bake once a week
+Bakers - Yearly,2424433,AP_x is 15858,Include,Food & Drink,Survey,Survey,Bakers - Yearly,We define these users as those who bake 1 to 2 times a year
+Ballet enthusiasts,0,AP_x is 16669,Include,Interest,Survey,Survey,Ballet enthusiasts,We define these users as those who enjoy ballet
+Bathroom renovation intenders,1171843,AP_x is 15395,Include,Home Renovation,Survey,Survey,Bathroom renovation intenders,We define these users as those who intend on renovating their bathroom
+Beach holiday goers,4162326,AP_x is 15142,Include,Holiday intenders,Survey,Survey,Beach holiday goers,We define these users as those who prefer beach holidays
+Bedroom renovation intenders,0,AP_x is 15396,Include,Home Renovation,Survey,Survey,Bedroom renovation intenders,We define these users as those who intend on renovating their bathroom
+Beer drinkers,1451471,AP_x is 15504,Include,Food & Drink,Survey,Survey,Beer drinkers,We define these users as those who prefer drinking beer
+Bike owners - £1-4k,2550065,AP_x is 15841,Include,Sports,Survey,Survey,Bike owners - £1-4k,We define these users as those who own a bike worth £1-4k
+Bike owners - £4k+,749035,AP_x is 15843,Include,Sports,Survey,Survey,Bike owners - £4k+,We define these users as those who own a bike worth more than £4k
+Bike owners - Less than £1k,3737642,AP_x is 15840,Include,Sports,Survey,Survey,Bike owners - Less than £1k,We define these users as those who own a bike worth less than £1k
+Bike purchase intenders,2916646,AP_x is 15526,Include,Sports,Survey,Survey,Bike purchase intenders,We define these users as those who intend on purchasing a new bike
+Black Friday - Clothing/Fashion Purchasers,0,AP_x is 15384,Include,Black Friday,Survey,Survey,Black Friday - Clothing/Fashion Purchasers,We define these users as those who plan to purchase clothing on Black Friday
+Black friday - Considering deals if relevant,7555136,AP_x is 16491,Include,Black Friday,Survey,Survey,Black friday - Considering deals if relevant,We define these users as those who may consider Black Friday deals if relevant
+Black Friday - Homeware Purchases,0,AP_x is 15383,Include,Black Friday,Survey,Survey,Black Friday - Homeware Purchases,We define these users as those who plan to purchase homeware items on Black Friday
+Black Friday - Tech Purchasers,2346710,AP_x is 15386,Include,Black Friday,Survey,Survey,Black Friday - Tech Purchasers,We define these users as those who plan to make tech purchases on Black Friday
+Black Friday cosmetics/personal care product purchasers,0,AP_x is 15389,Include,Black Friday,Survey,Survey,Black Friday cosmetics/personal care product purchasers,We define these users as those who are likely to purchase cosmetics/personal care products during Black Friday 
+Black Friday deal searchers,1933666,AP_x is 16490,Include,Black Friday,Survey,Survey,Black Friday deal searchers,We define these users as those who actively look for deals during Black Friday
+Black Friday ticket purchasers,0,AP_x is 15387,Include,Black Friday,Survey,Survey,Black Friday ticket purchasers,We define these users as those who are likely to purchase tickets during Black Friday
+Black Friday toy purchasers,0,AP_x is 15388,Include,Black Friday,Survey,Survey,Black Friday toy purchasers,We define these users as those who are likely to purchase toy products during Black Friday
+Britbox subsribers,844177,AP_x is 16078,Include,Arts & Entertainment,Survey,Survey,Britbox subsribers,We define these users as those who are subscrbed to Britbox
+BT Customers who use On Demand Services,0,AP_x is 13708,Include,Arts & Entertainment,Survey,Survey,BT Customers who use On Demand Services,We define these users as those who are BT customers and use on demand services
+BT TV Customers,462658,AP_x is 10417,Include,Arts & Entertainment,Survey,Survey,BT TV Customers,We define these users as those who pay for a BT entertainment package
+Business Owners (10-50 people),293498,AP_x is 15872,Include,Demographics - employment,Survey,Survey,Business Owners (10-50 people),We define these users as those who own a business with 50 or more employees
+Business Owners (1-9 people),6865350,AP_x is 15870,Include,Demographics - employment,Survey,Survey,Business Owners (1-9 people),We define these users as those who own a business with up to 10 employees
+Car Intenders,55248,ap_k is 2030,Include,Intenders,Survey,Survey,Car Intenders,We define these users as those who intend to buy a car
+Car owners,7708415,AP_x is 15839,Include,Auto,Survey,Survey,Car owners,We define these users as those who already own a car
+Car payment - cash,5557043,AP_x is 15499,Include,Auto,Survey,Survey,Car payment - cash,We define these users as those who plan to purchase their next car with cash
+Car payment - lease,1582041,AP_x is 15496,Include,Auto,Survey,Survey,Car payment - lease,We define these users as those who plan to purchase their next car on lease
+Car payment - loan,2384886,AP_x is 15498,Include,Auto,Survey,Survey,Car payment - loan,We define these users as those who plan to purchase their next car using a loan
+Car payment - PCP,2377933,AP_x is 15497,Include,Auto,Survey,Survey,Car payment - PCP,We define these users as those who plan to purchase their next car on a PCP scheme
+Cat & Dog Owners,1325179,AP_x is 15419,Include,Pet Owner,Survey,Survey,Cat & Dog Owners,We define these users as those who own a cat or dog
+Cat owners,2671028,AP_x is 13618,Include,Pet Owner,Survey,Survey,Cat owners,We define these users as those who are cat owners
+Child - 0-3 months,541351,AP_x is 16157,Include,Demographics - Children,Survey,Survey,Child - 0-3 months,We define these users as those whose youngest child is between the ages of 0-3 months
+Child - 10-15 years,3453506,AP_x is 16540,Include,Demographics - Children,Survey,Survey,Child - 10-15 years,We define these users as those who youngest child is aged 10-15 years
+Child - 1-2 years,1590756,AP_x is 16160,Include,Demographics - Children,Survey,Survey,Child - 1-2 years,We define these users as those who youngest child is aged 1-2 years
+Child - 1-3 years,2586326,AP_x is 16959,Include,Demographics - Children,Survey,Survey,Child - 1-3 years,We define these users as those whoseyoungest child is aged 1-3 
+Child - 3+ years,6268176,AP_x is 16161,Include,Demographics - Children,Survey,Survey,Child - 3+ years,We define these users as those who youngest child is aged 3+ 
+Child - 3-5 years,3140248,AP_x is 16960,Include,Demographics - Children,Survey,Survey,Child - 3-5 years,We define these users as those whoseyoungest child is aged 3-5
+Child - 4-6 months,450096,AP_x is 16158,Include,Demographics - Children,Survey,Survey,Child - 4-6 months,We define these users as those who youngest child is aged 4-6 months
+Child - 5-10 years,5079467,AP_x is 16539,Include,Demographics - Children,Survey,Survey,Child - 5-10 years,We define these users as those whoseyoungest child is aged 5-10
+Child - 7-12 months,884409,AP_x is 16159,Include,Demographics - Children,Survey,Survey,Child - 7-12 months,We define these users as those who youngest child is aged 7-12 months
+Christmas food quality - Somewhat important,5028855,AP_x is 16518,Include,Christmas,Survey,Survey,Christmas food quality - Somewhat important,We define these users as those who consider how premium the food quality is for their Christmas shop to be somewhat important
+Christmas food quality - Very important,4298789,AP_x is 16517,Include,Christmas,Survey,Survey,Christmas food quality - Very important,We define these users as those who consider how premium the food quality is for their Christmas shop to be very important
+Christmas gift buyers -  technology - £1000+,413676,AP_x is 16503,Include,Christmas,Survey,Survey,Christmas gift buyers -  technology - £1000+,"We define these users as those who usually spend over £1,000 on technology per year for Christmas"
+Christmas gift buyers -  technology - £250-500,3296469,AP_x is 16500,Include,Christmas,Survey,Survey,Christmas gift buyers -  technology - £250-500,We define these users as those who are likely to spend £250-£500 on technology related products at Christmas
+Christmas gift buyers -  technology - £500-750,338440,AP_x is 16501,Include,Christmas,Survey,Survey,Christmas gift buyers -  technology - £500-750,We define these users as those who are likely to spend £500-£750 on technology related products at Christmas
+Christmas gift buyers -  technology - £750-1000,213383,AP_x is 16502,Include,Christmas,Survey,Survey,Christmas gift buyers -  technology - £750-1000,We define these users as those who are likely to spend £750-£1000 on technology related products at Christmas
+Christmas gift buyers -  technology - less than £250,5067043,AP_x is 16499,Include,Christmas,Survey,Survey,Christmas gift buyers -  technology - less than £250,We define these users as those who are likely to spend less than £250 on technology related products at Christmas
+Christmas gift buyers - 1-2 months in advance,2097927,AP_x is 15514,Include,Christmas,Survey,Survey,Christmas gift buyers - 1-2 months in advance,We define these users as those who purchase their Christmas presents 1-2 months in advance
+Christmas gift buyers - clothing - £100-250,4674827,AP_x is 16505,Include,Christmas,Survey,Survey,Christmas gift buyers - clothing - £100-250,We define these users as those who spends £100-250 on clothing for Christmas presents
+Christmas gift buyers - clothing - £250-500,678351,AP_x is 16506,Include,Christmas,Survey,Survey,Christmas gift buyers - clothing - £250-500,We define these users as those who spends £250-500 on clothing for Christmas presents
+Christmas gift buyers - clothing - £500-800,388002,AP_x is 16507,Include,Christmas,Survey,Survey,Christmas gift buyers - clothing - £500-800,We define these users as those who spends £500-800 on clothing for Christmas presents
+Christmas gift buyers - clothing - £800+,296036,AP_x is 16508,Include,Christmas,Survey,Survey,Christmas gift buyers - clothing - £800+,We define these users as those who spends £800+ on clothing for Christmas presents
+Christmas gift buyers - clothing - Less than £100-250,3345167,AP_x is 16504,Include,Christmas,Survey,Survey,Christmas gift buyers - clothing - Less than £100-250,We define these users as those who spends less than £100 on clothing for Christmas presents
+Christmas gift buyers - early december,776614,AP_x is 15515,Include,Christmas,Survey,Survey,Christmas gift buyers - early december,We define these users as those who purchase their Christmas presents early December
+Christmas gift buyers - first half of the year,245635,AP_x is 15513,Include,Christmas,Survey,Survey,Christmas gift buyers - first half of the year,We define these users as those who purchase their Christmas presents in the first half of the year
+Christmas gift buyers - last minute,211282,AP_x is 15517,Include,Christmas,Survey,Survey,Christmas gift buyers - last minute,We define these users as those who purchase their Christmas presents last minute
+Christmas gift buyers - mid december,455990,AP_x is 15516,Include,Christmas,Survey,Survey,Christmas gift buyers - mid december,We define these users as those who purchase their Christmas presents mid December
+Christmas guests,2385249,AP_x is 15409,Include,Food & Drink,Survey,Survey,Christmas guests,We define these users as those who spends Christmas day as a guest
+Christmas hosters,2507845,AP_x is 13617,Include,Food & Drink,Survey,Survey,Christmas hosters,We define these users as those who host Christmas day
+Christmas hosters - 10+ attendees,882073,AP_x is 15453,Include,Food & Drink,Survey,Survey,Christmas hosters - 10+ attendees,We define these users as those who host Christmas day for more than 10 people
+Christmas premium food shoppers,6416232,AP_x is 13620,Include,Food & Drink,Survey,Survey,Christmas premium food shoppers,We define these users as those who likely place very importance on premium food products at Christmas
+Christmas presents - spend less than last year,4469200,AP_x is 16496,Include,Christmas,Survey,Survey,Christmas presents - spend less than last year,We define these users as those who are likely to spend less than last year on Christmas presents
+Christmas presents - spend more than last year,1930241,AP_x is 16497,Include,Christmas,Survey,Survey,Christmas presents - spend more than last year,We define these users as those who are likely to spend more than last year on Christmas presents
+Christmas presents - spend the same last year,2866124,AP_x is 16498,Include,Christmas,Survey,Survey,Christmas presents - spend the same last year,We define these users as those who are likely to spend the same as last year on Christmas presents
+Christmas quality food shoppers,3801249, AP_x is 16513,Include,Christmas,Survey,Survey,Christmas quality food shoppers,We define these users as those who prefer to shop for better quality food during Christmas
+Christmas shopping - change stores based on price,3190411, AP_x is 16519,Include,Christmas,Survey,Survey,Christmas shopping - change stores based on price,We define these users as those who change stores based on prices for their Christmas shop
+Christmas shopping - change stores based on range of food,6518129,AP_x is 16520,Include,Christmas,Survey,Survey,Christmas shopping - change stores based on range of food,We define these users as those who change stores based on range of food for their Christmas shop
+Christmas shopping - change stores based on recommendation,933021,AP_x is 16521,Include,Christmas,Survey,Survey,Christmas shopping - change stores based on recommendation,We define these users as those who change stores based on recommendations from others for their Christmas shop
+Christmas shopping - change supermarkets,623312,AP_x is 16522,Include,Christmas,Survey,Survey,Christmas shopping - change supermarkets,We define these users as those who change supermarkets for their Christmas shop
+Christmas shopping - cheaper supermarkets,832088,AP_x is 15436,Include,Food & Drink,Survey,Survey,Christmas shopping - cheaper supermarkets,We define these users as those who shop at a cheaper supermarket during Christmas
+Christmas shopping - same supermarket,6231659,AP_x is 16525,Include,Christmas,Survey,Survey,Christmas shopping - same supermarket,We define these users as those who do not change supermarkets for their Christmas shop
+Christmas shopping - shop at multiple stores,656947,AP_x is 16524,Include,Christmas,Survey,Survey,Christmas shopping - shop at multiple stores,We define these users as those who shop at multiple stores for their Christmas shop
+Christmas shopping - spend less,3164821,AP_x is 16523,Include,Christmas,Survey,Survey,Christmas shopping - spend less,We define these users as those who spend less when doing their Christmas shop
+Christmas staycation intenders,245154,AP_x is 16494,Include,Christmas,Survey,Survey,Christmas staycation intenders,We define these users as those who intend on planning a staycation for Christmas this year
+Christmas stock level shoppers,785867,AP_x is 16515,Include,Christmas,Survey,Survey,Christmas stock level shoppers,We define these users as those who shop at multiple supermarkets at Christmas to obtain high stock levels
+Christmas unique product shoppers,6073023, AP_x is 16514,Include,Christmas,Survey,Survey,Christmas unique product shoppers,We define these users as those who shop at u
+Christmas/NYE hosters,1836882,AP_x is 16509,Include,Christmas,Survey,Survey,Christmas/NYE hosters,We define these users as those who enjoy hosting at Christmas and/or New Year's Eve
+Cider drinkers,933369,AP_x is 15502,Include,Food & Drink,Survey,Survey,Cider drinkers,We define these users as those who prefer drinking cider
+City break goers,1404294,AP_x is 15143,Include,Holiday intenders,Survey,Survey,City break goers,We define these users as those who prefer going on city breaks
+Classical music fans,7200233,AP_x is 16052,Include,Interest,Survey,Survey,Classical music fans,We define these users as those who listen to classical music
+Cocktail drinkers,2219927,AP_x is 15503,Include,Food & Drink,Survey,Survey,Cocktail drinkers,We define these users as those who prefer drinking cocktails
+Coffee Drinkers,4043017,AP_x is 15715,Include,Food & Drink,Survey,Survey,Coffee Drinkers,We define these users as those who prefer drinking coffee
+Comedy film fans,847188,AP_x is 15875,Include,Arts & Entertainment,Survey,Survey,Comedy film fans,We define these users as those who prefer watching comedy films
+Comedy TV fans,1517008,AP_x is 15451,Include,Arts & Entertainment,Survey,Survey,Comedy TV fans,We define these users as those who prefere watching comedy TV
+Commercial vehicle owner,60962,AP_x is 14062,Include,Auto,Survey,Survey,Commercial vehicle owner,We define these users as those who own a commercial vehicle or van
+Community supporters,1702181,AP_x is 15959,Include,Interest,Survey,Survey,Community supporters,We define these users as those who enjoy contributing to the community through volunteering or supporting a charity
+Company car users,3355561,AP_x is 15427,Include,Auto,Survey,Survey,Company car users,We define these users as those who are likely to have a company car
+Confident bakers,2174957,AP_x is 15859,Include,Food & Drink,Survey,Survey,Confident bakers,We define these users as those who are confident when baking
+Console gamers,4446959,AP_x is 16170,Include,Interest,Survey,Survey,Console gamers,We define these users as those who prefer to game on a console
+Contract phone purchase intenders,4872521,AP_x is 14052,Include,Purchase intenders,Survey,Survey,Contract phone purchase intenders,We define these users as those who intend on purchase a new phone on contract
+Cooking enthusiasts,7736527,AP_x is 16628,Include,Food & Drink,Survey,Survey,Cooking enthusiasts,We define these users as those who have clearly indicated that they enjoy cooking
+CO-OP Shoppers,992434,AP_x is 14224,Include,Food & Drink,Survey,Survey,CO-OP Shoppers,We define these users as those who prefer shopping at Co-Op
+Countryside break goers,1511838,AP_x is 15144,Include,Holiday intenders,Survey,Survey,Countryside break goers,We define these users as those who prefer going on countryside breaks
+Crime film fans,3315355,AP_x is 15882,Include,Arts & Entertainment,Survey,Survey,Crime film fans,We define these users as those who prefer watching crime films
+Crime TV fans,812452,AP_x is 15449,Include,Arts & Entertainment,Survey,Survey,Crime TV fans,We define these users as those who prefer watching crime TV
+Cross fit enthusiasts,131790,AP_x is 15510,Include,Sports,Survey,Survey,Cross fit enthusiasts,We define these users as those who enjoy crossfit
+Cruise goers,158004,AP_x is 15145,Include,Holiday intenders,Survey,Survey,Cruise goers,We define these users as those who prefer cruise breaks
+Current affairs TV fans,290638,AP_x is 15450,Include,Arts & Entertainment,Survey,Survey,Current affairs TV fans,We define these users as those who prefer watching current affairs TV
+Cycling - accessory/tool purchase intenders,1297472,AP_x is 15530,Include,Sports,Survey,Survey,Cycling - accessory/tool purchase intenders,We define these users as those who intend on purchasing cycling accesories or tools
+Cycling - clothing purchase intenders,1615815,AP_x is 15529,Include,Sports,Survey,Survey,Cycling - clothing purchase intenders,We define these users as those who intend on purchasing clothing for cycling
+Cycling - components purchase intenders,1961940,AP_x is 15528,Include,Sports,Survey,Survey,Cycling - components purchase intenders,We define these users as those who intend on purchasing bike components
+Cycling - frame purchase intenders,413373,AP_x is 15527,Include,Sports,Survey,Survey,Cycling - frame purchase intenders,We define these users as those who intend on purchasing a bike frame
+Cycling - helmet purchase intenders,172877,AP_x is 15531,Include,Sports,Survey,Survey,Cycling - helmet purchase intenders,We define these users as those who intend on purchasing a cycling helmet
+Dairy alternative purchasers,6213260,AP_x is 16595,Include,Food & Drink,Survey,Survey,Dairy alternative purchasers,We define these users as those who regularly purchase dairy alternatives
+Deezer subscribers,0,AP_x is 15430,Include,Arts & Entertainment,Survey,Survey,Deezer subscribers,We define these users as those who are subscribed to Deezer
+Diet - cutting all meat and dairy,367376,AP_x is 15713,Include,Food & Drink,Survey,Survey,Diet - cutting all meat and dairy,We define these users as those who plan to cut all meat and dairy from their diet
+Dine out on Christmas day,561673,AP_x is 15410,Include,Food & Drink,Survey,Survey,Dine out on Christmas day,We define these users as those who likely enjoy eating out at Christmas
+Disney+ subscribers,5345373,AP_x is 16594,Include,Arts & Entertainment,Survey,Survey,Disney+ subscribers,We define these users as those who are subscribed to Disney plus
+Documentary fans,1936982,AP_x is 14469,Include,Arts & Entertainment,Survey,Survey,Documentary fans,We define these users as those who prefer watching documentaries
+Dog owners,2485351,AP_x is 13619,Include,Pet Owner,Survey,Survey,Dog owners,We define these users as those who are dog owners
+Domestic Travel intenders,4022575,AP_x is 15957,Include,Holiday intenders,Survey,Survey,Domestic Travel intenders,We define these users as those who prefer a domestic holiday
+Drama TV fans,3477461,AP_x is 14527,Include,Arts & Entertainment,Survey,Survey,Drama TV fans,We define these users as those who prefer watching drama TV
+Drinkers,4118306,AP_x is 16166,Include,Food & Drink,Survey,Survey,Drinkers,We define these users as those who drink
+E-bike owners,496023,AP_x is 15791,Include,Sports,Survey,Survey,E-bike owners,We define these users as those who are likely to currently own an e-bike
+E-bike purchase intenders,5213765,AP_x is 15866,Include,Sports,Survey,Survey,E-bike purchase intenders,We define these users as those who intend on purchasing an E-bike
+Employed,75513,AP_f is 1500,Include,Demographics - employment,Survey,Survey,Employed,We define these users as those who are employed
+Employment: Other,2018706,AP_f is 1514,Include,Demographics - employment,Survey,Survey,Employment: Other,We define these users as those who have stated employment as 'other'
+EV/hybrid car fans,4907208,AP_x is 16156,Include,Auto,Survey,Survey,EV/hybrid car fans,We define these users as those who prefer EV/hybrid cars
+Female,4931559,AP_a is 1101,Include,Demographics - gender,Survey,Survey,Female,We define these users as those who are females
+Folding bike owners,0,AP_x is 16897,Include,Sports,Survey,Survey,Folding bike owners,We define these users as those who likely own a folding bike
+Folding bike purchase intenders,0,AP_x is 16898,Include,Sports,Survey,Survey,Folding bike purchase intenders,We define these users as those who intend on purchasing a folding bike
+Food & Drink - 7 a day (R & All time),19835,Permutive is 8454,Include,Food & Drink,Regular,All Time,7 a day recipe collection fans,We define these users as those who regularly browse 7 a day collection recipes
+Food & Drink - Asian (O & All time),2927030,Permutive is 8515,Include,Food & Drink,Occasional,All Time,Asian food fans,We define these users as those who regularly browse Asian recipes
+Food & Drink - Baking (R & All time),7019592,Permutive is 7318,Include,Food & Drink,Regular,All Time,Baking enthusiasts,We define these users as those who regularly browse Baking recipes
+Food & Drink - Bank Holidays (O & All time),34619,Permutive is 6663,Include,Food & Drink,Occasional,All Time,Bank Holidays recipe fans,We define these users as those who regularly browse Bank Holiday recipes
+Food & Drink - BBQs (O & All time),2567021,Permutive is 6613,Include,Food & Drink,Occasional,All Time,BBQs recipe fans,We define these users as those who regularly browse BBQ recipes
+Food & Drink - Big Batch Cooking (O & All time),492926,Permutive is 6615,Include,Food & Drink,Occasional,All Time,Big Batch Cooking recipe fans,We define these users as those who regularly browse Big Batch Cooking recipes
+Food & Drink - Boxing Day (O & All time),48157,Permutive is 10822,Include,Food & Drink,Occasional,All Time,Boxing Day recipe fans,We define these users as those who regularly browse Boxing Day recipes
+Food & Drink - Bread - (F & all Time),2104976,Permutive is 18307,Include,Food & Drink,Frequent,All Time,Bread - recipe fans,We define these users as those who regularly browse Bread recipes
+Food & Drink - Breakfast (R & All Time),4168830,Permutive is 47330,Include,Food & Drink,Regular,All Time,Breakfast recipe fans,We define these users as those who regularly browse Breakfast recipes
+Food & Drink - British (R & All time),4586370,Permutive is 8211,Include,Food & Drink,Regular,All Time,British food fans,We define these users as those who regularly browse British recipes
+Food & Drink - Brunch (O & All time),2860447,Permutive is 6975,Include,Food & Drink,Occasional,All Time,Brunch recipe fans,We define these users as those who regularly browse Brunch recipes
+Food & Drink - Calcium (R & 30 days),1625414,Permutive is 136121,Include,Food & Drink,Regular,30 Days,Calcium recipe fans,We define these users as those who regularly browse calcium-rich recipes across our food websites
+Food & Drink - Challenge Skill Level (O & All time),194274,Permutive is 8226,Include,Food & Drink,Occasional,All Time,Challenge Skill Level recipe fans,We define these users as those who regularly browse Challenging skill level recipes
+Food & Drink - Cheap (R & All time),477506,Permutive is 7658,Include,Food & Drink,Regular,All Time,Cheap Food budgeters,We define these users as those who regularly browse  budget/cheap recipes
+Food & Drink - Cheese (R & All time),2555504,Permutive is 7728,Include,Food & Drink,Regular,All Time,Cheese fans,We define these users as those who regularly browse Recipes with Cheese 
+Food & Drink - Chinese (O & All time),1009243,Permutive is 8511,Include,Food & Drink,Occasional,All Time,Chinese food fans,We define these users as those who regularly browse Chinese recipes
+Food & Drink - Chocolate (R & All time),2404943,Permutive is 19713,Include,Food & Drink,Regular,All Time,Chocolate fans,We define these users as those who regularly browse Recipes with Chocolate 
+Food & Drink - Cinnamon (R & All time),1503777,Permutive is 7599,Include,Food & Drink,Regular,All Time,Cinnamon fans,We define these users as those who regularly browse Recipes with Cinnamon 
+Food & Drink - Classic-recipes-minus-meat (O & All time),6168,Permutive is 8605,Include,Food & Drink,Occasional,All Time,Classic-recipes-minus-meat recipe fans,We define these users as those who regularly browse Meatless recipes
+Food & Drink - Cocktails (O & All time),1678670,Permutive is 6901,Include,Food & Drink,Occasional,All Time,Cocktails recipe fans,We define these users as those who regularly browse Cocktail recipes
+Food & Drink - Comfort Food/Slow Food Fans(R & All Time),3706281,Permutive is 117595,Include,Food & Drink,Regular,All Time,Comfort Food/Slow Food  recipe fans,We define these users as those who regularly browse Comfort food and slow food recipes across our websites
+Food & Drink - Cooking Time Exceeds 2 Hours (R & All time),40986620,Permutive is 10888,Include,Food & Drink,Regular,All Time,Cooking Time Exceeds 2 Hours recipe fans,We define these users as those who regularly browse 2+ hour cooking recipes
+Food & Drink - Cultural Food fans (F & All Time),3854546,Permutive is 56420,Include,Food & Drink,Frequent,All Time,Cultural Food fans Cultural food fans,We define these users as those who regularly browse  recipes of different cuisines
+Food & Drink - Curry (R & All time),2165839,Permutive is 14395,Include,Food & Drink,Regular,All Time,Curry recipe fans,We define these users as those who regularly browse Curry recipes
+Food & Drink - Dairy Free (O & All time),385669,Permutive is 7572,Include,Food & Drink,Occasional,All Time,Dairy Free recipe fans,We define these users as those who regularly browse Dairy Free recipes
+Food & Drink - Delicious (F & All time),1180825,Permutive is 11171,Include,Food & Drink,Frequent,All Time,Delicious users,We define these users as those who regularly browse Delicious content
+Food & Drink - Diabetic-Friendly (R & All Time),62688,Permutive is 21602,Include,Food & Drink,Regular,All Time,Diabetic-Friendly recipe fans,We define these users as those who regularly browse Diabetic Friendly recipes
+Food & Drink - Dinner for Two (F & All time).,4101134,Permutive is 18252,Include,Food & Drink,Frequent,All Time,Dinner for Two recipe fans,We define these users as those who regularly browse Dinner for Two recipes
+Food & Drink - Dinner Party (R & 90 Days),1116509,Permutive is 22336,Include,Food & Drink,Regular,90 Days,Dinner Party hosters,We define these users as those who regularly browse Dinner Party recipes
+Food & Drink - Easter (O & 90 days),1776341,Permutive is 6175,Include,Food & Drink,Occasional,90 Days,Easter food fans,We define these users as those who regularly browse Easter recipes
+Food & Drink - Easy Cake (R & All time),920725,Permutive is 8414,Include,Food & Drink,Regular,All Time,Easy Cake recipe fans,We define these users as those who regularly browse Easy Cake recipes
+Food & Drink - Easy Pasta (R & All time),1134504,Permutive is 8415,Include,Food & Drink,Regular,All Time,Easy Pasta recipe fans,We define these users as those who regularly browse Easy Pasta recipes
+Food & Drink - Easy Skill Level (R & All time),15204738,Permutive is 6904,Include,Food & Drink,Regular,All Time,Easy Skill Level recipe fans,We define these users as those who regularly browse Easy Skill Level recipes
+Food & Drink - Eat like an Athlete (R & All time),1038419,Permutive is 8417,Include,Food & Drink,Regular,All Time,Eat like an Athlete recipe fans,We define these users as those who regularly browse Eat like an Athlete recipes
+Food & Drink - Eco/Green Conscious (R & All time),3812910,Permutive is 12079,Include,Food & Drink,Regular,All Time,Eco/Green Conscious foodies,We define these users as those who regularly browse Eco Conscious recipes
+Food & Drink - Edible Gift Recipes (O & All Time),18401,Permutive is 22279,Include,Food & Drink,Occasional,All Time,Edible Gift Recipes recipe fans,We define these users as those who regularly browse Edible Gift recipes
+Food & Drink - Exotic (R & All Time),127767,Permutive is 117053,Include,Food & Drink,Regular,All Time,Exotic recipe fans,We define these users as those who regularly browse exotic recipes across our food websites
+"Food & Drink - Exotic Recipes Fans (R & All Time) [Lookalike: 86.3% similarity, including seed]",1486218,Permutive is 117166,Include,Food & Drink,Regular,All Time,Exotic Recipes recipe fans,We define these users as those who regularly browse exotic recipes across our food websites
+Food & Drink - Family Foodies Olive (O & All time),678042,Permutive is 10674,Include,Food & Drink,Occasional,All Time,Family Foodies Olive recipe fans,We define these users as those who regularly browse Olive family recipes
+Food & Drink - Family Meal Planners (O & 90 days),346116,Permutive is 7367,Include,Food & Drink,Occasional,90 Days,Family Meal Planners planners,We define these users as those who regularly browse Family meal recipes
+Food & Drink - Father's Day Recipes (O & All time),776382,Permutive is 6998,Include,Food & Drink,Occasional,All Time,Father's Day Recipes recipe fans,We define these users as those who regularly browse Father's Day recipes
+Food & Drink - Foodies (O & All time),58793336,Permutive is 6894,Include,Food & Drink,Occasional,All Time,Foodies Foodies,"We define these users as those who regularly browse  recipes on Olive, Delicious or GoodFood"
+Food & Drink - Freezable (R & All time),360452,Permutive is 8413,Include,Food & Drink,Regular,All Time,Freezable recipe fans,We define these users as those who regularly browse Freezable recipes
+Food & Drink - French (R & All Time),1086201,Permutive is 22135,Include,Food & Drink,Regular,All Time,French food fans,We define these users as those who regularly browse French recipes
+Food & Drink - Fried food (R & 90 days),781735,Permutive is 136161,Include,Food & Drink,Regular,90 Days,Fried food recipe fans,We define these users as those who regularly browse fried food recipes across our food websites
+Food & Drink - General Christmas Food Planners (O & All time),7314132,Permutive is 10824,Include,Food & Drink,Occasional,All Time,General Christmas Food Planners food planners,We define these users as those who regularly browse Christmas themed recipes
+Food & Drink - GF (F & All time),11631440,Permutive is 11169,Include,Food & Drink,Frequent,All Time,GF users,We define these users as those who regularly browse GoodFood content
+Food & Drink - Gin Fans (O & All time),226956,Permutive is 11159,Include,Food & Drink,Occasional,All Time,Gin  fans,We define these users as those who regularly browse Drink recipes with Gin 
+Food & Drink - Ginger (R & All time),1936724,Permutive is 7600,Include,Food & Drink,Regular,All Time,Ginger fans,We define these users as those who regularly browse Recipes with Ginger 
+Food & Drink - Gluten Free (O & All time),1222951,Permutive is 7569,Include,Food & Drink,Occasional,All Time,Gluten Free recipe fans,We define these users as those who regularly browse Gluten Free recipes
+Food & Drink - Golden Syrup (R & all Time),4931006,Permutive is 18781,Include,Food & Drink,Regular,All Time,Golden Syrup fans,We define these users as those who regularly browse Recipes with Golden Syrup 
+Food & Drink - GoodFood Users (O & All time),53025389,Permutive is 6619,Include,Food & Drink,Occasional,All Time,GoodFood Users users,We define these users as those who regularly browse GoodFood content
+Food & Drink - Greek (O & All time),272826,Permutive is 19671,Include,Food & Drink,Occasional,All Time,Greek food fans,We define these users as those who regularly browse Greek recipes
+Food & Drink - Gut-Friendly Diet (F & 90 days),0,Permutive is 123355,Include,Food & Drink,Frequent,90 Days,Gut-Friendly Diet recipe fans,We define these users as those who frequently browse Gut-Friendly and High Fibre recipes across our food websites
+Food & Drink - Health Conscious Foodies (O & All time),16682876,Permutive is 7423,Include,Food & Drink,Occasional,All Time,Health Conscious Foodies foodies,We define these users as those who regularly browse Health conscious recipes
+Food & Drink - Health conscious Parents (R & All time),1711956,Permutive is 8233,Include,Food & Drink,Regular,All Time,Health conscious Parents parent foodies,We define these users as those who regularly browse Health conscious recipes
+Food & Drink - Healthy Breakfast (O & All time),188252,Permutive is 12479,Include,Food & Drink,Occasional,All Time,Healthy Breakfast recipe fans,We define these users as those who regularly browse Healthy Breakfast recipes
+Food & Drink - Healthy Heart (O & All time).,1156364,Permutive is 8111,Include,Food & Drink,Occasional,All Time,Healthy Heart recipe collection fans,We define these users as those who regularly browse Healthy Heart collection recipes
+Food & Drink - Healthy Snackers (O & All time),507203,Permutive is 8806,Include,Food & Drink,Occasional,All Time,Healthy Snackers snackers,We define these users as those who regularly browse Healthy snack recipes
+Food & Drink - Herbs & Spices (R & All time),4135643,Permutive is 7597,Include,Food & Drink,Regular,All Time,Herbs & Spices fans,We define these users as those who regularly browse Recipes with Herbs & Spices 
+Food & Drink - High Protein (O & All time),1347507,Permutive is 8624,Include,Food & Drink,Occasional,All Time,High Protein recipe fans,We define these users as those who regularly browse High Protein recipes
+Food & Drink - Hosters (O & All time),9942894,Permutive is 6670,Include,Food & Drink,Occasional,All Time,Hosters hosters,We define these users as those who regularly browse Dinner Party recipes
+Food & Drink - Indian (O & All time),602419,Permutive is 19672,Include,Food & Drink,Occasional,All Time,Indian food fans,We define these users as those who regularly browse Indian recipes
+Food & Drink - Indulgent Foodies (R & All time),6238007,Permutive is 7656,Include,Food & Drink,Regular,All Time,Indulgent Foodies foodies,We define these users as those who regularly browse Indulgent recipes
+Food & Drink - Inspiring recipes fans (R & 90 Days),2325585,Permutive is 122786,Include,Food & Drink,Regular,90 Days,Inspiring recipes fans recipe fans,"We define these users as those who regularly browse challenging, creative and inspiring recipes across our food websites"
+Food & Drink - Italian (R & All time),1475232,Permutive is 7768,Include,Food & Drink,Regular,All Time,Italian food fans,We define these users as those who regularly browse Italian recipes
+"Food & Drink - Jamie Oliver, Rick Stein, Kay and Kate Allinson Fans (O & All Time)",205437,Permutive is 117581,Include,Food & Drink,Occasional,All Time,"Jamie Oliver, Rick Stein, Kay and Kate Allinson  content fans","We define these users as those who occasionally browse Jamie Oliver, Rick Stein and/or Kate Allison-related content across our websites"
+Food & Drink - Japanese (O & All time),882219,Permutive is 8514,Include,Food & Drink,Occasional,All Time,Japanese food fans,We define these users as those who regularly browse Japanese recipes
+Food & Drink - Low Calories (O & All time),660331,Permutive is 6971,Include,Food & Drink,Occasional,All Time,Low Calories recipe fans,We define these users as those who regularly browse Low Calorie recipes
+Food & Drink - Low Carb (R & All Time),434976,Permutive is 22096,Include,Food & Drink,Regular,All Time,Low Carb recipe fans,We define these users as those who regularly browse Low Carb recipes
+Food & Drink - Low Fat (R & All time),399520,Permutive is 19666,Include,Food & Drink,Regular,All Time,Low Fat recipe fans,We define these users as those who regularly browse Low Fat recipes
+Food & Drink - Mayonnaise (O & 90 days),342927,Permutive is 139775,Include,Food & Drink,Occasional,90 Days,Mayonnaise recipe fans,We define these users as those who occasionally browse mayonnaise recipes or recipes containing mayonnaise across our food websites
+Food & Drink - Meat Lovers (F & 90 days).,1578388,Permutive is 38052,Include,Food & Drink,Frequent,90 Days,Meat Lovers Meat lovers,We define these users as those who regularly browse  recipes containing meat
+Food & Drink - Milk Alternatives (O & All Time),2617951,Permutive is 30074,Include,Food & Drink,Occasional,All Time,Milk Alternatives fans,We define these users as those who regularly browse Recipes with milk alternatives 
+Food & Drink - Mixed Spice (R & All time),592524,Permutive is 7601,Include,Food & Drink,Regular,All Time,Mixed Spice fans,We define these users as those who regularly browse Recipes with Mixed Spice 
+Food & Drink - More Effort Skill Level (R & All time),331302,Permutive is 6905,Include,Food & Drink,Regular,All Time,More Effort Skill Level recipe fans,We define these users as those who regularly browse More Effort Skill Level recipes
+Food & Drink - Morning Food Planners (O & All time),4188,Permutive is 11072,Include,Food & Drink,Occasional,All Time,Morning food planners,We define these users as those who look at breakfast recipes
+Food & Drink - Mother's Day Recipes (O & All time),2046945,Permutive is 6999,Include,Food & Drink,Occasional,All Time,Mother's Day Recipes recipe fans,We define these users as those who regularly browse Mother's day recipes
+Food & Drink - Non-alcoholic Drink Fans (R & All Time),25341,Permutive is 22058,Include,Food & Drink,Regular,All Time,Non-alcoholic Drink  recipe fans,We define these users as those who regularly browse Non-alcoholic Drink recipes
+Food & Drink - Oats (O & All time),494902,Permutive is 7643,Include,Food & Drink,Occasional,All Time,Oats recipe fans,We define these users as those who regularly browse Oats recipes
+Food & Drink - Occasional Easy skill level bakers (O & 6 months),263095,Permutive is 25205,Include,Food & Drink,Occasional,6 Months,Occasional Easy skill level bakers bakers,We define these users as those who regularly browse Easy skill level baking recipes
+Food & Drink - Olive Fans (O & All time),5143316,Permutive is 6439,Include,Food & Drink,Occasional,All Time,Olive  users,We define these users as those who regularly browse Olive content
+"Food & Drink - Omega 3, 6, 9 (O & 90 days)",1113331,Permutive is 136261,Include,Food & Drink,Occasional,90 Days,"Omega 3, 6, 9 recipe fans","We define these users as those who occasionally browse Omega 3, Omega 6 and Omega 9 recipes across our food websites"
+Food & Drink - Pancake (O & All time),8819647,Permutive is 8418,Include,Food & Drink,Occasional,All Time,Pancake recipe fans,We define these users as those who regularly browse Pancake recipes
+Food & Drink - Parent Foodies (O & All time),637027,Permutive is 8307,Include,Food & Drink,Occasional,All Time,Parent Foodies Parent foodies,We define these users as those who regularly browse  our food brands and MadeForMums
+Food & Drink - Pasta (R & All time),2441614,Permutive is 7781,Include,Food & Drink,Regular,All Time,Pasta recipe fans,We define these users as those who regularly browse Pasta recipes
+Food & Drink - Picnic (O & All time),420172,Permutive is 6972,Include,Food & Drink,Occasional,All Time,Picnic recipe fans,We define these users as those who regularly browse Picnic recipes
+Food & Drink - Pies (O & All time),6465450,Permutive is 7651,Include,Food & Drink,Occasional,All Time,Pies recipe fans,We define these users as those who regularly browse Pie recipes
+Food & Drink - Polish (O & All time),63102,Permutive is 10449,Include,Food & Drink,Occasional,All Time,Polish food fans,We define these users as those who regularly browse Polish recipes
+Food & Drink - Recipe Enthusiasts (F & All time),10909014,Permutive is 6900,Include,Food & Drink,Frequent,All Time,Recipe Enthusiasts Recipe enthusiasts,We define these users as those who regularly browse  recipes
+Food & Drink - Recipes containing Stock/Broth (R & 90 days),2655591,Permutive is 124267,Include,Food & Drink,Regular,90 Days,Recipes containing Stock/Broth recipe fans,"We define these users as those who regularly browse Sotck or Broth recipes, or recipes containing Stock or Broth across our food websites"
+Food & Drink - Regular Challenging skill level bakers (R & 1 month),3749,Permutive is 25206,Include,Food & Drink,Regular,1 Month,Regular Challenging skill level bakers bakers,We define these users as those who regularly browse Challenging skill level baking recipes
+Food & Drink - Rice (R & All time),1612713,Permutive is 14396,Include,Food & Drink,Regular,All Time,Rice recipe fans,We define these users as those who regularly browse Rice recipes
+Food & Drink - School Lunches (O & All time),154139,Permutive is 8406,Include,Food & Drink,Occasional,All Time,School Lunches recipe fans,We define these users as those who regularly browse School Lunch recipes
+Food & Drink - Seafood (O & All Time),0,Permutive is 33330,Include,Food & Drink,Occasional,All Time,Seafood recipe fans,We define these users as those who regularly browse Seafood recipes
+Food & Drink - Serves 6+ (R & All time),25037088,Permutive is 6906,Include,Food & Drink,Regular,All Time,Serves 6+ recipe fans,We define these users as those who regularly browse Serves 6+ recipes
+Food & Drink - Slimming,906240,Permutive is 20952,Include,Food & Drink,Regular,Unspecified,Slimming recipe fans,We define these users as those who regularly browse Slimming recipes
+Food & Drink - Smoothie (O & All time),590808,Permutive is 8594,Include,Food & Drink,Occasional,All Time,Smoothie recipe fans,We define these users as those who regularly browse Smoothie recipes
+Food & Drink - Snackers (O & All time),14708951,Permutive is 6666,Include,Food & Drink,Occasional,All Time,Snackers Snackers,We define these users as those who regularly browse  snack recipes
+Food & Drink - Soup - (O & all Time),3713303,Permutive is 20847,Include,Food & Drink,Occasional,All Time,Soup - recipe fans,We define these users as those who regularly browse Soup recipes
+Food & Drink - Sour Dough - (O & all Time),252627,Permutive is 18308,Include,Food & Drink,Occasional,All Time,Sour Dough - recipe fans,We define these users as those who regularly browse Sour Dough recipes
+Food & Drink - Spring Meal Planners (R & All time),770568,Permutive is 7567,Include,Food & Drink,Regular,All Time,Spring Meal Planners meal planners,We define these users as those who regularly browse Spring themed recipes
+Food & Drink - Summer Family Recipes (R & All time),348271,Permutive is 8472,Include,Food & Drink,Regular,All Time,Summer Family Recipes meal planners,We define these users as those who regularly browse Family summer themed recipes
+Food & Drink - Summer Meal Planners (R & All time),1251686,Permutive is 7568,Include,Food & Drink,Regular,All Time,Summer Meal Planners meal planners,We define these users as those who regularly browse Summer themed recipes
+Food & Drink - Superfoods (O & All time),25934,Permutive is 7427,Include,Food & Drink,Occasional,All Time,Superfoods recipe fans,We define these users as those who regularly browse Superfood recipes
+Food & Drink - Sustainable (O & All time),51616,Permutive is 7602,Include,Food & Drink,Occasional,All Time,Sustainable recipe fans,We define these users as those who regularly browse Sustainable recipes
+Food & Drink - Tea (O & 90 days),12060028,Permutive is 136241,Include,Food & Drink,Occasional,90 Days,Tea recipe fans,We define these users as those who occasionally browse for recipes containing tea across our food websites
+Food & Drink - Thai (R & All time),1752995,Permutive is 8512,Include,Food & Drink,Regular,All Time,Thai food fans,We define these users as those who regularly browse Thai recipes
+Food & Drink - Time Poor Cooks (F & 90 days),3221963,Permutive is 43420,Include,Food & Drink,Frequent,90 Days,Time Poor Cooks Time poor cooks,We define these users as those who regularly browse  quick and easy recipes
+Food & Drink - Tinned Tomatoes (R & All time),2661895,Permutive is 7783,Include,Food & Drink,Regular,All Time,Tinned Tomatoes fans,We define these users as those who regularly browse Recipes with tinned tomatoes 
+"Food & Drink - Tofu (F & All Time) [Lookalike: 64.9% similarity, including seed]",1895576,Permutive is 81186,Include,Food & Drink,Frequent,All Time,Tofu recipe fans,We define these users as those who regularly browse Tofurecipes
+Food & Drink - Tofu (O & All time),2529,Permutive is 18719,Include,Food & Drink,Occasional,All Time,Tofu recipe fans,We define these users as those who regularly browse Tofu recipes
+Food & Drink - Travel (R & All Time),3016124,Permutive is 69805,Include,Food & Drink,Regular,All Time,Travel content fans,We define these users as those who regularly browse Food travel content
+Food & Drink - Treats (O & All time),19968495,Permutive is 7507,Include,Food & Drink,Occasional,All Time,Treats recipe fans,We define these users as those who regularly browse Treat recipes
+Food & Drink - Tropical (R & All time),696343,Permutive is 117052,Include,Food & Drink,Regular,All Time,Tropical recipe fans,We define these users as those who regularly browse recipes from tropical countries across our food websites
+"Food & Drink - Tropical Recipes Fans (R & All time) [Lookalike: 80.9% similarity, including seed]",2266824,Permutive is 117165,Include,Food & Drink,Regular,All Time,Tropical Recipes  recipe fans,We define these users as those who regularly browse recipes from tropical countries across our food websites
+Food & Drink - Under 20 Minutes (R & All time),38918,Permutive is 19712,Include,Food & Drink,Regular,All Time,Under 20 Minutes recipe fans,We define these users as those who regularly browse Under 20 Minutes recipes
+Food & Drink - Valentines (R & All time),472668,Permutive is 12349,Include,Food & Drink,Regular,All Time,Valentines recipe fans,We define these users as those who regularly browse Valentines day recipes
+Food & Drink - Vegan (O & All time),2788254,Permutive is 7571,Include,Food & Drink,Occasional,All Time,Vegan recipe fans,We define these users as those who regularly browse Vegan recipes
+Food & Drink - Vegetarian (O & All time),3659007,Permutive is 7570,Include,Food & Drink,Occasional,All Time,Vegetarian recipe fans,We define these users as those who regularly browse Vegetarian recipes
+Food & Drink - Vietnamese (O & All time),383462,Permutive is 8513,Include,Food & Drink,Occasional,All Time,Vietnamese food fans,We define these users as those who regularly browse Vietnamese recipes
+Food & Drink - Vitamins (R & 30 days),15151,Permutive is 136050,Include,Food & Drink,Regular,30 Days,Vitamins recipe fans,We define these users as those who regularly browse for vitamin-rich recipes across our food websites
+Food & Drink - Weekly Meal Planners (F & All time),3249167,Permutive is 14397,Include,Food & Drink,Frequent,All Time,Weekly Meal Planners Weekly meal planners,We define these users as those who regularly browse  recipes every week
+Food & Drink - Whisky (O & All time),311266,Permutive is 6902,Include,Food & Drink,Occasional,All Time,Whisky fans,We define these users as those who regularly browse Drink recipes with Whisky 
+Food shoppers - £120+,1529862,AP_x is 15484,Include,Food & Drink,Survey,Survey,Food shoppers - £120+,We define these users as those who spend more than £120 on groceries per week
+Food shoppers - £25-50,3363014,AP_x is 15481,Include,Food & Drink,Survey,Survey,Food shoppers - £25-50,We define these users as those who spend £25-50 on groceries per week
+Food shoppers - £51-70,2264268,AP_x is 15482,Include,Food & Drink,Survey,Survey,Food shoppers - £51-70,We define these users as those who tend to spend around £51-£70 per week on their groceries
+Food shoppers - £71-120,4205821,AP_x is 15483,Include,Food & Drink,Survey,Survey,Food shoppers - £71-120,We define these users as those who spend £71-120 on groceries per week
+Food shoppers - Less than £25,896616,AP_x is 15480,Include,Food & Drink,Survey,Survey,Food shoppers - Less than £25,We define these users as those who spend less than £25 on groceries per week
+Football fans 1P,1238553,Permutive is 27605,Include,Sports,Occasional,Unspecified,Football content fans,We define these users as those who occasionally browse Football content
+Ford fans,1541252,AP_x is 15520,Include,Auto,Survey,Survey,Ford fans,We define these users as those who likely associate Ford with being one of the most reliable car brands
+Freeview viewers,5055330,AP_x is 14321,Include,Arts & Entertainment,Survey,Survey,Freeview viewers,We define these users as those who are likely to be freeview customers
+Frequent holiday goers - 5+ per year,683948,AP_x is 15799,Include,Holiday intenders,Survey,Survey,Frequent holiday goers - 5+ per year,We define these users as those who are like to go on holiday 5+ times per year
+Frequent takeaway purchasers,2561054,AP_x is 15960,Include,Food & Drink,Survey,Survey,Frequent takeaway purchasers,We define these users as those who are likely to frequently get takeaways
+Full time students,3684512,AP_f is 1512,Include,Demographics - employment,Survey,Survey,Full time students,We define these users as those who are full time students
+Furniture purchase intenders,2605812,AP_x is 15461,Include,Home,Survey,Survey,Furniture purchase intenders,We define these users as those who are likely to be purchasing new furniture soon
+Gaming - Casual Games Fans (R & All Time),217798,Permutive is 121775,Include,Gaming,Regular,All Time,Casual Games  content fans,We define these users as those who regularly browse casual games content across our websites
+"Gaming - Nintendo Switch Fans (R & All Time) [Lookalike: 88.4% similarity, including seed]",612177,Permutive is 121875,Include,Gaming,Regular,All Time,Nintendo Switch  content fans,We define these users as those who regularly browse Nintendo Switch-related content across our websites
+"Gaming - Sims Franchise Fans (R & All Time) [Lookalike: 81.7% similarity, including seed]",6474920,Permutive is 121991,Include,Gaming,Regular,All Time,Sims Franchise content fans,We define these users as those who regularly browse Sims videogame franchise content across our websites
+"Gaming - Simulators Fans (R & All Time) [Lookalike: 84.9% similarity, including seed]",670670,Permutive is 121992,Include,Gaming,Regular,All Time,Simulators  content fans,We define these users as those who regularly browse simulation games content across our websites
+Garden renovation intenders,5922295,AP_x is 15393,Include,Home Renovation,Survey,Survey,Garden renovation intenders,We define these users as those who are likely to be renovating their garden soon
+Gardening - Flower lovers (R & All Time),453028,Permutive is 26095,Include,Gardening,Regular,All Time,Flower lovers lovers,We define these users as those who regularly browse Flower content
+Gardening - Garden Owners (O & 7 days),0,Permutive is 64124,Include,Gardening,Occasional,7 Days,Garden Owners content fans,We define these users as those who regularly browse Garden Owners content
+Gardening - Gardeners World Fans (O & All time),5471491,Permutive is 6395,Include,Gardening,Occasional,All Time,Gardeners World  users,We define these users as those who regularly browse Gardeners World content
+Gardening - Gardening enthusiasts (R & All Time),2575880,Permutive is 23496,Include,Gardening,Regular,All Time,Gardening enthusiasts enthusiasts,We define these users as those who regularly browse Gardening content
+Gardening - Gardening for beginners (R & All Time),0,Permutive is 60843,Include,Gardening,Regular,All Time,Gardening for beginners content fans,We define these users as those who regularly browse Gardening for beginners content
+Gardening - How to (R & All time),1203237,Permutive is 8140,Include,Gardening,Regular,All Time,How to content fans,We define these users as those who regularly browse How to content
+Gardening - How to maintain the garden (O & All time),202092,Permutive is 8141,Include,Gardening,Occasional,All Time,How to maintain the garden content fans,We define these users as those who regularly browse How to maintain the garden content
+Gardening - Plant guide (R & All time),139164,Permutive is 60845,Include,Gardening,Regular,All Time,Plant guide content fans,We define these users as those who regularly browse Plant guide content
+GF - Waste conscious,185733,Permutive is 21839,Include,Food & Drink,Occasional,Unspecified,Waste Concious Foodies,We define these users as those who regularly browse Waste conscious recipes
+Golf 1P (O & All Time),262335,Permutive is 27600,Include,Sports,Occasional,All Time,Golf content fans,We define these users as those who regularly browse Golf content
+Google play music subscribers,274041,AP_x is 15431,Include,Arts & Entertainment,Survey,Survey,Google play music subscribers,We define these users as those who are likely to be Google Play music subscribers
+Hatchback owners,1199340,AP_x is 15469,Include,Auto,Survey,Survey,Hatchback owners,We define these users as those who likely own a hatchback
+Healthcare Professionals ,1050590,ap_x is 17197,Include,Demographics - employment,Survey,Survey,Healthcare Professionals ,We define these users as those who work in the healthcare sector
+Help For Heroes Contributors ,613117, ap_x is 17314,Include,NGO Contributors,Survey,Survey,Help For Heroes Contributors ,"We define these users as those who contributed to ""Help For Heroes"" NGO"
+High end haircare product users,941964,AP_x is 15883,Include,Beauty,Survey,Survey,High end haircare product users,We define these users as those who tend to chose high end tier products for their haircare regime
+High household income,94171,AP_c is 1206,Include,Demographics - Income,Survey,Survey,High household income,We define these users as those who have a high household income
+HIIT workout enthusiasts,1359971,AP_x is 16629,Include,Sports,Survey,Survey,HIIT workout enthusiasts,We define these users as those who are likely to regularly do HIIT workouts
+History Extra - Medieval,5155,Permutive is 17015,Include,Interest,Occasional,Unspecified,Medieval content fans,We define these users as those who regularly browse Medieval content
+History Extra - Second World War,4349,Permutive is 17017,Include,Interest,Occasional,Unspecified,Second World War content fans,We define these users as those who regularly browse Second World War content
+History Extra - Tudors,5478,Permutive is 15833,Include,Interest,Occasional,Unspecified,Tudor Period content fans,We define these users as those who regularly browse Tudors content
+History Extra - Victorian,5087,Permutive is 17016,Include,Interest,Occasional,Unspecified,Victorian period content fans,We define these users as those who regularly browse Victorian content
+History film fans,2224770,AP_x is 15879,Include,Arts & Entertainment,Survey,Survey,History film fans,We define these users as those who enjoy watching Historic genre films
+Holiday purchase intenders,3887176,AP_x is 15458,Include,Holiday intenders,Survey,Survey,Holiday purchase intenders,We define these users as those who are likely to purchase a holiday soon
+Holiday purchase intenders - £1-4k,4280055,AP_x is 15465,Include,Holiday intenders,Survey,Survey,Holiday purchase intenders - £1-4k,We define these users as those who tend to spend around £1-£4k on their average family holidays
+Holiday purchase intenders - £4-8k,1608422,AP_x is 15466,Include,Holiday intenders,Survey,Survey,Holiday purchase intenders - £4-8k,We define these users as those who tend to spend around £4k-£8k on their average family holidays
+Holiday purchase intenders - £500-1000,870669,AP_x is 15464,Include,Holiday intenders,Survey,Survey,Holiday purchase intenders - £500-1000,We define these users as those who tend to spend around £501-£999 on their average family holidays
+Holiday purchase intenders - £8k+,413490,AP_x is 15467,Include,Holiday intenders,Survey,Survey,Holiday purchase intenders - £8k+,We define these users as those who tend to spend over £8k on their average family holidays
+Holiday purchase intenders - Less than £500,1296926,AP_x is 15463,Include,Holiday intenders,Survey,Survey,Holiday purchase intenders - Less than £500,We define these users as those who tend to spend under £500 on their family holidays
+Holidays - Looking Forward Nature ,2501252,ap_x is 17312,Include,Travel,Survey,Survey,Holidays - Looking Forward Nature ,We define these users as those who look forward nature-related activities when going on holidays
+Home cleaning enthusiasts,6583083,AP_x is 16971,Include,Home,Survey,Survey,Home cleaning enthusiasts,We define these users as those who likely place a high degree of importance on maintaining a clean home
+Home insurance switchers,3868762,AP_x is 16920,Include,Home,Survey,Survey,Home insurance switchers,We define these users as those who are likely to consider switching home insurance providers
+Home owners,7397448,AP_x is 15850,Include,Home,Survey,Survey,Home owners,We define these users as those who are likely to be home owners
+Home renters,1197871,AP_x is 15863,Include,Home,Survey,Survey,Home renters,We define these users as those who are likely to be renters
+Home storage enthusiasts,7467061,AP_x is 16970,Include,Home,Survey,Survey,Home storage enthusiasts,We define these users as those who place high importance on being organised and having a precise storage system for things at home
+Home/garden renovators - 1+ per week,171691,AP_x is 15454,Include,Gardening,Survey,Survey,Home/garden renovators - 1+ per week,We define these users as those who likely spend money renovating their home and/or garden more than once a week
+Home/garden renovators - 1-2x per month,845310,AP_x is 15456,Include,Gardening,Survey,Survey,Home/garden renovators - 1-2x per month,We define these users as those who likely spend money renovating their home and/or garden 1-2 times per month
+Home/garden renovators - once a week,357350,AP_x is 15455,Include,Gardening,Survey,Survey,Home/garden renovators - once a week,We define these users as those who likely spend money renovating their home and/or garden around once a week
+Homemakers,2643812,AP_f is 1509,Include,Demographics - employment,Survey,Survey,Homemakers,We define these users as those who are homemakers
+Honda fans,437142,AP_x is 15522,Include,Auto,Survey,Survey,Honda fans,We define these users as those who likely associate Honda with being one of the most reliable car brands
+Horror film fans,275395,AP_x is 15874,Include,Arts & Entertainment,Survey,Survey,Horror film fans,We define these users as those who are likely to enjoy horror movies
+Hot chocolate drinkers,723520,AP_x is 15717,Include,Food & Drink,Survey,Survey,Hot chocolate drinkers,We define these users as those whosehot drink preference is likely to be hot chocolate
+Hot hatch owners,1640478,AP_x is 15477,Include,Auto,Survey,Survey,Hot hatch owners,We define these users as those who own a hot hatch car
+Household Grocery Main Purchasers,158081,ap_k is 2032,Include,Intenders,Survey,Survey,Household Grocery Main Purchasers,We define these users as those who are their own household main purchasers
+Household size: 1,5415480,AP_e is 1600,Include,Demographics - household size,Survey,Survey,Household size: 1,We define these users as those who have only 1 person in the household
+Household size: 2,5095008,AP_e is 1604,Include,Demographics - household size,Survey,Survey,Household size: 2,We define these users as those who have 2 people in the household
+Household size: 3,205690,AP_e is 1606,Include,Demographics - household size,Survey,Survey,Household size: 3,We define these users as those who have 3 people in the household
+Household size: 4,2918703,AP_e is 1611,Include,Demographics - household size,Survey,Survey,Household size: 4,We define these users as those who have 4 people in the household
+Household size: 5+,3961872,AP_e is 1615,Include,Demographics - household size,Survey,Survey,Household size: 5+,We define these users as those who have 5 or more people in the household
+Iceland shoppers,198638,AP_x is 14227,Include,Food & Drink,Survey,Survey,Iceland shoppers,We define these users as those who are likely to primarily shop at Iceland
+Immediate - Food & Drink - Korean (F & 90days),129457,Permutive is 20682,Include,Food & Drink,Frequent,90Days,Food & Drink - Korean food fans,We define these users as those who regularly browse Korean recipes
+Indoor cycling enthusiasts,279971, AP_x is 16632,Include,Sports,Survey,Survey,Indoor cycling enthusiasts,We define these users as those who enjoy indoor cycling as an activity to keep fit
+In-store food shoppers,4337357,AP_x is 15964,Include,Food & Drink,Survey,Survey,In-store food shoppers,We define these users as those who are likely to do most of their grocery shopping in-store
+Interest - Countryfile (O & All time),504239,Permutive is 15801,Include,Interest,Occasional,All Time,Countryfile users,We define these users as those who regularly browse Countryfile content
+Interest - Food TV Fans (R & All Time),663002,Permutive is 121751,Include,Interest,Regular,All Time,Food TV  content fans,We define these users as those who regularly browse Food TV Shows content across our websites
+Interest - Gaming (R & All Time),2598477,Permutive is 69724,Include,Interest,Regular,All Time,Gaming content fans,We define these users as those who regularly browse Gaming content
+Interest - History extra (R & All time),232406,Permutive is 8048,Include,Interest,Regular,All Time,History extra users,We define these users as those who regularly browse History Extra content
+Interest - History Extra Super fans 6+ (F & All time),44724,Permutive is 8047,Include,Interest,Frequent,All Time,History Extra Super fans 6+ users,We define these users as those who regularly browse History Extra content
+Interest - History Podcasts (O & All time),52,Permutive is 12824,Include,Interest,Occasional,All Time,History Podcasts fans,We define these users as those who regularly browse History Podcasts content
+Interest - Home Improvers (R & All time),1471580,Permutive is 120685,Include,Interest,Regular,All Time,Home Improvers content fans,"We define these users as those who regularly browse home renovation, decoration and smart homes content across our websites"
+Interest - Nature (O & All time),5550288,Permutive is 6620,Include,Interest,Occasional,All Time,Nature enthusiasts,We define these users as those who regularly browse Nature content
+"Interest - Premium Tech (R & All Time) [Lookalike: 93.0% similarity, including seed]",286371,Permutive is 129855,Include,Interest,Regular,All Time,Premium Tech content fans,We define these users as those who regularly browse premium tech content across our websites
+"Interest - Samsung Products (R & All Time) [Lookalike: 90.2% similarity, including seed]",389380,Permutive is 131613,Include,Interest,Regular,All Time,Samsung Products content fans,We define these users as those who regularly browse content related to Samsung Products across our websites
+Interest - Science Fans (O & All time),295574,Permutive is 12744,Include,Interest,Occasional,All Time,Science  content fans,We define these users as those who regularly browse Science content
+Interest - Science Focus (O & All time),179520,Permutive is 32852,Include,Interest,Occasional,All Time,Science Focus users,We define these users as those who regularly browse Science Focus content
+Interest - Sustainability (F & 90 days),564305,Permutive is 134841,Include,Interest,Frequent,90 Days,Sustainability content fans,We define these users as those who frequently browse sustainability-related content across our websites
+Interest - Tech (R & All time),2851529,Permutive is 7433,Include,Interest,Regular,All Time,Tech enthusiasts,We define these users as those who regularly browse Tech content
+"Interest - Virtual Reality (R & All Time) [Lookalike: 84.3% similarity, including seed]",416669,Permutive is 122815,Include,Interest,Regular,All Time,Virtual Reality content fans,We define these users as those who regularly browse virtual reality content across our websites
+Interest - Watches (R & All time),26971,Permutive is 105245,Include,Interest,Regular,All Time,Watches reviewers,We define these users as those who regularly browse watch reviews acros our websites
+Interest - Wildlife Fans (O & All time),448713,Permutive is 12643,Include,Interest,Occasional,All Time,Wildlife  content fans,We define these users as those who regularly browse Wildlife content
+Interests - Curious Thinkers (R & All time),513059,Permutive is 26445,Include,Interest,Regular,All Time,Curious Thinkers Curious thinkers,"We define these users as those who regularly browse  scientific, creative or historic content"
+Interests - Mary Queen of Scots (O & All time),0,Permutive is 20582,Include,Interest,Occasional,All Time,Mary Queen of Scots content fans,We define these users as those who regularly browse Mary Queen of Scots content
+Interests - Photography 1P (O & All time),210579,Permutive is 33016,Include,Interest,Occasional,All Time,Photography 1P fans,We define these users as those who regularly browse Photography content
+Interests - Victoria (O & All time),1420759,Permutive is 20584,Include,Interest,Occasional,All Time,Victoria content fans,We define these users as those who regularly browse Victoria content
+International Travellers ,3594776,ap_x is 17285,Include,Travel,Survey,Survey,International Travellers ,We define these users as those who usually go on international holidays
+January Health Kickers ,2473179,ap_x is 17299,Include,Food & Drink,Survey,Survey,January Health Kickers ,We define these users as those who are likely to consider a health kick in January
+Kitchen renovation/purchase intenders,2622149,AP_x is 15394,Include,Home Renovation,Survey,Survey,Kitchen renovation/purchase intenders,We define these users as those who are likely to be in market to renovate or purchase a new kitchen
+Lidl shoppers,4264710,AP_x is 17154,Include,Food & Drink,Survey,Survey,Lidl shoppers,We define these users as those who prefer shopping at Lidl
+Life insurance switchers,1040567,AP_x is 16919,Include,Home,Survey,Survey,Life insurance switchers,We define these users as those who intend on switching life insurance providers
+Loan intenders,1932388, AP_x is 16633,Include,Purchase intenders,Survey,Survey,Loan intenders,We define these users as those who might consider using a loan to pay for their next big purchase
+Long Commuters ,1474907,ap_x is 17301,Include,Demographics - employment,Survey,Survey,Long Commuters ,We define these users as those who usually spend 60 mins. or more commuting (both ways combined)
+Long Haul Travellers ,1205181,ap_x is 17211,Include,Travel,Survey,Survey,Long Haul Travellers ,We define these users as those who prefer long haul travels
+Low household income,624731,AP_c is 1200,Include,Demographics - Income,Survey,Survey,Low household income,We define these users as those who have a low household income
+M&S shoppers,306340, AP_x is 14214,Include,Food & Drink,Survey,Survey,M&S shoppers,We define these users as those who are likely to primarily shop at M&S
+Main grocery shopper,2946461,AP_x is 13549,Include,Food & Drink,Survey,Survey,Main grocery shopper,We define these users as those who acts as the main grocery shopper in their household
+Male,3881267,AP_a is 1100,Include,Demographics - gender,Survey,Survey,Male,We define these users as those who are males
+Meat/dairy diet changers,2629891,AP_x is 16293,Include,Food & Drink,Survey,Survey,Meat/dairy diet changers,We define these users as those who plan to change their meat/dairy consuming habits
+Medium ranged household income,144986,AP_c is 1202,Include,Demographics - Income,Survey,Survey,Medium ranged household income,We define these users as those who have a medium ranged household income
+Medium tier haircare product users,1470367,AP_x is 15884,Include,Beauty,Survey,Survey,Medium tier haircare product users,We define these users as those who tend to chose medium tier products for their haircare regime
+Mobile Gamers ,2326915,ap_x is 17286,Include,Interest,Survey,Survey,Mobile Gamers ,We define these users as those who enjoy online gaming
+Mobile Phone Intenders,134331,ap_k is 2031,Include,Intenders,Survey,Survey,Mobile Phone Intenders,We define these users as those who intend to buy a mobile phone
+Morrisons shoppers,2114806,AP_x is 14220,Include,Food & Drink,Survey,Survey,Morrisons shoppers,We define these users as those who are likely to primarily shop at Tesco
+Mortgage free home owners,900242,AP_x is 15955,Include,Home,Survey,Survey,Mortgage free home owners,We define these users as those who are likely to be mortgage free home owners
+Mortgage renewers - 1-2 years,2875972,AP_x is 16640,Include,Home,Survey,Survey,Mortgage renewers - 1-2 years,We define these users as those who are likely to have 1-2 years left until their mortgage renewal
+Mortgage renewers - 2-3 years,3105612,AP_x is 16641,Include,Home,Survey,Survey,Mortgage renewers - 2-3 years,We define these users as those who are likely to have 2-3 years left until their mortgage renewal
+Mortgage renewers - 3+ years,5925457,AP_x is 16642,Include,Home,Survey,Survey,Mortgage renewers - 3+ years,We define these users as those who are likely to have over 3+ years left until their mortgage renewal
+Mortgage renewers - 3-12 months,2671643,AP_x is 16639,Include,Home,Survey,Survey,Mortgage renewers - 3-12 months,We define these users as those who are likely to have 3-12 months left until their mortgage renewal
+Mortgage renewers - less than 3 months,1899825,AP_x is 16638,Include,Home,Survey,Survey,Mortgage renewers - less than 3 months,We define these users as those who are likely to have less than 3 months left until their mortgage renewal
+Mountain bike owners,2225639,AP_x is 15533,Include,Sports,Survey,Survey,Mountain bike owners,We define these users as those who are likely to own a mountain bike
+Musical film fans,1300021,AP_x is 15878,Include,Arts & Entertainment,Survey,Survey,Musical film fans,We define these users as those who are likely to enjoy musical films
+Netflix subscribers,4640460,AP_x is 15407,Include,Arts & Entertainment,Survey,Survey,Netflix subscribers,We define these users as those who are likely to have a Netflix subscription
+New car buyers,2722200,AP_x is 15426,Include,Auto,Survey,Survey,New car buyers,We define these users as those who are likely to buy a brand new car when they next get one
+New home purchase intenders,2158857,AP_x is 15459,Include,Home,Survey,Survey,New home purchase intenders,We define these users as those who are likely in market to purchase a new home
+New year diet - no change,4338543,AP_x is 16529,Include,Food & Drink,Survey,Survey,New year diet - no change,We define these users as those who are unlikely to change their diet in January
+New year health kickers,0,AP_x is 14319,Include,Food & Drink,Survey,Survey,New year health kickers,We define these users as those who are likely to consider a health kick in January
+Nintendo gamers,1397239,AP_x is 16889,Include,Interest,Survey,Survey,Nintendo gamers,We define these users as those who prefer to game on an Nintendo
+Nissan fans,975730,AP_x is 15523,Include,Auto,Survey,Survey,Nissan fans,We define these users as those who likely associate Nissan with being one of the most reliable car brands
+No children in the household,7048570,AP_x is 16536,Include,Demographics - Children,Survey,Survey,No children in the household,We define these users as those who have no childen in their household
+Non-alcoholic alternative purchasers,6385262,AP_x is 17128,Include,Food & Drink,Survey,Survey,Non-alcoholic alternative purchasers,We define these users as those who purchase non-alcoholic alternatives
+Not at all confident bakers,699312,AP_x is 15865,Include,Food & Drink,Survey,Survey,Not at all confident bakers,We define these users as those who are unlikely to be confident in baking whatsoever
+Now TV subscribers,60514,AP_x is 10480,Include,Arts & Entertainment,Survey,Survey,Now TV subscribers,We define these users as those who are likely to be NowTV subscribers
+Nutritional supplement purchasers,6353163,AP_x is 16266,Include,Sports,Survey,Survey,Nutritional supplement purchasers,We define these users as those who purchase nutritional supplements
+NYE - going out,678804, AP_x is 16510,Include,New Years,Survey,Survey,NYE - going out,We define these users as those who are likely to go out for New Year's Eve
+NYE - party hosters,266481, AP_x is 16512,Include,New Years,Survey,Survey,NYE - party hosters,We define these users as those who are likely to host a party/gathering at their own home on New Year's Eve
+NYE - staying in,7514340, AP_x is 16511,Include,New Years,Survey,Survey,NYE - staying in,We define these users as those who are likely to stay in for New Year's Eve
+Occasional bike users,493037,AP_x is 15539,Include,Sports,Survey,Survey,Occasional bike users,We define these users as those who are likely to occasionally use their push bike
+Occasional Ocado shoppers,651807,AP_x is 16244,Include,Food & Drink,Survey,Survey,Occasional Ocado shoppers,We define these users as those who occasionally shop with Ocado
+Occasional online food shoppers,4124173,AP_x is 15487,Include,Food & Drink,Survey,Survey,Occasional online food shoppers,We define these users as those who occasionally buy their groceries online
+Occasional TV viewers,1345225,AP_x is 15965,Include,Arts & Entertainment,Survey,Survey,Occasional TV viewers,We define these users as those who are only likely to watch TV occasionally
+Online food shoppers,6797549,AP_x is 15418,Include,Food & Drink,Survey,Survey,Online food shoppers,We define these users as those who are likely to regularly shop online for groceries (high accuracy)
+Online gamers,2218191,AP_x is 15956,Include,Interest,Survey,Survey,Online gamers,We define these users as those who are likely to be regular online gamers
+Online music streamers,3220521,AP_x is 14054,Include,Arts & Entertainment,Survey,Survey,Online music streamers,We define these users as those who likely pay for an online music streaming service
+Opera fans,1605920,AP_x is 17122,Include,Arts & Entertainment,Survey,Survey,Opera fans,We define these users as those who are opera fans
+Outdoor walking enthusiasts,4347013,AP_x is 15511,Include,Sports,Survey,Survey,Outdoor walking enthusiasts,We define these users as those who are likely to regularly enjoy outdoor walking
+Parenting - Babies in Household (O & All time).,2822486,Permutive is 10827,Include,Parenting,Occasional,All Time,Babies in Household content fans,We define these users as those who regularly browse Babies in Household content
+Parenting - Baby Content (O & All Time),1281200,Permutive is 25194,Include,Parenting,Occasional,All Time,Baby Content content fans,We define these users as those who regularly browse Baby content
+Parenting - Children under 2 years old (O & All time),3439337,Permutive is 8225,Include,Parenting,Occasional,All Time,Children under 2 years old content fans,We define these users as those who regularly browse Children under 2 years old content
+Parenting - Child's Clothing (O & All time),92387,Permutive is 13182,Include,Parenting,Occasional,All Time,Child's Clothing content fans,We define these users as those who regularly browse Child's Clothing content
+Parenting - Conception/Early Pregnancy (O & All time),1014213,Permutive is 6476,Include,Parenting,Occasional,All Time,Conception/Early Pregnancy content fans,We define these users as those who regularly browse Conception/Early pregnancy content
+Parenting - First Time Parents (O & All time),802675,Permutive is 8703,Include,Parenting,Occasional,All Time,First Time Parents content fans,We define these users as those who regularly browse First Time Parents content
+Parenting - MadeforMums Fans (O & All time),3919251,Permutive is 6393,Include,Parenting,Occasional,All Time,MadeforMums  users,We define these users as those who regularly browse Madeformums content
+Parenting - Parents (O & All time),8446433,Permutive is 6223,Include,Parenting,Occasional,All Time,Parents content fans,We define these users as those who regularly browse Parenting content
+Parenting - Pregnancy (O & All time),1170776,Permutive is 11271,Include,Parenting,Occasional,All Time,Pregnancy content fans,We define these users as those who regularly browse Pregnancy content
+Parenting - Primary School (O & All time),1466820,Permutive is 7615,Include,Parenting,Occasional,All Time,Primary School content fans,We define these users as those who regularly browse Primary School content
+Parenting - School (O & All time),1466820,Permutive is 7619,Include,Parenting,Occasional,All Time,School content fans,We define these users as those who regularly browse School content
+Parenting - School Aged Children (O & All time),1113910,Permutive is 6475,Include,Parenting,Occasional,All Time,School Aged Children content fans,We define these users as those who regularly browse School Aged Children content
+Parenting - Supportive parents (R & 90 days),277832,Permutive is 120697,Include,Parenting,Regular,90 Days,Supportive parents content fans,"We define these users as those who regularly browse for activities to do with their kids, as well as DIY for kids content across our websites"
+Parenting - Third Trimester (O & All time),1836,Permutive is 8057,Include,Parenting,Occasional,All Time,Third Trimester content fans,We define these users as those who regularly browse Third Trimester content
+Parenting - Toddler (O & All time),1292913,Permutive is 12896,Include,Parenting,Occasional,All Time,Toddler content fans,We define these users as those who regularly browse Toddler content
+Parents,204071,AP_d is 1300,Include,Demographics - Children,Survey,Survey,Parents,We define these users as those who have children in the household
+Pay as you go customers,795774,AP_x is 14320,Include,Purchase intenders,Survey,Survey,Pay as you go customers,We define these users as those who likely to be pay as you go mobile phone customers
+PC gamers,3324166,AP_x is 16949,Include,Interest,Survey,Survey,PC gamers,We define these users as those who are likely to be PC gamers
+Peugeot fans,288478,AP_x is 15519,Include,Auto,Survey,Survey,Peugeot fans,We define these users as those who likely consider Peugeot to be one of the most reliable car brands
+Phone upgrade intenders,1235244,AP_x is 14209,Include,Purchase intenders,Survey,Survey,Phone upgrade intenders,We define these users as those who are likely to be in market for a phone upgrade
+Phone upgrade intenders - 0-6 months,1235244,AP_x is 15447,Include,Purchase intenders,Survey,Survey,Phone upgrade intenders - 0-6 months,We define these users as those who are likely to be in market for a phone upgrade in the next 0 to 6 months
+Phone upgrade intenders - 6-12 months,862989,AP_x is 15448,Include,Purchase intenders,Survey,Survey,Phone upgrade intenders - 6-12 months,We define these users as those who are likely to be in market for a phone upgrade in the next 6 to 12 months
+Photography enthusiasts,3741970,AP_x is 17116,Include,Interest,Survey,Survey,Photography enthusiasts,We define these users as those who are likely to be photography enthusiasts
+Playstation gamers,880092,AP_x is 16887,Include,Interest,Survey,Survey,Playstation gamers,We define these users as those who prefer to game on an Playstation
+Post COVID holiday bookers,0,AP_x is 16239,Include,Holiday intenders,Survey,Survey,Post COVID holiday bookers,We define these users as those who were likely to be booking a holiday abroad once lockdown restrictions were eased
+Post COVID holiday bookers - abroad,0,AP_x is 16240,Include,Holiday intenders,Survey,Survey,Post COVID holiday bookers - abroad,We define these users as those who were likely to be booking a holiday abroad once lockdown restrictions were eased
+Post COVID holiday bookers - domestic,0,AP_x is 16241,Include,Holiday intenders,Survey,Survey,Post COVID holiday bookers - domestic,We define these users as those who were likely to be booking a domestic holiday once lockdown restrictions were eased
+Practical Car Fans ,1903618,ap_x is 17202,Include,Auto,Survey,Survey,Practical Car Fans ,"We define these users as those who, when in market for a car, consider practical ones (e.g. Citroen, Honda, Mazda, Volvo)"
+Premium car considerers,1467831,AP_x is 16624,Include,Auto,Survey,Survey,Premium car considerers,"We define these users as those who , when buying a car, consider how premium it is as the most important factor"
+Premium Car Fans ,586527,ap_x is 17203,Include,Auto,Survey,Survey,Premium Car Fans ,"We define these users as those who, when in market for a car, consider Premium ones (e.g. Audi, BMW, Jaguar, Mercedes)"
+Purchase intenders - cash,3794541,AP_x is 16636,Include,Purchase intenders,Survey,Survey,Purchase intenders - cash,We define these users as those who might consider using cash to pay for their next big purchase
+Purchase intenders - credit card,1715506, AP_x is 16635,Include,Purchase intenders,Survey,Survey,Purchase intenders - credit card,We define these users as those who might consider using a credit card to pay for their next big purchase
+Purchase intenders - PCP loan,261622,AP_x is 16637,Include,Purchase intenders,Survey,Survey,Purchase intenders - PCP loan,We define these users as those who might consider PCP to pay for their next big purchase
+Purchase intenders - savings,4059091, AP_x is 16634,Include,Purchase intenders,Survey,Survey,Purchase intenders - savings,We define these users as those who might consider using savings to pay for their next big purchase
+Readers,7558521,AP_x is 17160,Include,Interest,Survey,Survey,Readers,We define these users as those who regularly read books
+Recipe box users,2431088,AP_x is 15958,Include,Food & Drink,Survey,Survey,Recipe box users,We define these users as those who are likely to consider paying for a food box service
+Reducing meat & dairy in diet,1740723,AP_x is 15712,Include,Food & Drink,Survey,Survey,Reducing meat & dairy in diet,We define these users as those who likely intend on reducing their meat and dairy consumption
+Reducing meat or dairy in diet,1472952,AP_x is 15711,Include,Food & Drink,Survey,Survey,Reducing meat or dairy in diet,We define these users as those who likely intend on reducing their meat or dairy consumption
+Regular betters,2642566,AP_x is 15988,Include,Interest,Survey,Survey,Regular betters,We define these users as those who are likely to regularly place bets either online or at the bookmakers 
+Regular bike users,281251,AP_x is 15538,Include,Sports,Survey,Survey,Regular bike users,We define these users as those who regularly use their bicycle
+Regular holiday goers - 3+ times a year,1821427,AP_x is 15462,Include,Holiday intenders,Survey,Survey,Regular holiday goers - 3+ times a year,We define these users as those who are likely to go on holiday more than 3 times a year
+Regular Ocado shoppers,1180526,AP_x is 16243,Include,Food & Drink,Survey,Survey,Regular Ocado shoppers,We define these users as those who regularly shop with Ocado
+Regular online food shoppers,3879402,AP_x is 15486,Include,Food & Drink,Survey,Survey,Regular online food shoppers,We define these users as those who are liekly to regularly shop online for their food
+Remote Workers ,4766297,ap_x is 17303,Include,Demographics - employment,Survey,Survey,Remote Workers ,"We define these users as those who work remotely ""everyday"" or ""sometimes"""
+Retired,2119657,AP_f is 1507,Include,Demographics - employment,Survey,Survey,Retired,We define these users as those who have retired
+Road bike owners,568083,AP_x is 15534,Include,Sports,Survey,Survey,Road bike owners,We define these users as those who are likely to own a road bike
+Romance film fans,873331,AP_x is 15881,Include,Arts & Entertainment,Survey,Survey,Romance film fans,We define these users as those who are likely to love romantic movies
+Runners,607878,AP_x is 15508,Include,Sports,Survey,Survey,Runners,We define these users as those who are liekly to enjoy regularly running
+Sainsburys shoppers,2336102,AP_x is 15398,Include,Food & Drink,Survey,Survey,Sainsburys shoppers,We define these users as those who are likely to primarily shop at Sainsbury's
+Saloon owners,2136622,AP_x is 15472,Include,Auto,Survey,Survey,Saloon owners,We define these users as those who are likely to own a saloon car
+Sci-fi film fans,634917,AP_x is 15873,Include,Arts & Entertainment,Survey,Survey,Sci-fi film fans,We define these users as those who are likely to enjoy sci-fi films
+Seasonal - Halloween (O & All Time),1061414,Permutive is 22298,Include,Interest,Occasional,All Time,Halloween content fans,We define these users as those who regularly browse Halloween content
+Self employed - business owners,1587179,AP_x is 15869,Include,Demographics - employment,Survey,Survey,Self employed - business owners,We define these users as those who are likely to be business owners (high accuracy)
+Shop at multiple supermarkets due to habit,903480,AP_x is 16516,Include,Christmas,Survey,Survey,Shop at multiple supermarkets due to habit,We define these users as those who are likely to spend at multiple supermarkets down to habit
+Skiers/Snowboarders,324044,AP_x is 15509,Include,Holiday intenders,Survey,Survey,Skiers/Snowboarders,We define these users as those who are likely to enjoy skying and/or snowboarding
+Skincare - affordable product preference,2786418,AP_x is 15888,Include,Beauty,Survey,Survey,Skincare - affordable product preference,We define these users as those who tend to chose affordable products for their skincare regime
+Skincare - high end product preference,824871,AP_x is 15886,Include,Beauty,Survey,Survey,Skincare - high end product preference,We define these users as those who tend to chose high end products for their skincare regime
+Skincare - medium tier product preference,1656396,AP_x is 15887,Include,Beauty,Survey,Survey,Skincare - medium tier product preference,We define these users as those who tend to chose medium-tier products for their skincare regime
+Sky TV customers,3289605,AP_x is 15404,Include,Arts & Entertainment,Survey,Survey,Sky TV customers,We define these users as those who are likely to be Sky TV customers
+Smart Home Tech Considerers ,5642611,ap_x is 17287,Include,Home,Survey,Survey,Smart Home Tech Considerers ,We define these users as those who would consider implementing any smart home tech
+Somewhat confident bakers,3231224,AP_x is 15864,Include,Food & Drink,Survey,Survey,Somewhat confident bakers,We define these users as those who are likely to be somewhat confident when baking
+Spend Christmas abroad,327025,AP_x is 16495,Include,Christmas,Survey,Survey,Spend Christmas abroad,We define these users as those who are likely to spend the Christmas holiday season abroad
+Spend Christmas at home,6028920,AP_x is 16492,Include,Christmas,Survey,Survey,Spend Christmas at home,We define these users as those who are likely to spend the Christmas holiday season at home
+Spend Christmas with friends/family,2381595,AP_x is 16493,Include,Christmas,Survey,Survey,Spend Christmas with friends/family,We define these users as those who are likely to spend the Christmas holiday season with friends/family
+Spirit drinkers,3402285,AP_x is 15505,Include,Food & Drink,Survey,Survey,Spirit drinkers,We define these users as those who likely enjoy spirits as their alcoholic drink of preference
+Sports - Beginner Cyclists (O & All Time),448328,Permutive is 38280,Include,Sports,Occasional,All Time,Beginner Cyclists cyclist,We define these users as those who regularly browse Beginner cycling content
+Sports - Bike Maintenance (O & All Time),9168867,Permutive is 38273,Include,Sports,Occasional,All Time,Bike Maintenance content fans,We define these users as those who regularly browse Bike Maintenance content
+Sports - Bike Radar (O & 30 days),127278,Permutive is 7729,Include,Sports,Occasional,30 Days,Bike Radar users,We define these users as those who regularly browse Bike Radar content
+Sports - Bike Radar Fans (F & All time),121610,Permutive is 6545,Include,Sports,Frequent,All Time,Bike Radar  users,We define these users as those who regularly browse Bike Radar content
+Sports - BMC (O & All time),280,Permutive is 8263,Include,Sports,Occasional,All Time,BMC content fans,We define these users as those who regularly browse BMC content
+Sports - Bontrager (O & All time),0,Permutive is 8407,Include,Sports,Occasional,All Time,Bontrager content fans,We define these users as those who regularly browse Bontrager content
+Sports - Calibre (O & All time),0,Permutive is 8295,Include,Sports,Occasional,All Time,Calibre content fans,We define these users as those who regularly browse Calibre content
+Sports - Cannondale (O & All time),0,Permutive is 8258,Include,Sports,Occasional,All Time,Cannondale content fans,We define these users as those who regularly browse Cannondale content
+Sports - Canyon (O & All time),0,Permutive is 8267,Include,Sports,Occasional,All Time,Canyon content fans,We define these users as those who regularly browse Canyon content
+Sports - Clothing (O & All time),244129,Permutive is 10636,Include,Sports,Occasional,All Time,Clothing content fans,We define these users as those who regularly browse Cycling clothing content
+"Sports - Cross-Country Cycling (R & All Time) [Lookalike: 97.3% similarity, including seed]",12961,Permutive is 126053,Include,Sports,Regular,All Time,Cross-Country Cycling content fans,We define these users as those who regularly browse Cross-Country Cycling content across our websites
+Sports - Cycle Commuters (O & All Time),8948299,Permutive is 38278,Include,Sports,Occasional,All Time,Cycle Commuters commuters,We define these users as those who regularly browse Cycle commuting content
+Sports - Cycling Fans (O & All time),376429,Permutive is 8281,Include,Sports,Occasional,All Time,Cycling  users,We define these users as those who regularly browse Bike Radar content
+"Sports - Cycling Purchase Intenders (R & All time) [Lookalike: 54.5% similarity, including seed]",84085,Permutive is 75689,Include,Sports,Regular,All Time,Cycling Purchase Intenders purchase intenders,We define these users as those who regularly browse Cycling accessory reviews
+Sports - Cyclo-cross Bikes (O & All time),0,Permutive is 9712,Include,Sports,Occasional,All Time,Cyclo-cross Bikes content fans,We define these users as those who regularly browse Cyclo-cross Bikes content
+"Sports - E-bikes (O & All  time) [Lookalike: 83.7% similarity, including seed]",1391666,Permutive is 85977,Include,Sports,Occasional,All Time,E-bikes reviewers,We define these users as those who regularly browse E-bike reviews
+Sports - Enigma (O & All time),0,Permutive is 8260,Include,Sports,Occasional,All Time,Enigma content fans,We define these users as those who regularly browse Enigma content
+Sports - Felt (O & All time),63,Permutive is 8296,Include,Sports,Occasional,All Time,Felt content fans,We define these users as those who regularly browse Felt content
+Sports - Fitness and training (R & 90 days),310577,Permutive is 123397,Include,Sports,Regular,90 Days,Fitness and training content fans,We define these users as those who regularly browse fitness and training-related content across our websites
+Sports - Frequent Reviewers (F & All time),327404,Permutive is 8697,Include,Sports,Frequent,All Time,Frequent Reviewers purchase intenders,We define these users as those who regularly browse Cycling reviews
+Sports - Garmin Fans (O & All time),1129,Permutive is 7435,Include,Sports,Occasional,All Time,Garmin  content fans,We define these users as those who regularly browse Garmin content
+Sports - Genesis (O & All time),0,Permutive is 8321,Include,Sports,Occasional,All Time,Genesis content fans,We define these users as those who regularly browse Genesis content
+Sports - GPS Fans (O & All time),63141,Permutive is 7436,Include,Sports,Occasional,All Time,GPS  content fans,We define these users as those who regularly browse GPS content
+Sports - Gravel Bikes (O & All time),95836,Permutive is 9711,Include,Sports,Occasional,All Time,Gravel Bikes content fans,We define these users as those who regularly browse Gravel Bikes content
+Sports - Gravel/Adventure (O & All Time),723729,Permutive is 38270,Include,Sports,Occasional,All Time,Gravel/Adventure content fans,We define these users as those who regularly browse Gravel Adventure content
+Sports - GT (O & All time),0,Permutive is 8297,Include,Sports,Occasional,All Time,GT content fans,We define these users as those who regularly browse GT content
+Sports - Helmet (O & All time),37017,Permutive is 6178,Include,Sports,Occasional,All Time,Helmet content fans,We define these users as those who regularly browse Helmet content
+Sports - Indoor Training (O & All Time),2750912,Permutive is 32009,Include,Sports,Occasional,All Time,Indoor Training content fans,We define these users as those who regularly browse Indoor Training content
+Sports - Leisure/Family Cyclists (O & All Time),1916729,Permutive is 38282,Include,Sports,Occasional,All Time,Leisure/Family Cyclists cyclist,We define these users as those who regularly browse Leisure family cycling content
+Sports - Lights & Visibility (R & All Time),187679,Permutive is 38277,Include,Sports,Regular,All Time,Lights & Visibility content fans,We define these users as those who regularly browse Lights & Visibility content
+Sports - Marin (O & All time),0,Permutive is 8298,Include,Sports,Occasional,All Time,Marin content fans,We define these users as those who regularly browse Marin content
+Sports - Mavic (O & All time),451,Permutive is 8409,Include,Sports,Occasional,All Time,Mavic content fans,We define these users as those who regularly browse Mavic content
+Sports - Mountain Biking (O & All time),455987,Permutive is 6156,Include,Sports,Occasional,All Time,Mountain Biking content fans,We define these users as those who regularly browse Mountain Biking content
+Sports - Norco (O & All time),0,Permutive is 8336,Include,Sports,Occasional,All Time,Norco content fans,We define these users as those who regularly browse Norco content
+Sports - Orange (O & All time),995,Permutive is 8328,Include,Sports,Occasional,All Time,Orange content fans,We define these users as those who regularly browse Orange content
+Sports - Orbea (O & All time),304,Permutive is 8337,Include,Sports,Occasional,All Time,Orbea content fans,We define these users as those who regularly browse Orbea content
+Sports - Orbea Favourite Cycling brands (O & All Time),1871294,Permutive is 40649,Include,Sports,Occasional,All Time,Orbea Favourite Cycling brands content fans,We define these users as those who regularly browse Cycling brand content
+Sports - Pedal (O & All time),64061,Permutive is 6179,Include,Sports,Occasional,All Time,Pedal content fans,We define these users as those who regularly browse Pedal content
+Sports - Pivot (O & All time),245,Permutive is 8326,Include,Sports,Occasional,All Time,Pivot content fans,We define these users as those who regularly browse Pivot content
+Sports - Raleigh (O & All time),0,Permutive is 8262,Include,Sports,Occasional,All Time,Raleigh content fans,We define these users as those who regularly browse Raleigh content
+Sports - Rapha (O & All time),105,Permutive is 11300,Include,Sports,Occasional,All Time,Rapha content fans,We define these users as those who regularly browse Rapha content
+Sports - Recovery (O & All time),86888,Permutive is 8449,Include,Sports,Occasional,All Time,Recovery content fans,We define these users as those who regularly browse Recovery content
+Sports - Ribble (O & All time),0,Permutive is 8217,Include,Sports,Occasional,All Time,Ribble content fans,We define these users as those who regularly browse Ribble content
+Sports - Road Biking (O & All time),2079724,Permutive is 6157,Include,Sports,Occasional,All Time,Road Biking content fans,We define these users as those who regularly browse Road Biking content
+Sports - Road Biking brands (R & All time),932559,Permutive is 33137,Include,Sports,Regular,All Time,Road Biking brands content fans,We define these users as those who regularly browse Road biking brands content
+Sports - Road E-bikes (R & All time),45134,Permutive is 115881,Include,Sports,Regular,All Time,Road E-bikes content fans,We define these users as those who regularly browse E-Road bikes content across our websites
+Sports - RockShox (O & All time),220,Permutive is 8412,Include,Sports,Occasional,All Time,RockShox content fans,We define these users as those who regularly browse RockShox content
+Sports - Roubaix (O & All time),389,Permutive is 17451,Include,Sports,Occasional,All Time,Roubaix content fans,We define these users as those who regularly browse Roubaix content
+Sports - Saddle (O & All time),38541,Permutive is 6180,Include,Sports,Occasional,All Time,Saddle content fans,We define these users as those who regularly browse Saddle content
+Sports - Santa Cruz (O & All time),0,Permutive is 8299,Include,Sports,Occasional,All Time,Santa Cruz content fans,We define these users as those who regularly browse Santa Cruz content
+Sports - Scott (O & All time),1205816,Permutive is 8266,Include,Sports,Occasional,All Time,Scott content fans,We define these users as those who regularly browse Scott content
+Sports - Shimano (O & All time),0,Permutive is 8261,Include,Sports,Occasional,All Time,Shimano content fans,We define these users as those who regularly browse Shimano content
+Sports - Shoes (O & All time),116011,Permutive is 6181,Include,Sports,Occasional,All Time,Shoes content fans,We define these users as those who regularly browse Shoes content
+Sports - Specialized (O & All time),43076,Permutive is 6793,Include,Sports,Occasional,All Time,Specialized content fans,We define these users as those who regularly browse Specialized content
+Sports - SRAM (O & All time),34346,Permutive is 8265,Include,Sports,Occasional,All Time,SRAM content fans,We define these users as those who regularly browse SRAM content
+"Sports - Tour de France (R & All time) [Lookalike: 53.7% similarity, including seed]",245883,Permutive is 93612,Include,Sports,Regular,All Time,Tour de France content fans,We define these users as those who regularly browse Tour de France content
+Sports - Track Cycling (O & All time),818007,Permutive is 8257,Include,Sports,Occasional,All Time,Track Cycling content fans,We define these users as those who regularly browse Track Cycling content
+Sports - Trek (O & All time),216872,Permutive is 8264,Include,Sports,Occasional,All Time,Trek content fans,We define these users as those who regularly browse Trek content
+Sports - Tyre (O & All time),114726,Permutive is 6183,Include,Sports,Occasional,All Time,Tyre content fans,We define these users as those who regularly browse Tyre content
+Sports - Voodoo (O & All time),348,Permutive is 8340,Include,Sports,Occasional,All Time,Voodoo content fans,We define these users as those who regularly browse Voodoo content
+Sports - Wheels (O & All time),353065,Permutive is 6127,Include,Sports,Occasional,All Time,Wheels content fans,We define these users as those who regularly browse Wheels content
+Sports - Whyte (O & All time),0,Permutive is 8324,Include,Sports,Occasional,All Time,Whyte content fans,We define these users as those who regularly browse Whyte content
+Sports - Zwift (O & All time),21195,Permutive is 10289,Include,Sports,Occasional,All Time,Zwift content fans,We define these users as those who regularly browse Zwift content
+Sports car owners,3653324,AP_x is 15475,Include,Auto,Survey,Survey,Sports car owners,We define these users as those who tend to consider sports cars when buying a new car
+Sports enthusiasts,4474664,AP_x is 16168,Include,Arts & Entertainment,Survey,Survey,Sports enthusiasts,We define these users as those who enjoy sports
+Sports Enthusiasts (R & All Time),3251968,Permutive is 27601,Include,Sports,Regular,All Time,Sport enthusiasts,We define these users as those who regularly browse Sports content
+Spotify subscribers,3472163,AP_x is 15428,Include,Arts & Entertainment,Survey,Survey,Spotify subscribers,We define these users as those who are likely to have a Spotify membership
+Style first car considerers,750083,AP_x is 16625,Include,Auto,Survey,Survey,Style first car considerers,"We define these users as those who , when buying a car, consider how stylish it is as the most important factor"
+Supermarket clothing purchasers,6015093,AP_x is 16573,Include,Fashion,Survey,Survey,Supermarket clothing purchasers,We define these users as those who are likely to consider purchasing clothing from supermarkets
+Swimmers,2990384,AP_x is 15507,Include,Sports,Survey,Survey,Swimmers,We define these users as those who are likely to enjoy swimming 
+Talk Talk TV customers,475700,AP_x is 15406,Include,Arts & Entertainment,Survey,Survey,Talk Talk TV customers,We define these users as those who are likely to be TalkTalk TV customers
+Tea drinkers,4246671,AP_x is 15716,Include,Food & Drink,Survey,Survey,Tea drinkers,We define these users as those whosehot drink preference is likely to be tea
+Technology - Early Tech Adopters (O & All time),15094354,Permutive is 7522,Include,Interest,Occasional,All Time,Early Tech Adopters enthusiasts,We define these users as those who regularly browse Tech content
+Tennis Fans 1P,0,Permutive is 27609,Include,Sports,Occasional,Unspecified,Tennis content fans,We define these users as those who regularly browse Tennis content
+Tesco shoppers,4591698, AP_x is 14211,Include,Food & Drink,Survey,Survey,Tesco shoppers,We define these users as those who are likely to primarily shop at Tesco
+Theatre fans,7736040,AP_x is 17121,Include,Arts & Entertainment,Survey,Survey,Theatre fans,We define these users as those who are theatre fans
+Theatre music enthusiasts,5430694,AP_x is 17120,Include,Arts & Entertainment,Survey,Survey,Theatre music enthusiasts,We define these users as those who enjoy listening to theatre music
+Travel - Travel Intenders (O & All time),747513,Permutive is 8134,Include,Travel,Occasional,All Time,Travel Intenders intenders,We define these users as those who regularly browse Travel content
+Travel Intenders,193860,ap_k is 2033,Include,Intenders,Survey,Survey,Travel Intenders,We define these users as those who intend to travel
+Treadmill running/walking enthusiasts,827629, AP_x is 16631,Include,Sports,Survey,Survey,Treadmill running/walking enthusiasts,We define these users as those who enjoy using an indoor treadmill in order to keep fit
+TV Intenders,104849,ap_k is 2034,Include,Intenders,Survey,Survey,TV Intenders,We define these users as those who intend to buy a TV
+TV watchers - 11-20 hours per week,2034148,AP_x is 15967,Include,Arts & Entertainment,Survey,Survey,TV watchers - 11-20 hours per week,We define these users as those who tend to view around 11-20 hours of TV per week
+TV watchers - 21-30 hours per week,602620,AP_x is 15968,Include,Arts & Entertainment,Survey,Survey,TV watchers - 21-30 hours per week,We define these users as those who tend to view around 21-30 hours of TV per week
+TV watchers - 31+ hours per week,583018,AP_x is 14206,Include,Arts & Entertainment,Survey,Survey,TV watchers - 31+ hours per week,We define these users as those who tend to view more than 31 hours of TV per week (high accuracy)
+TV watchers - 31+ hours per week,1081914,AP_x is 15445,Include,Arts & Entertainment,Survey,Survey,TV watchers - 31+ hours per week,We define these users as those who tend to view more than 31 hours of TV per week
+TV watchers - 6-10 hours per week,1817459,AP_x is 15966,Include,Arts & Entertainment,Survey,Survey,TV watchers - 6-10 hours per week,We define these users as those who tend to view around 6-10 hours of TV per week
+Unemployed,4778520,AP_f is 1501,Include,Demographics - employment,Survey,Survey,Unemployed,We define these users as those who are unemployed
+Urban bike owners,3003348,AP_x is 15535,Include,Sports,Survey,Survey,Urban bike owners,We define these users as those who are likely to own an urban bike
+Used car buyers,5918359,AP_x is 14051,Include,Auto,Survey,Survey,Used car buyers,We define these users as those whosenext car is likely to be used
+Users looking forward to going out post lockdown,665,AP_x is 17117,Include,Lockdown,Survey,Survey,Users looking forward to going out post lockdown,We define these users as those who are looking forward to going out when lockdown restrictions are lifted
+Users looking forward to health/fitness activities post lockdown,531,AP_x is 17118,Include,Lockdown,Survey,Survey,Users looking forward to health/fitness activities post lockdown,We define these users as those who are looking forward to health and fitness based activities when lockdown restrictions are lifted
+Users who can play a instrument,0, AP_x is 15420,Include,Interest,Survey,Survey,Users who can play a instrument,We define these users as those who are likely to be able to play an instrument
+Users who have not subscribed to any on demand service,2138799,AP_x is 15963,Include,Arts & Entertainment,Survey,Survey,Users who have not subscribed to any on demand service,We define these users as those who are unlikely to be paying for an on demand service
+Users who intend on learning to play an instrument,0, AP_x is 15421,Include,Interest,Survey,Survey,Users who intend on learning to play an instrument,We define these users as those who likely intend on learning to play an instrument
+Users who value car expert opinion,7453358,AP_x is 16864,Include,Auto,Survey,Survey,Users who value car expert opinion,"We define these users as those who , when buying a car, consider its value for money to be the most important factor"
+Users who value car interior features,7601081,AP_x is 16863,Include,Auto,Survey,Survey,Users who value car interior features,We define these users as those who are likely to place high importance on the interior features of a car when buying a new one
+Users who value car specfications,6659221,AP_x is 16861,Include,Auto,Survey,Survey,Users who value car specfications,We define these users as those who value car specifications
+Value auto opinion from others,2997273,AP_x is 16865,Include,Auto,Survey,Survey,Value auto opinion from others,We define these users as those who are likely to place huge importance on other's opinions when buying a car
+Vegan,651764,AP_x is 15714,Include,Food & Drink,Survey,Survey,Vegan,We define these users as those who are likely to be vegans
+Virgin TV customers,2701485,AP_x is 15405,Include,Arts & Entertainment,Survey,Survey,Virgin TV customers,We define these users as those who are likely to be Virgin TV customers
+Volkswagen fans,3839091,AP_x is 15521,Include,Auto,Survey,Survey,Volkswagen fans,We define these users as those who are likely to favour VW most highly over other car brands
+Waitrose shoppers,441861, AP_x is 14212,Include,Food & Drink,Survey,Survey,Waitrose shoppers,We define these users as those who are most likely to shop regularly at Waitrose
+Weight lifting enthusiasts,1025144, AP_x is 16630,Include,Sports,Survey,Survey,Weight lifting enthusiasts,We define these users as those who enjoy weight lifting in order to keep fit
+White goods purchase intenders,730403,AP_x is 15460,Include,Home,Survey,Survey,White goods purchase intenders,We define these users as those who are likely to purchase white goods soon
+Wine drinkers,5618109,AP_x is 15501,Include,Food & Drink,Survey,Survey,Wine drinkers,We define these users as those who likely enjoy wine as their alcoholic drink of preference
+Xbox gamers,1932865,AP_x is 16888,Include,Interest,Survey,Survey,Xbox gamers,We define these users as those who prefer to game on an Xbox
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
