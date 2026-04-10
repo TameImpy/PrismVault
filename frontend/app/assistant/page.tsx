@@ -203,7 +203,7 @@ export default function AssistantPage() {
                 }`}
               >
                 {msg.role === "assistant" ? (
-                  <div className="prose prose-invert prose-sm max-w-none">
+                  <div className="prose prose-invert prose-sm max-w-none prose-p:mb-3 prose-ul:my-3 prose-li:my-1 prose-headings:mt-4 prose-headings:mb-2">
                     <ReactMarkdown>{msg.content || "..."}</ReactMarkdown>
                   </div>
                 ) : (
