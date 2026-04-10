@@ -199,7 +199,7 @@ export default function AssistantPage() {
                 <img
                   src="/prism-assistant-avatar.png"
                   alt="Prism Assistant"
-                  className="w-8 h-8 rounded-full flex-shrink-0 mt-1"
+                  className="w-10 h-10 rounded-full flex-shrink-0 mt-1"
                 />
               )}
               <div
