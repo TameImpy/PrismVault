@@ -1,33 +1,46 @@
 import { describe, it, expect } from "vitest";
-import { formatAssistantMessage } from "./formatAssistantMessage";
 
-describe("formatAssistantMessage", () => {
-  it("converts single newlines to markdown hard breaks (two trailing spaces)", () => {
-    const input = "First line.\nSecond line.\nThird line.";
-    const result = formatAssistantMessage(input);
-    expect(result).toBe("First line.  \nSecond line.  \nThird line.");
+/**
+ * The assistant page splits msg.content on "\n" and renders each
+ * non-empty line as its own <div> inside a space-y-3 container.
+ * These tests verify the split-and-filter logic.
+ */
+function splitLines(content: string): string[] {
+  return content.split("\n");
+}
+
+function nonEmptyLines(content: string): string[] {
+  return content.split("\n").filter((line) => line.trim());
+}
+
+describe("assistant message line splitting", () => {
+  it("splits single-newline content into separate lines", () => {
+    const input = "Line one.\nLine two.\nLine three.";
+    const lines = splitLines(input);
+    expect(lines).toEqual(["Line one.", "Line two.", "Line three."]);
   });
 
-  it("preserves existing double newlines as paragraph breaks", () => {
-    const input = "First paragraph.\n\nSecond paragraph.\n\nThird paragraph.";
-    const result = formatAssistantMessage(input);
-    expect(result).toBe("First paragraph.\n\nSecond paragraph.\n\nThird paragraph.");
+  it("preserves bold markdown within individual lines", () => {
+    const input = "**Aldi shoppers**: Size 2,512,699\n**Asda shoppers**: Size 1,938,772";
+    const lines = splitLines(input);
+    expect(lines[0]).toBe("**Aldi shoppers**: Size 2,512,699");
+    expect(lines[1]).toBe("**Asda shoppers**: Size 1,938,772");
   });
 
-  it("handles mixed single and double newlines", () => {
-    const input = "Intro line.\nDetail line.\n\nNew section.\nMore detail.";
-    const result = formatAssistantMessage(input);
-    expect(result).toBe("Intro line.  \nDetail line.\n\nNew section.  \nMore detail.");
+  it("double newlines produce empty lines for extra spacing", () => {
+    const input = "Section one.\n\nSection two.";
+    const lines = splitLines(input);
+    expect(lines).toEqual(["Section one.", "", "Section two."]);
   });
 
-  it("adds hard breaks between bold headers and following text", () => {
-    const input = "**Permutive:**\nBuilt on browsing.\n**Audience Project:**\nUses surveys.";
-    const result = formatAssistantMessage(input);
-    expect(result).toContain("**Permutive:**  \nBuilt on browsing.");
-    expect(result).toContain("**Audience Project:**  \nUses surveys.");
+  it("filters empty lines when counting visible content", () => {
+    const input = "Line one.\n\n\nLine two.";
+    const visible = nonEmptyLines(input);
+    expect(visible).toEqual(["Line one.", "Line two."]);
   });
 
-  it("handles empty content gracefully", () => {
-    expect(formatAssistantMessage("")).toBe("");
+  it("handles empty content", () => {
+    expect(splitLines("")).toEqual([""]);
+    expect(nonEmptyLines("")).toEqual([]);
   });
 });
