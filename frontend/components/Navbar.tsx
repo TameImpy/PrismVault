@@ -33,6 +33,13 @@ export default function Navbar() {
             Features
           </Link>
           <Link
+            href="/assistant"
+            onClick={() => trackNav("Assistant")}
+            className="hidden md:inline text-slate-400 hover:text-white transition-all duration-300 font-headline font-semibold tracking-tight"
+          >
+            Assistant
+          </Link>
+          <Link
             href="/tetris"
             onClick={() => trackNav("Prism Play")}
             className="hidden md:inline text-slate-400 hover:text-white transition-all duration-300 font-headline font-semibold tracking-tight"
