@@ -1,14 +1,15 @@
 /**
- * Preprocess LLM output so single newlines render as paragraph breaks
- * in markdown. Replaces lone \n with \n\n while preserving existing
- * double newlines.
+ * Preprocess LLM output so single newlines render as visible breaks
+ * in markdown. Appends two trailing spaces before each \n to create
+ * a markdown hard line break, and preserves existing double newlines
+ * as paragraph breaks.
  */
 export function formatAssistantMessage(content: string): string {
-  // First, normalise existing double newlines to a placeholder
-  // Then convert remaining single newlines to doubles
-  // Then restore the originals
   return content
+    // Preserve existing paragraph breaks (double newlines)
     .replace(/\n\n/g, "\x00")
-    .replace(/\n/g, "\n\n")
+    // Convert single newlines to markdown hard breaks (two trailing spaces + newline)
+    .replace(/\n/g, "  \n")
+    // Restore paragraph breaks
     .replace(/\x00/g, "\n\n");
 }
