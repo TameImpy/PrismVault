@@ -20,6 +20,7 @@ from src.synthesiser import generate_insights
 from src.email_drafter import draft_email
 from src.slide_content import generate_slide_content
 from src.deck_builder import build_deck
+from src.assistant import chat as assistant_chat
 from api.database import (
     connect, disconnect, init_db, get_email_samples,
     submit_score as db_submit_score, get_leaderboard as db_get_leaderboard,
@@ -147,6 +148,26 @@ async def download_deck(req: DownloadDeckRequest, user: dict = Depends(get_curre
             media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
             headers={"Content-Disposition": 'attachment; filename="%s"' % filename},
         )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ---------------------------------------------------------------------------
+# Prism Assistant
+# ---------------------------------------------------------------------------
+
+
+class AssistantChatRequest(BaseModel):
+    messages: list
+
+
+@app.post("/api/assistant/chat")
+def assistant_chat_endpoint(req: AssistantChatRequest, user: dict = Depends(get_current_user)):
+    if not config.OPENAI_API_KEY:
+        raise HTTPException(status_code=500, detail="Missing OPENAI_API_KEY on the server.")
+    try:
+        result = assistant_chat(req.messages)
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
