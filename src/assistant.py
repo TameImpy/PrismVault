@@ -195,3 +195,99 @@ def chat(messages):
         "role": "assistant",
         "content": choice.message.content,
     }
+
+
+def chat_stream(messages):
+    """Stream a chat response, yielding event dicts.
+
+    Event types:
+      {"type": "content", "text": "..."}  — a text token
+      {"type": "status", "message": "..."} — status update (e.g. during tool call)
+      {"type": "done"} — stream complete
+
+    Handles a single round of function calling if the model requests it.
+    """
+    system_prompt = _build_system_prompt()
+    full_messages = [{"role": "system", "content": system_prompt}] + messages
+
+    client = OpenAI(api_key=config.OPENAI_API_KEY)
+
+    stream = client.chat.completions.create(
+        model=config.CHAT_MODEL,
+        messages=full_messages,
+        tools=[SEARCH_SEGMENTS_TOOL],
+        temperature=0.3,
+        stream=True,
+    )
+
+    # Accumulate tool call data if the model requests one
+    tool_call_id = None
+    tool_call_name = None
+    tool_call_args = ""
+    assistant_content = ""
+
+    for chunk in stream:
+        delta = chunk.choices[0].delta
+
+        # Check for tool calls
+        if delta.tool_calls:
+            tc = delta.tool_calls[0]
+            if tc.id:
+                tool_call_id = tc.id
+            if tc.function and tc.function.name:
+                tool_call_name = tc.function.name
+            if tc.function and tc.function.arguments:
+                tool_call_args += tc.function.arguments
+            continue
+
+        # Stream content tokens
+        if delta.content:
+            assistant_content += delta.content
+            yield {"type": "content", "text": delta.content}
+
+    # If there was a tool call, execute it and stream the follow-up
+    if tool_call_id and tool_call_name == "search_segments":
+        yield {"type": "status", "message": "Searching segments..."}
+
+        args = json.loads(tool_call_args)
+        results = search_segments(
+            query=args.get("query", ""),
+            category=args.get("category"),
+            max_results=args.get("max_results", 20),
+        )
+
+        # Build the follow-up messages
+        assistant_msg = {
+            "role": "assistant",
+            "content": assistant_content or None,
+            "tool_calls": [{
+                "id": tool_call_id,
+                "type": "function",
+                "function": {
+                    "name": tool_call_name,
+                    "arguments": tool_call_args,
+                },
+            }],
+        }
+        full_messages.append(assistant_msg)
+        full_messages.append({
+            "role": "tool",
+            "tool_call_id": tool_call_id,
+            "content": json.dumps(results),
+        })
+
+        # Second streaming call with tool results
+        stream2 = client.chat.completions.create(
+            model=config.CHAT_MODEL,
+            messages=full_messages,
+            tools=[SEARCH_SEGMENTS_TOOL],
+            temperature=0.3,
+            stream=True,
+        )
+
+        for chunk in stream2:
+            delta = chunk.choices[0].delta
+            if delta.content:
+                yield {"type": "content", "text": delta.content}
+
+    yield {"type": "done"}
