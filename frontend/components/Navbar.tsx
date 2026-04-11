@@ -24,13 +24,20 @@ export default function Navbar() {
           Prism Plan
         </Link>
 
-        <div className="flex items-center space-x-6">
+        <div className="flex items-center space-x-6 flex-1 justify-end">
           <Link
             href="/#features"
             onClick={() => trackNav("Features")}
             className="hidden md:inline text-slate-400 hover:text-white transition-all duration-300 font-headline font-semibold tracking-tight"
           >
             Features
+          </Link>
+          <Link
+            href="/app"
+            onClick={() => trackNav("Planning")}
+            className="hidden md:inline text-slate-400 hover:text-white transition-all duration-300 font-headline font-semibold tracking-tight"
+          >
+            Planning
           </Link>
           <Link
             href="/assistant"
@@ -48,7 +55,7 @@ export default function Navbar() {
           </Link>
           {loading ? null : user ? (
             <>
-              <span className="text-slate-300 font-semibold text-sm">
+              <span className="ml-auto text-slate-300 font-semibold text-sm">
                 {user.name}
               </span>
               <button
@@ -66,7 +73,7 @@ export default function Navbar() {
               <Link
                 href="/login"
                 onClick={() => trackNav("Login")}
-                className="text-slate-400 font-semibold hover:text-white active:scale-95 transition-all"
+                className="ml-auto text-slate-400 font-semibold hover:text-white active:scale-95 transition-all"
               >
                 Login
               </Link>
