@@ -24,7 +24,7 @@ export default function Navbar() {
           Prism Plan
         </Link>
 
-        <div className="flex items-center space-x-6 flex-1 justify-end">
+        <div className="flex items-center space-x-6">
           <Link
             href="/#features"
             onClick={() => trackNav("Features")}
