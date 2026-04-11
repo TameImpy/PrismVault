@@ -161,7 +161,12 @@ export default function AssistantPage() {
 
       <main className="flex-1 flex flex-col pt-24 pb-24 max-w-4xl mx-auto w-full px-4">
         {/* Header */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 flex flex-col items-center">
+          <img
+            src="/prism-assistant-avatar.png"
+            alt="Prism Assistant"
+            className="w-24 h-24 rounded-full mb-4 shadow-[0_0_30px_rgba(31,137,223,0.3)]"
+          />
           <h1 className="text-3xl font-bold text-white font-headline tracking-tight">
             Prism Assistant
           </h1>
