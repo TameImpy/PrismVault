@@ -315,3 +315,52 @@ async def save_brief(user_id, topic, advertiser, kpi, client_brief, result_json)
         {"id": brief_id},
     )
     return _row_to_dict(row)
+
+
+async def get_user_briefs(user_id):
+    """Return all briefs for a user, most recent first. Excludes result_json for performance."""
+    rows = await database.fetch_all(
+        "SELECT id, user_id, topic, advertiser, kpi, client_brief, created_at "
+        "FROM briefs WHERE user_id = :user_id ORDER BY created_at DESC, id DESC",
+        {"user_id": user_id},
+    )
+    return [_row_to_dict(r) for r in rows]
+
+
+async def get_all_briefs():
+    """Return all briefs with author names, most recent first. Excludes result_json."""
+    rows = await database.fetch_all(
+        "SELECT b.id, b.user_id, b.topic, b.advertiser, b.kpi, b.client_brief, "
+        "b.created_at, u.name as author_name "
+        "FROM briefs b JOIN users u ON b.user_id = u.id "
+        "ORDER BY b.created_at DESC, b.id DESC"
+    )
+    return [_row_to_dict(r) for r in rows]
+
+
+async def get_brief_by_id(brief_id):
+    """Return a single brief with full result_json, or None."""
+    row = await database.fetch_one(
+        "SELECT b.id, b.user_id, b.topic, b.advertiser, b.kpi, b.client_brief, "
+        "b.result_json, b.created_at, u.name as author_name "
+        "FROM briefs b JOIN users u ON b.user_id = u.id "
+        "WHERE b.id = :id",
+        {"id": brief_id},
+    )
+    return _row_to_dict(row)
+
+
+async def delete_brief(brief_id, user_id):
+    """Delete a brief by ID, but only if it belongs to the given user.
+    Returns True if deleted, False if not found or not owned."""
+    row = await database.fetch_one(
+        "SELECT id FROM briefs WHERE id = :id AND user_id = :user_id",
+        {"id": brief_id, "user_id": user_id},
+    )
+    if row is None:
+        return False
+    await database.execute(
+        "DELETE FROM briefs WHERE id = :id AND user_id = :user_id",
+        {"id": brief_id, "user_id": user_id},
+    )
+    return True

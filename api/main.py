@@ -25,7 +25,9 @@ from src.assistant import chat as assistant_chat, chat_stream as assistant_chat_
 from api.database import (
     connect, disconnect, init_db, get_email_samples,
     submit_score as db_submit_score, get_leaderboard as db_get_leaderboard,
-    save_brief as db_save_brief,
+    save_brief as db_save_brief, get_user_briefs as db_get_user_briefs,
+    get_all_briefs as db_get_all_briefs, get_brief_by_id as db_get_brief_by_id,
+    delete_brief as db_delete_brief,
 )
 from api.auth import router as auth_router, me_router, get_current_user
 from api.email_samples import router as email_samples_router
@@ -198,6 +200,34 @@ def assistant_stream_endpoint(req: AssistantChatRequest, user: dict = Depends(ge
         event_generator(),
         media_type="text/event-stream",
     )
+
+
+# ---------------------------------------------------------------------------
+# Briefs
+# ---------------------------------------------------------------------------
+
+
+@app.get("/api/briefs")
+async def get_briefs(scope: str = Query("mine"), user: dict = Depends(get_current_user)):
+    if scope == "team":
+        return await db_get_all_briefs()
+    return await db_get_user_briefs(user["id"])
+
+
+@app.get("/api/briefs/{brief_id}")
+async def get_brief(brief_id: int, user: dict = Depends(get_current_user)):
+    brief = await db_get_brief_by_id(brief_id)
+    if brief is None:
+        raise HTTPException(status_code=404, detail="Brief not found.")
+    return brief
+
+
+@app.delete("/api/briefs/{brief_id}")
+async def remove_brief(brief_id: int, user: dict = Depends(get_current_user)):
+    deleted = await db_delete_brief(brief_id, user["id"])
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Brief not found.")
+    return {"ok": True}
 
 
 @app.get("/api/health")
