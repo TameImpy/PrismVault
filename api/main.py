@@ -4,8 +4,10 @@ import os
 # Ensure the project root is on sys.path so `src` and `config` are importable
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+import asyncio
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
+from functools import partial
 from typing import Optional
 
 import json
@@ -78,12 +80,17 @@ async def create_insights(req: InsightsRequest, user: dict = Depends(get_current
     if not config.OPENAI_API_KEY:
         raise HTTPException(status_code=500, detail="Missing OPENAI_API_KEY on the server.")
     try:
-        result = generate_insights(
-            topic=req.topic,
-            advertiser=req.advertiser,
-            kpi=req.kpi,
-            include_google_trends=req.include_google_trends,
-            client_brief=req.client_brief,
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(
+            None,
+            partial(
+                generate_insights,
+                topic=req.topic,
+                advertiser=req.advertiser,
+                kpi=req.kpi,
+                include_google_trends=req.include_google_trends,
+                client_brief=req.client_brief,
+            ),
         )
         await db_save_brief(
             user_id=user["id"],
