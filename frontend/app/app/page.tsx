@@ -228,6 +228,59 @@ export default function InsightsTool() {
   const [deckLoading, setDeckLoading] = useState(false);
   const { track } = useAnalytics();
 
+  // Brief library state
+  type TabName = "new" | "mine" | "team";
+  const [activeTab, setActiveTab] = useState<TabName>("new");
+  const [briefs, setBriefs] = useState<any[]>([]);
+  const [briefsLoading, setBriefsLoading] = useState(false);
+  const [briefSearch, setBriefSearch] = useState("");
+  const [viewingBrief, setViewingBrief] = useState<any | null>(null);
+  const [viewingBriefLoading, setViewingBriefLoading] = useState(false);
+
+  const fetchBriefs = useCallback(async (scope: string) => {
+    setBriefsLoading(true);
+    try {
+      const res = await fetch("/api/briefs?scope=" + scope, { credentials: "include" });
+      if (res.ok) setBriefs(await res.json());
+    } catch {}
+    setBriefsLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === "mine") fetchBriefs("mine");
+    else if (activeTab === "team") fetchBriefs("team");
+  }, [activeTab, fetchBriefs]);
+
+  async function openBrief(id: number) {
+    setViewingBriefLoading(true);
+    try {
+      const res = await fetch("/api/briefs/" + id, { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json();
+        data._parsed_result = JSON.parse(data.result_json);
+        setViewingBrief(data);
+      }
+    } catch {}
+    setViewingBriefLoading(false);
+  }
+
+  async function handleDeleteBrief(id: number) {
+    const res = await fetch("/api/briefs/" + id, { method: "DELETE", credentials: "include" });
+    if (res.ok) {
+      setBriefs((prev) => prev.filter((b) => b.id !== id));
+      if (viewingBrief?.id === id) setViewingBrief(null);
+    }
+  }
+
+  function handleRerun(brief: any) {
+    setTopic(brief.topic);
+    setAdvertiser(brief.advertiser);
+    setKpi(brief.kpi);
+    setClientBrief(brief.client_brief || "");
+    setViewingBrief(null);
+    setActiveTab("new");
+  }
+
   const handleSampleCountChange = useCallback((count: number) => {
     setSampleCount(count);
   }, []);
@@ -319,7 +372,7 @@ export default function InsightsTool() {
 
         <div className="max-w-5xl mx-auto">
           {/* Page header */}
-          <div className="mb-12">
+          <div className="mb-8">
             <h1 className="font-headline text-4xl md:text-5xl font-extrabold tracking-tighter mb-4">
               Prism <span className="text-accent-cyan italic">Plan</span>
             </h1>
@@ -329,7 +382,233 @@ export default function InsightsTool() {
             </p>
           </div>
 
-          {/* Input panel */}
+          {/* Tabs */}
+          <div className="flex gap-1 mb-8 bg-surface-container rounded-xl p-1 w-fit">
+            {([["new", "New Brief"], ["mine", "My Briefs"], ["team", "Team Library"]] as [TabName, string][]).map(([key, label]) => (
+              <button
+                key={key}
+                onClick={() => { setActiveTab(key); setViewingBrief(null); }}
+                className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  activeTab === key
+                    ? "bg-accent-cyan/15 text-accent-cyan"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Brief list view (My Briefs / Team Library) */}
+          {activeTab !== "new" && !viewingBrief && (
+            <div>
+              <div className="mb-6">
+                <input
+                  type="text"
+                  value={briefSearch}
+                  onChange={(e) => setBriefSearch(e.target.value)}
+                  placeholder="Search by advertiser, topic, or author..."
+                  className="w-full md:w-96 bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-3 text-on-surface placeholder-slate-500 focus:outline-none focus:border-accent-cyan focus:shadow-[0_0_0_1px_rgba(31,137,223,0.3)] transition-all text-sm"
+                />
+              </div>
+
+              {briefsLoading ? (
+                <div className="space-y-4">
+                  <SkeletonCard />
+                  <SkeletonCard />
+                </div>
+              ) : briefs.length === 0 ? (
+                <div className="text-center py-20">
+                  <p className="text-slate-400 text-lg">
+                    {activeTab === "mine" ? "You haven't generated any briefs yet." : "No briefs have been generated yet."}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {briefs
+                    .filter((b) => {
+                      if (!briefSearch.trim()) return true;
+                      const q = briefSearch.toLowerCase();
+                      return (
+                        b.advertiser?.toLowerCase().includes(q) ||
+                        b.topic?.toLowerCase().includes(q) ||
+                        (b.author_name && b.author_name.toLowerCase().includes(q))
+                      );
+                    })
+                    .map((brief) => (
+                      <button
+                        key={brief.id}
+                        onClick={() => openBrief(brief.id)}
+                        className="w-full text-left glass-card rounded-2xl p-5 border border-white/10 shadow-2xl hover:border-accent-cyan/30 hover:shadow-[0_0_20px_rgba(31,137,223,0.1)] transition-all duration-300 flex items-center justify-between group"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3 mb-1">
+                            <span className="font-headline font-bold text-white text-lg truncate">{brief.advertiser}</span>
+                            <span className="px-2 py-0.5 rounded-md bg-accent-cyan/10 text-accent-cyan text-xs font-semibold shrink-0">{brief.kpi}</span>
+                          </div>
+                          <p className="text-slate-400 text-sm truncate">{brief.topic}</p>
+                          <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
+                            {brief.author_name && <span>{brief.author_name}</span>}
+                            <span>{new Date(brief.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
+                          </div>
+                        </div>
+                        {brief.user_id === user?.id && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleDeleteBrief(brief.id); }}
+                            className="ml-4 p-2 text-slate-500 hover:text-error transition-colors opacity-0 group-hover:opacity-100"
+                            title="Delete brief"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                            </svg>
+                          </button>
+                        )}
+                      </button>
+                    ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Brief detail view (from saved brief) */}
+          {viewingBrief && activeTab !== "new" && (() => {
+            const briefResult: InsightsResult = viewingBrief._parsed_result;
+            const sections = parseSections(briefResult.content);
+            const atAGlance = sections.find((s) => s.title === "At a Glance");
+            const keyRecs = sections.find((s) => s.title === "Key Recommendations");
+            const detailSections = sections.filter(
+              (s) => s.title !== "Key Recommendations" && s.title !== "At a Glance"
+            );
+            const glanceCards = atAGlance ? parseGlanceCards(atAGlance.content) : [];
+
+            // Temporarily set result for deck/email actions
+            const savedResult = briefResult;
+
+            return (
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <button
+                    onClick={() => setViewingBrief(null)}
+                    className="text-accent-cyan text-sm font-semibold hover:underline flex items-center gap-1"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Back to list
+                  </button>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-slate-500">
+                      {viewingBrief.author_name} &middot; {new Date(viewingBrief.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                    </span>
+                    <button
+                      onClick={() => handleRerun(viewingBrief)}
+                      className="px-4 py-2 rounded-lg text-sm font-semibold text-accent-cyan bg-accent-cyan/10 hover:bg-accent-cyan/20 transition-all"
+                    >
+                      Re-run
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mb-4">
+                  <h2 className="font-headline text-2xl font-bold text-white">{viewingBrief.advertiser}</h2>
+                  <p className="text-slate-400">{viewingBrief.topic} &middot; {viewingBrief.kpi}</p>
+                </div>
+
+                <div className="space-y-6">
+                  {glanceCards.length > 0 && (
+                    <div className="bg-surface-container-lowest rounded-2xl p-8 border border-white/5">
+                      <h2 className="font-headline text-2xl font-bold mb-6">At a Glance</h2>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {glanceCards.map((card, i) => (
+                          <div key={i} className="bg-surface-container rounded-xl p-4 border border-white/5 hover:border-accent-cyan/20 transition-all duration-500 flex items-start gap-3">
+                            <div className="shrink-0 inline-flex p-2.5 rounded-xl bg-accent-cyan/10 text-accent-cyan">
+                              {GLANCE_ICONS[card.label] || GLANCE_ICONS["Core Products"]}
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-bold tracking-widest text-on-surface-variant uppercase mb-1">{card.label}</p>
+                              <p className="text-on-surface text-sm leading-relaxed">{card.content}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {keyRecs && keyRecs.content && (
+                    <div className="bg-surface-container-lowest rounded-2xl p-8 border border-white/5 border-l-4 border-l-accent-cyan">
+                      <div className="mb-6 inline-flex p-3 rounded-xl bg-accent-cyan/10 text-accent-cyan">
+                        {SECTION_ICONS["Key Recommendations"]}
+                      </div>
+                      <h2 className="font-headline text-2xl font-bold mb-4">Key Recommendations</h2>
+                      <div className="text-on-surface-variant text-sm leading-relaxed break-words-anywhere">
+                        <ReactMarkdown components={markdownComponents}>{keyRecs.content}</ReactMarkdown>
+                      </div>
+                    </div>
+                  )}
+
+                  {detailSections.map((section, i) => (
+                    <div key={i} className="bg-surface-container-lowest rounded-2xl p-8 border border-white/5 hover:border-accent-cyan/20 transition-all duration-500">
+                      {SECTION_ICONS[section.title] && (
+                        <div className="mb-6 inline-flex p-3 rounded-xl bg-accent-cyan/10 text-accent-cyan">{SECTION_ICONS[section.title]}</div>
+                      )}
+                      <h2 className="font-headline text-2xl font-bold mb-4">{section.title}</h2>
+                      <div className="text-on-surface-variant text-sm leading-relaxed break-words-anywhere">
+                        <ReactMarkdown components={markdownComponents}>{section.content}</ReactMarkdown>
+                      </div>
+                    </div>
+                  ))}
+
+                  {savedResult.sources && savedResult.sources.length > 0 && (
+                    <CollapsiblePanel title="Sources & Attribution" defaultOpen={false}>
+                      <ul className="space-y-3">
+                        {savedResult.sources.map((source, i) => (
+                          <li key={i} className="text-on-surface-variant text-sm">
+                            <span className="font-bold text-on-surface">{source.editor}</span>, {source.publication} ({source.date}) &mdash; <span className="italic text-accent-cyan">{source.vertical}</span>: {source.topics}
+                          </li>
+                        ))}
+                      </ul>
+                    </CollapsiblePanel>
+                  )}
+
+                  {savedResult.research_skills && savedResult.research_skills.length > 0 && (
+                    <CollapsiblePanel title="Advertiser Research" defaultOpen={false}>
+                      <div className="space-y-6">
+                        {savedResult.research_skills.map((skill, i) => (
+                          <div key={i} className="bg-surface-container-lowest rounded-xl p-5 border border-white/5">
+                            <h4 className="font-headline font-bold text-lg mb-3">{skill.skill_name}</h4>
+                            {skill.error && <p className="text-error text-sm mb-3">Error: {skill.error}</p>}
+                            <p className="text-on-surface-variant text-sm leading-relaxed whitespace-pre-wrap mb-4">{skill.processed_summary}</p>
+                            {skill.raw_results && skill.raw_results.length > 0 && <ExpandableRawResults results={skill.raw_results} />}
+                          </div>
+                        ))}
+                      </div>
+                    </CollapsiblePanel>
+                  )}
+
+                  {savedResult.audience_timing && (
+                    <CollapsiblePanel title="Audience Data" defaultOpen={false}>
+                      <p className="text-on-surface-variant text-sm leading-relaxed whitespace-pre-wrap">{savedResult.audience_timing}</p>
+                    </CollapsiblePanel>
+                  )}
+
+                  {savedResult.google_trends && (
+                    <CollapsiblePanel title="Google Trends" defaultOpen={false}>
+                      <p className="text-on-surface-variant text-sm leading-relaxed whitespace-pre-wrap">{savedResult.google_trends}</p>
+                    </CollapsiblePanel>
+                  )}
+
+                  {savedResult.format_recommendations && (
+                    <CollapsiblePanel title="Format Recommendations" defaultOpen={false}>
+                      <p className="text-on-surface-variant text-sm leading-relaxed whitespace-pre-wrap">{savedResult.format_recommendations}</p>
+                    </CollapsiblePanel>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Input panel — only show on New Brief tab */}
+          {activeTab === "new" && (<>
           <GlassCard className="mb-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               <div>
@@ -700,6 +979,9 @@ export default function InsightsTool() {
                 Enter a topic and advertiser to generate strategic insights.
               </p>
             </div>
+          )}
+          {/* End of New Brief tab */}
+          </>
           )}
         </div>
       </main>
