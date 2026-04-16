@@ -92,14 +92,17 @@ async def create_insights(req: InsightsRequest, user: dict = Depends(get_current
                 client_brief=req.client_brief,
             ),
         )
-        await db_save_brief(
-            user_id=user["id"],
-            topic=req.topic,
-            advertiser=req.advertiser,
-            kpi=req.kpi,
-            client_brief=req.client_brief,
-            result_json=json.dumps(result),
-        )
+        try:
+            await db_save_brief(
+                user_id=user["id"],
+                topic=req.topic,
+                advertiser=req.advertiser,
+                kpi=req.kpi,
+                client_brief=req.client_brief,
+                result_json=json.dumps(result),
+            )
+        except Exception:
+            pass  # Auto-save failure should not block the response
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
