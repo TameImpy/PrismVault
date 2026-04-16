@@ -75,12 +75,27 @@ CREATE TABLE IF NOT EXISTS scores (
 )
 """ % _PK
 
+CREATE_BRIEFS = """
+CREATE TABLE IF NOT EXISTS briefs (
+    id %s,
+    user_id INTEGER NOT NULL,
+    topic TEXT NOT NULL,
+    advertiser TEXT NOT NULL,
+    kpi TEXT NOT NULL,
+    client_brief TEXT NOT NULL DEFAULT '',
+    result_json TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+)
+""" % _PK
+
 
 async def init_db():
     """Create all tables if they do not exist."""
     await database.execute(CREATE_USERS)
     await database.execute(CREATE_EMAIL_SAMPLES)
     await database.execute(CREATE_SCORES)
+    await database.execute(CREATE_BRIEFS)
 
 
 # ---------------------------------------------------------------------------
@@ -273,3 +288,30 @@ async def get_leaderboard(player_name=None):
         "player_rank": player_rank,
         "total_players": total_players,
     }
+
+
+# ---------------------------------------------------------------------------
+# Briefs
+# ---------------------------------------------------------------------------
+
+
+async def save_brief(user_id, topic, advertiser, kpi, client_brief, result_json):
+    """Insert a new brief and return the saved row dict."""
+    brief_id = await _insert_returning_id(
+        "INSERT INTO briefs (user_id, topic, advertiser, kpi, client_brief, result_json) "
+        "VALUES (:user_id, :topic, :advertiser, :kpi, :client_brief, :result_json)",
+        {
+            "user_id": user_id,
+            "topic": topic,
+            "advertiser": advertiser,
+            "kpi": kpi,
+            "client_brief": client_brief,
+            "result_json": result_json,
+        },
+    )
+    row = await database.fetch_one(
+        "SELECT id, user_id, topic, advertiser, kpi, client_brief, created_at "
+        "FROM briefs WHERE id = :id",
+        {"id": brief_id},
+    )
+    return _row_to_dict(row)

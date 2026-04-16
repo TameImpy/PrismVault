@@ -25,6 +25,7 @@ from src.assistant import chat as assistant_chat, chat_stream as assistant_chat_
 from api.database import (
     connect, disconnect, init_db, get_email_samples,
     submit_score as db_submit_score, get_leaderboard as db_get_leaderboard,
+    save_brief as db_save_brief,
 )
 from api.auth import router as auth_router, me_router, get_current_user
 from api.email_samples import router as email_samples_router
@@ -71,7 +72,7 @@ class InsightsRequest(BaseModel):
 
 
 @app.post("/api/insights")
-def create_insights(req: InsightsRequest, user: dict = Depends(get_current_user)):
+async def create_insights(req: InsightsRequest, user: dict = Depends(get_current_user)):
     if not config.OPENAI_API_KEY:
         raise HTTPException(status_code=500, detail="Missing OPENAI_API_KEY on the server.")
     try:
@@ -81,6 +82,14 @@ def create_insights(req: InsightsRequest, user: dict = Depends(get_current_user)
             kpi=req.kpi,
             include_google_trends=req.include_google_trends,
             client_brief=req.client_brief,
+        )
+        await db_save_brief(
+            user_id=user["id"],
+            topic=req.topic,
+            advertiser=req.advertiser,
+            kpi=req.kpi,
+            client_brief=req.client_brief,
+            result_json=json.dumps(result),
         )
         return result
     except Exception as e:
