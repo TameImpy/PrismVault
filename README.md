@@ -8,7 +8,7 @@ A RAG-based strategic insights tool that combines editorial interview transcript
 pip3 install -r requirements.txt
 ```
 
-Create a `.env` file:
+Create a `.env` fyle:
 ```
 OPENAI_API_KEY=your-key-here
 ```
