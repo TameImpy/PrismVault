@@ -1,7 +1,13 @@
 import csv
 import os
+import re
 
 DEFAULT_CSV_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "format_recommendations.csv")
+
+# A recommendation entry is a list item (bullet or number) whose first bold span
+# is the format name — matching the "Recommended Products" output format.
+_LIST_MARKER = re.compile(r"^\s*(?:[-*•]|\d+[.)])\s+")
+_BOLD = re.compile(r"\*\*(.+?)\*\*")
 
 # V2 schema: `When to use this` and `avoid_when` are dropped. Indicative cost
 # is retained here as model context but is not surfaced to users (enforced via
@@ -84,3 +90,46 @@ def load_format_data(csv_path=None):
         parts.append("\n".join(lines))
 
     return "\n\n".join(parts)
+
+
+def validate_format_names(content, valid_names):
+    # type: (str, list) -> dict
+    """Best-effort, deterministic name-validation guardrail.
+
+    Scans generated recommendation `content` and classifies the format names it
+    presents against the confirmed catalogue `valid_names`:
+
+    - ``recognised``: confirmed catalogue names that appear in the content.
+    - ``unrecognised``: format-like names presented as recommendation entries
+      (the leading bold name of a list item) that do NOT match any confirmed
+      name — i.e. hallucinated or renamed products.
+
+    Pure and side-effect free (no OpenAI, no I/O) so it is fully testable. This
+    is intentionally best-effort per PRD #91: the synthesiser logs unrecognised
+    names server-side without blocking the user's response.
+    """
+    valid_list = [(n or "").strip() for n in valid_names]
+    valid_lookup = set(n.lower() for n in valid_list if n)
+
+    lowered = content.lower()
+    recognised = [n for n in valid_list if n and n.lower() in lowered]
+
+    unrecognised = []
+    seen = set()
+    for line in content.splitlines():
+        marker = _LIST_MARKER.match(line)
+        if not marker:
+            continue
+        bold = _BOLD.search(line[marker.end():])
+        if not bold:
+            continue
+        candidate = bold.group(1).strip().rstrip(":").strip()
+        if not candidate:
+            continue
+        key = candidate.lower()
+        if key in valid_lookup or key in seen:
+            continue
+        seen.add(key)
+        unrecognised.append(candidate)
+
+    return {"recognised": recognised, "unrecognised": unrecognised}

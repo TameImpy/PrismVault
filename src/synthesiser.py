@@ -1,3 +1,5 @@
+import logging
+
 from openai import OpenAI
 import config
 from src.vectorstore import search_transcripts
@@ -5,9 +7,35 @@ from src.web_search import research_advertiser
 from src.audience import load_audience_data, get_topic_trends
 from src.trends import get_trend_data
 from src.brief import summarise_brief
-from src.formats import load_format_data
+from src.formats import load_format_data, load_format_names, validate_format_names
 from src.campaign_history import get_campaign_summary
 from src.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
+
+logger = logging.getLogger(__name__)
+
+
+def _run_format_name_guardrail(content):
+    # type: (str) -> dict
+    """Validate recommended format names against the confirmed catalogue.
+
+    Best-effort and non-blocking: any unrecognised (format-like) names are
+    logged server-side so drift/hallucination is surfaced without failing the
+    user's response. Never raises.
+    """
+    try:
+        valid_names = load_format_names()
+        result = validate_format_names(content or "", valid_names)
+    except Exception:  # pragma: no cover - guardrail must never break a response
+        logger.exception("Format-name guardrail failed; continuing without it.")
+        return {"recognised": [], "unrecognised": []}
+
+    if result["unrecognised"]:
+        logger.warning(
+            "Format-name guardrail flagged unrecognised format names in the "
+            "generated brief: %s",
+            result["unrecognised"],
+        )
+    return result
 
 
 def _format_editorial_insights(results: dict) -> tuple[str, list[dict]]:
@@ -112,6 +140,10 @@ def generate_insights(
     )
 
     content = response.choices[0].message.content
+
+    # 10. Guardrail: flag any recommended format names not in the catalogue
+    # (best-effort, non-blocking — logs server-side, never fails the response).
+    _run_format_name_guardrail(content)
 
     return {
         "content": content,

@@ -2,7 +2,7 @@ import os
 import tempfile
 import csv
 
-from src.formats import load_format_data, load_format_names
+from src.formats import load_format_data, load_format_names, validate_format_names
 
 # V2 schema: `When to use this` and `avoid_when` are dropped; all other columns retained.
 V2_FIELDNAMES = [
@@ -290,3 +290,191 @@ def test_load_format_names_skips_rows_with_blank_format_cell():
 
         assert names == ["Valid Format", "Another Valid"]
 
+
+# ---------------------------------------------------------------------------
+# validate_format_names — pure, deterministic name-validation guardrail (#94)
+# ---------------------------------------------------------------------------
+
+VALID_NAMES = [
+    "Standard display - Mobile Banner",
+    "Host Read",
+    "Gatefold (General)",
+    "Masthead",
+]
+
+
+def test_validate_format_names_recognises_in_catalogue_names():
+    content = (
+        "## Recommended Products\n"
+        "- **Standard display - Mobile Banner** — CTR average 0.08%, "
+        "Viewability 72.49%, Primary objective: Reach\n"
+        "- **Host Read** — benchmarks not currently available for this "
+        "specific format, Primary objective: Awareness\n"
+    )
+
+    result = validate_format_names(content, VALID_NAMES)
+
+    assert "Standard display - Mobile Banner" in result["recognised"]
+    assert "Host Read" in result["recognised"]
+    assert result["unrecognised"] == []
+
+
+def test_validate_format_names_flags_off_catalogue_names():
+    content = (
+        "## Recommended Products\n"
+        "- **Standard display - Mobile Banner** — CTR average 0.08%\n"
+        "- **Premium Mega Skin** — CTR average 3.10%, Primary objective: Awareness\n"
+        "\n"
+        "**Combined rationale:** For Acme this set balances reach and impact.\n"
+    )
+
+    result = validate_format_names(content, VALID_NAMES)
+
+    # The real product is recognised; the hallucinated one is flagged.
+    assert "Standard display - Mobile Banner" in result["recognised"]
+    assert "Premium Mega Skin" in result["unrecognised"]
+    # The closing rationale line is not a recommendation entry and must not be flagged.
+    assert "Combined rationale" not in result["unrecognised"]
+
+
+# ---------------------------------------------------------------------------
+# validate_format_names — edge cases for the guardrail (#94)
+# ---------------------------------------------------------------------------
+
+def test_validate_format_names_numbered_list_items_extracted():
+    """List items starting with '1.' and '2)' must be treated as recommendation
+    entries just like bullet points."""
+    content = (
+        "## Recommended Products\n"
+        "1. **Host Read** — benchmarks not currently available\n"
+        "2) **Ghost Format** — CTR average 1.00%\n"
+    )
+
+    result = validate_format_names(content, VALID_NAMES)
+
+    assert "Host Read" in result["recognised"]
+    assert "Ghost Format" in result["unrecognised"]
+
+
+def test_validate_format_names_renamed_real_product_flagged_as_unrecognised():
+    """A name that is merely similar to a catalogue name ('Mastheads' vs
+    'Masthead') must be flagged as unrecognised — partial similarity is not
+    a match on the candidate side.
+
+    Note: 'Masthead' IS in the recognised list because validate_format_names
+    uses a substring scan for the recognised set (checking whether the catalogue
+    name appears anywhere in the content). 'Mastheads' as a list-entry bold span
+    does not match 'masthead' in valid_lookup, so it must also appear in
+    unrecognised."""
+    content = (
+        "## Recommended Products\n"
+        "- **Mastheads** — CTR average 2.00%, Primary objective: Awareness\n"
+    )
+
+    result = validate_format_names(content, VALID_NAMES)
+
+    assert "Mastheads" in result["unrecognised"]
+
+
+def test_validate_format_names_name_with_parentheses_not_flagged():
+    """A real catalogue name containing parentheses like 'Gatefold (General)'
+    must NOT appear in unrecognised when it is in valid_names."""
+    content = (
+        "## Recommended Products\n"
+        "- **Gatefold (General)** — CTR average 0.50%, Primary objective: Reach\n"
+    )
+
+    result = validate_format_names(content, VALID_NAMES)
+
+    assert "Gatefold (General)" in result["recognised"]
+    assert "Gatefold (General)" not in result["unrecognised"]
+
+
+def test_validate_format_names_duplicate_unrecognised_listed_only_once():
+    """The same unrecognised name appearing in multiple list items must only
+    appear once in the unrecognised list."""
+    content = (
+        "## Recommended Products\n"
+        "- **Mystery Format** — CTR average 0.80%\n"
+        "- **Mystery Format** — repeated again for some reason\n"
+    )
+
+    result = validate_format_names(content, VALID_NAMES)
+
+    assert result["unrecognised"].count("Mystery Format") == 1
+
+
+def test_validate_format_names_no_list_items_returns_empty_unrecognised():
+    """Content with no list items at all (headings, prose, bold labels) must
+    return an empty unrecognised list."""
+    content = (
+        "## Recommended Products\n"
+        "**Combined rationale:** This advertiser would benefit from Host Read.\n"
+        "See the full format catalogue for more options.\n"
+    )
+
+    result = validate_format_names(content, VALID_NAMES)
+
+    assert result["unrecognised"] == []
+
+
+def test_validate_format_names_empty_content_returns_empty_results():
+    """Passing an empty string must not crash and must return empty lists."""
+    result = validate_format_names("", VALID_NAMES)
+
+    assert result == {"recognised": [], "unrecognised": []}
+
+
+def test_validate_format_names_whitespace_only_content_returns_empty_results():
+    """Whitespace-only content must not crash and must return empty lists."""
+    result = validate_format_names("   \n\n  \t  ", VALID_NAMES)
+
+    assert result == {"recognised": [], "unrecognised": []}
+
+
+def test_validate_format_names_bold_label_on_non_list_line_not_flagged():
+    """A bold span like '**Combined rationale:**' that appears on a non-list
+    line (no leading list marker) must never be flagged as an unrecognised
+    format name."""
+    content = (
+        "## Recommended Products\n"
+        "- **Host Read** — benchmarks not currently available\n"
+        "\n"
+        "**Combined rationale:** These formats suit the brief.\n"
+        "**Note:** All names are from the catalogue.\n"
+    )
+
+    result = validate_format_names(content, VALID_NAMES)
+
+    assert "Combined rationale" not in result["unrecognised"]
+    assert "Note" not in result["unrecognised"]
+
+
+def test_validate_format_names_bullet_variants_all_extracted():
+    """The three bullet variants (-, *, •) must all be treated as list markers."""
+    content = (
+        "- **Host Read** — bullet dash\n"
+        "* **Fake Alpha** — bullet asterisk\n"
+        "• **Fake Beta** — bullet point\n"
+    )
+
+    result = validate_format_names(content, VALID_NAMES)
+
+    assert "Host Read" in result["recognised"]
+    assert "Fake Alpha" in result["unrecognised"]
+    assert "Fake Beta" in result["unrecognised"]
+
+
+def test_validate_format_names_empty_valid_names_everything_unrecognised():
+    """With an empty catalogue every bold list-entry name is unrecognised and
+    the recognised list is empty."""
+    content = (
+        "- **Host Read** — some description\n"
+        "- **Masthead** — some description\n"
+    )
+
+    result = validate_format_names(content, [])
+
+    assert result["recognised"] == []
+    assert "Host Read" in result["unrecognised"]
+    assert "Masthead" in result["unrecognised"]

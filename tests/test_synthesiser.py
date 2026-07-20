@@ -1,5 +1,11 @@
+import logging
+
 from src.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
-from src.synthesiser import _format_editorial_insights, _format_advertiser_research
+from src.synthesiser import (
+    _format_editorial_insights,
+    _format_advertiser_research,
+    _run_format_name_guardrail,
+)
 
 
 def test_system_prompt_not_empty():
@@ -265,3 +271,87 @@ def test_format_advertiser_research():
 def test_format_advertiser_research_empty():
     formatted = _format_advertiser_research([])
     assert "No advertiser research available" in formatted
+
+
+def test_guardrail_logs_unrecognised_format_names(caplog):
+    """The guardrail flags and logs hallucinated/off-catalogue format names."""
+    content = (
+        "## Recommended Products\n"
+        "- **Totally Fake Format 9000** — CTR average 5.00%, Primary objective: Awareness\n"
+    )
+    with caplog.at_level(logging.WARNING):
+        result = _run_format_name_guardrail(content)
+
+    assert "Totally Fake Format 9000" in result["unrecognised"]
+    assert "Totally Fake Format 9000" in caplog.text
+
+
+def test_guardrail_nonblocking_and_silent_for_valid_names(caplog):
+    """Recognised names produce no warning and the guardrail never raises."""
+    content = (
+        "## Recommended Products\n"
+        "- **Host Read** — benchmarks not currently available for this specific format\n"
+    )
+    with caplog.at_level(logging.WARNING):
+        result = _run_format_name_guardrail(content)
+
+    assert result["unrecognised"] == []
+    assert not [r for r in caplog.records if r.levelno >= logging.WARNING]
+
+
+# ---------------------------------------------------------------------------
+# _run_format_name_guardrail — edge cases (#94)
+# ---------------------------------------------------------------------------
+
+def test_guardrail_empty_content_returns_empty_results_and_no_warning(caplog):
+    """An empty string must not crash the guardrail and must produce no warning."""
+    with caplog.at_level(logging.WARNING):
+        result = _run_format_name_guardrail("")
+
+    assert result == {"recognised": [], "unrecognised": []}
+    assert not [r for r in caplog.records if r.levelno >= logging.WARNING]
+
+
+def test_guardrail_none_content_returns_empty_results_and_no_warning(caplog):
+    """None as content must be coerced safely via 'content or \"\"' and must
+    not crash or emit a warning."""
+    with caplog.at_level(logging.WARNING):
+        result = _run_format_name_guardrail(None)
+
+    assert result == {"recognised": [], "unrecognised": []}
+    assert not [r for r in caplog.records if r.levelno >= logging.WARNING]
+
+
+def test_guardrail_returns_safe_fallback_if_load_format_names_raises(caplog):
+    """If load_format_names raises unexpectedly the guardrail must catch the
+    exception, log at ERROR level, and return the empty safe-fallback dict
+    rather than propagating the error."""
+    from unittest.mock import patch
+
+    with patch("src.synthesiser.load_format_names", side_effect=RuntimeError("CSV gone")):
+        with caplog.at_level(logging.ERROR):
+            result = _run_format_name_guardrail("- **Some Format** — CTR 1.00%")
+
+    assert result == {"recognised": [], "unrecognised": []}
+    # The guardrail must have logged the exception at ERROR/CRITICAL level.
+    error_records = [r for r in caplog.records if r.levelno >= logging.ERROR]
+    assert error_records, "Expected at least one ERROR-level log from the guardrail exception handler"
+
+
+def test_guardrail_warning_names_the_module_logger(caplog):
+    """The WARNING must be emitted by the synthesiser module logger, not the
+    root logger or an unexpected name. This pins the logger.warning() call
+    to src.synthesiser so log-routing configuration works correctly in prod."""
+    content = (
+        "## Recommended Products\n"
+        "- **Fictional Ad Unit** — CTR average 9.99%\n"
+    )
+    with caplog.at_level(logging.WARNING, logger="src.synthesiser"):
+        result = _run_format_name_guardrail(content)
+
+    warning_records = [
+        r for r in caplog.records
+        if r.levelno == logging.WARNING and r.name == "src.synthesiser"
+    ]
+    assert warning_records, "Expected a WARNING from the src.synthesiser logger"
+    assert "Fictional Ad Unit" in result["unrecognised"]
