@@ -40,16 +40,27 @@ How the advertiser's stated goals, challenges, and recent activity connect to th
 When and how to reach the target audience based on engagement data. Cite specific data points from the audience timing data (peak months, best days, top segments, index values).
 
 ## Recommended Products
-Based on the format recommendation data provided, recommend 3-5 specific ad formats that best align with the advertiser's KPI and brief context. For each recommended format:
-- State the format name with its key metrics (CTR average, viewability, indicative cost)
-- Incorporate the format's usage guidance naturally (e.g. "this product is great for efficient reach, simple messaging...")
-- Explain why this format fits the specific brief — connect it to the KPI, the advertiser's goals, or the editorial themes
+Based on the format recommendation data provided, recommend the ad formats that best match the advertiser's brief and KPI. Aim for 5 formats; never recommend fewer than 3; never exceed 5; and never pad the list with weak fits just to reach a number — a focused set of genuinely strong matches is the goal.
+
+Use only formats that appear in the provided catalogue, and refer to each by its **exact catalogue name**. Do not invent, rename, abbreviate, or merge product names.
+
+Present the recommendations as a list. For **each** recommended format, show exactly these fields and nothing more:
+- **Format name** (exact catalogue name)
+- **CTR average** — the format's CTR benchmark
+- **Viewability** — the format's viewability benchmark
+- **Primary objective** — the format's primary objective
+
+Do **not** show indicative cost. Do **not** add a per-format "when to use" line or per-format rationale.
+
+For any format that has no digital benchmarks (e.g. print, podcast, email, newsletter, sponsorship products), the CTR average and viewability will be blank in the data. In that case, render the plain-English note "benchmarks not currently available for this specific format" in place of the CTR and viewability values — never a blank or "N/A".
 
 Use this KPI-to-objective mapping when selecting formats:
 - Awareness → prioritise formats with Awareness or Reach as primary objective
 - Consideration → prioritise formats with Consideration as primary objective
 - Viewability → prioritise formats with the highest viewability scores regardless of stated objective
 - Clicks → prioritise formats with the highest CTR and Direct response as primary objective
+
+After the list, close the section with a single **combined rationale** — one short paragraph (not per-format) that ties the chosen set together against *this* specific advertiser and KPI. Amalgamate the chosen formats' `best_for_brief` and `best_for_advertiser_type` guidance along with the available editorial and audience context, so the rationale reads as a tailored strategic story rather than boilerplate. Reference the advertiser by name and the stated KPI explicitly.
 
 If no format recommendation data is available, note this explicitly.
 

@@ -95,6 +95,57 @@ def test_system_prompt_recommended_products_has_kpi_mapping():
     assert "Viewability" in recs_section
 
 
+def _recommended_products_section():
+    """Slice out the Recommended Products section of SYSTEM_PROMPT."""
+    start = SYSTEM_PROMPT.index("Recommended Products")
+    end = SYSTEM_PROMPT.index("Messaging & Tone")
+    return SYSTEM_PROMPT[start:end]
+
+
+def test_recommended_products_instructs_single_combined_rationale():
+    """The section must end with one combined, brief-aware rationale tying the
+    chosen formats to the specific advertiser and KPI (not per-format prose)."""
+    section = _recommended_products_section().lower()
+    assert "combined rationale" in section
+    assert "advertiser" in section
+    assert "kpi" in section
+
+
+def test_recommended_products_uses_missing_benchmark_wording():
+    """Formats without benchmarks must render the plain-English note, not N/A."""
+    section = _recommended_products_section()
+    assert "benchmarks not currently available for this specific format" in section
+
+
+def test_recommended_products_does_not_surface_indicative_cost():
+    """Indicative cost is model context only — the prompt must instruct the
+    model not to surface it (rather than listing it as a per-format field)."""
+    section = _recommended_products_section().lower().replace("*", "")
+    # The only permitted mention of cost is a prohibition on showing it.
+    assert "do not show indicative cost" in section
+
+
+def test_recommended_products_requires_exact_catalogue_names():
+    """The model must use exact catalogue names only (no renamed/invented formats)."""
+    section = _recommended_products_section().lower()
+    assert "exact" in section
+    assert "catalogue" in section or "catalog" in section
+
+
+def test_recommended_products_per_format_fields():
+    """Each recommendation shows name, CTR average, viewability, and primary objective."""
+    section = _recommended_products_section().lower()
+    assert "ctr" in section
+    assert "viewability" in section
+    assert "primary objective" in section
+
+
+def test_recommended_products_bounds_three_to_five():
+    """Aim for 5, floor of 3, no padding with weak fits."""
+    section = _recommended_products_section()
+    assert "3" in section and "5" in section
+
+
 def test_system_prompt_messaging_section_references_kpi():
     """The Messaging & Tone section should instruct the model to tailor recommendations to the KPI."""
     # Find the Messaging & Tone section and check it mentions KPI
