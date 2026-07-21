@@ -1218,6 +1218,7 @@ export default function InsightsTool() {
                             topic: topic.trim(),
                             advertiser: advertiser.trim(),
                             kpi,
+                            audience_segments: result.audience_segments,
                           }),
                         });
                         if (!res.ok) {
