@@ -38,6 +38,11 @@ Always scope the wording to **"direct"** campaigns; never over-claim beyond what
 ## Strategic Alignment
 How the advertiser's stated goals, challenges, and recent activity connect to the audience data, market trends, and brand research provided. Identify specific opportunities where the advertiser's strategy aligns with what the data shows.
 
+## Historical Research
+Only include this section when proprietary Historical Research is supplied below — i.e. it is NOT the exact fallback string "No historical research matched this brief.". When it is that fallback, **omit this section entirely**: do not write the heading, and do not write "none found" or any equivalent into the prose.
+
+When research is present, produce 2–3 findings bullets, each tailored specifically to *this* advertiser and brief (e.g. cruise figures for a cruise brand) and grounded strictly in the supplied research — never invented or extrapolated. When quoting any figure, observe this citation discipline: name the source audience (e.g. "Immediate Media travellers", not "UK consumers"), state the fieldwork date, quote the base `n=` alongside any percentage, present figures as stated intention rather than observed behaviour, and never sum multi-select percentages.
+
 ## Audience Segments & Reach
 Recommend the most relevant targetable audience segments for this brief, based on the Audience Segments & Reach data provided. The data is split by platform (AP = modelled first-party audience, broad reach; Permutive = behavioural, recently engaged browsers) — present them as two separate lists, each in its own scale, and state the one-line framing for each so a broad modelled audience is never oversold as precise intent.
 
@@ -124,6 +129,13 @@ The following is the full catalogue of available ad formats with performance ben
 The following is the advertiser's **direct** campaign history with us, resolved deterministically. Use this to build the Client Relationship section and to inform recommendations. Treat its factual status (a direct history summary, or "No direct campaign history") as ground truth.
 
 {campaign_history}
+
+---
+
+### Historical Research
+The following is proprietary Immediate Media research, selected deterministically as relevant to this brief. Use it to build the Historical Research section. If it reads exactly "No historical research matched this brief.", omit the Historical Research section entirely; otherwise ground 2–3 brief-tailored findings in it and cite with the discipline described above.
+
+{historical_research}
 
 ---
 

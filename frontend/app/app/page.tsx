@@ -10,6 +10,9 @@ import CollapsiblePanel from "@/components/CollapsiblePanel";
 import WritingSamplesModal from "@/components/WritingSamplesModal";
 import DraftEmailModal from "@/components/DraftEmailModal";
 import AudienceSegmentsPanel from "@/components/AudienceSegmentsPanel";
+import HistoricalResearchCard, {
+  HistoricalResearch,
+} from "@/components/HistoricalResearchCard";
 import { useAnalytics } from "@/components/AnalyticsProvider";
 import { useAuth } from "@/contexts/AuthContext";
 import { AudienceSegmentsPayload } from "@/lib/audienceSegments";
@@ -44,6 +47,7 @@ interface InsightsResult {
   format_recommendations: string;
   campaign_history: string;
   client_brief_summary: string;
+  historical_research?: HistoricalResearch;
 }
 
 function SkeletonCard() {
@@ -676,7 +680,11 @@ export default function InsightsTool() {
               const detailSections = sections.filter(
                 (s) =>
                   s.title !== "Key Recommendations" &&
-                  s.title !== "At a Glance",
+                  s.title !== "At a Glance" &&
+                  s.title !== "Historical Research",
+              );
+              const historicalSection = sections.find(
+                (s) => s.title === "Historical Research",
               );
               const glanceCards = atAGlance
                 ? parseGlanceCards(atAGlance.content)
@@ -778,6 +786,12 @@ export default function InsightsTool() {
                         </div>
                       </div>
                     )}
+
+                    {/* Historical Research hero card (saved-brief view). */}
+                    <HistoricalResearchCard
+                      data={savedResult.historical_research}
+                      content={historicalSection?.content}
+                    />
 
                     {detailSections.map((section, i) => (
                       <div
@@ -997,7 +1011,11 @@ export default function InsightsTool() {
                   const detailSections = sections.filter(
                     (s) =>
                       s.title !== "Key Recommendations" &&
-                      s.title !== "At a Glance",
+                      s.title !== "At a Glance" &&
+                      s.title !== "Historical Research",
+                  );
+                  const historicalSection = sections.find(
+                    (s) => s.title === "Historical Research",
                   );
                   const glanceCards = atAGlance
                     ? parseGlanceCards(atAGlance.content)
@@ -1051,6 +1069,13 @@ export default function InsightsTool() {
                           </div>
                         </div>
                       )}
+
+                      {/* Historical Research hero card — proprietary research
+                          pull-through. Renders only on a relevant (matched) brief. */}
+                      <HistoricalResearchCard
+                        data={result.historical_research}
+                        content={historicalSection?.content}
+                      />
 
                       {/* Detail section cards */}
                       {detailSections.map((section, i) => (

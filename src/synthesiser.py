@@ -12,6 +12,7 @@ from src.trends import get_trend_data
 from src.brief import summarise_brief
 from src.formats import load_format_data, load_format_names, validate_format_names
 from src.campaign_history import get_campaign_summary, load_campaign_rows
+from src.historical_research import get_relevant_research
 from src.alias_table import DEFAULT_UNMATCHED_LOG_PATH
 from src.comparables import (
     get_comparables,
@@ -164,6 +165,14 @@ def generate_insights(
     # 7. Summarise client brief if provided
     client_brief_summary = summarise_brief(client_brief)
 
+    # 7b. Deterministic keyword gate over the proprietary research catalogue.
+    #     On a match the whole file body is woven into the prompt; on a no-match
+    #     a fallback string tells the model to omit the section entirely.
+    historical = get_relevant_research(topic, advertiser, client_brief)
+    historical_research_text = historical["prompt_text"]
+    # The return object carries only the card metadata (never the prompt body).
+    historical_research = {k: v for k, v in historical.items() if k != "prompt_text"}
+
     # 8. Assemble prompt
     user_prompt = USER_PROMPT_TEMPLATE.format(
         topic=topic,
@@ -175,6 +184,7 @@ def generate_insights(
         format_recommendations=format_recommendations,
         campaign_history=campaign_history,
         client_brief=client_brief_summary,
+        historical_research=historical_research_text,
     )
 
     # 9. Call GPT-4o
@@ -204,4 +214,5 @@ def generate_insights(
         "format_recommendations": format_recommendations,
         "campaign_history": campaign_history,
         "client_brief_summary": client_brief_summary,
+        "historical_research": historical_research,
     }

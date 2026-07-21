@@ -189,6 +189,7 @@ def test_user_prompt_template_has_placeholders():
     assert "{format_recommendations}" in USER_PROMPT_TEMPLATE
     assert "{campaign_history}" in USER_PROMPT_TEMPLATE
     assert "{client_brief}" in USER_PROMPT_TEMPLATE
+    assert "{historical_research}" in USER_PROMPT_TEMPLATE
 
 
 def test_user_prompt_renders():
@@ -202,6 +203,7 @@ def test_user_prompt_renders():
         format_recommendations="some formats",
         campaign_history="some history",
         client_brief="some brief",
+        historical_research="some historical research",
     )
     assert "test topic" in rendered
     assert "test brand" in rendered
