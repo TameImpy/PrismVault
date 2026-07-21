@@ -88,6 +88,48 @@ def test_case_insensitive_match():
         assert len(result["campaigns"]) == 2
 
 
+def test_match_exposes_status_and_matched_name():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        csv_path = os.path.join(tmpdir, "campaigns.csv")
+        _create_test_csv(csv_path)
+
+        result = get_campaign_summary("Tesco", csv_path)
+
+        assert result["status"] == "match"
+        assert result["matched_name"] == "Tesco"
+
+
+def test_substring_false_positive_now_no_match():
+    """The old substring match returned Skyscanner for "Sky"; the resolver
+    must not — "Sky" shares no whole token with "Skyscanner"."""
+    rows = [
+        {
+            "advertiser": "Skyscanner",
+            "campaign_name": "Skyscanner Summer",
+            "campaign_id": "500",
+            "category": "Travel",
+            "start_date": "2025-05-01",
+            "impressions": "1000000",
+            "clicks": "2000",
+        },
+    ]
+    with tempfile.TemporaryDirectory() as tmpdir:
+        csv_path = os.path.join(tmpdir, "campaigns.csv")
+        _create_test_csv(csv_path, rows=rows)
+
+        result = get_campaign_summary("Sky", csv_path)
+
+        assert result["status"] == "no_match"
+        assert result["campaigns"] == []
+        assert result["summary"] == NO_DATA_MESSAGE
+
+
+def test_no_direct_wording_on_no_match():
+    """No-match wording is scoped to 'direct', never an absolute claim."""
+    assert "direct" in NO_DATA_MESSAGE.lower()
+    assert "never" not in NO_DATA_MESSAGE.lower()
+
+
 def test_no_match_returns_fallback():
     with tempfile.TemporaryDirectory() as tmpdir:
         csv_path = os.path.join(tmpdir, "campaigns.csv")

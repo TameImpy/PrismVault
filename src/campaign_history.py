@@ -1,38 +1,59 @@
 import csv
 import os
 
+from src.entity_resolution import resolve
+
 DEFAULT_CSV_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "campaign_history.csv")
 
-NO_DATA_MESSAGE = "No previous campaign data found for this advertiser."
+# Scoped to "direct": the dataset is direct-only, so we never claim to know
+# about programmatic activity and never assert "we've never advertised".
+NO_DATA_MESSAGE = "No direct campaign history with this advertiser."
+
+
+def _no_match_result():
+    # type: () -> dict
+    return {
+        "summary": NO_DATA_MESSAGE,
+        "campaigns": [],
+        "status": "no_match",
+        "matched_name": None,
+    }
 
 
 def get_campaign_summary(advertiser, csv_path=None):
     # type: (str, str) -> dict
     """Look up an advertiser's campaign history and return a summary.
 
-    Returns a dict with:
+    Resolution is deterministic (see ``src.entity_resolution``): the queried
+    advertiser is matched against the roster of canonical advertiser names,
+    never by crude substring. Returns a dict with:
         summary (str): prompt-ready formatted summary
         campaigns (list): raw campaign records (one per campaign ID)
+        status (str): "match" or "no_match"
+        matched_name (str|None): the canonical roster name on a match
     """
     if csv_path is None:
         csv_path = DEFAULT_CSV_PATH
 
     if not os.path.exists(csv_path):
-        return {"summary": NO_DATA_MESSAGE, "campaigns": []}
+        return _no_match_result()
 
     with open(csv_path, newline="") as f:
         reader = csv.DictReader(f)
         rows = list(reader)
 
     if not rows:
-        return {"summary": NO_DATA_MESSAGE, "campaigns": []}
+        return _no_match_result()
 
-    # Filter rows matching advertiser (case-insensitive substring)
-    search = advertiser.lower()
-    matched = [r for r in rows if search in r.get("advertiser", "").lower()]
+    # Resolve the queried advertiser against the roster of canonical names.
+    roster = sorted({r.get("advertiser", "") for r in rows if r.get("advertiser")})
+    resolution = resolve(advertiser, roster)
 
-    if not matched:
-        return {"summary": NO_DATA_MESSAGE, "campaigns": []}
+    if resolution["status"] != "match":
+        return _no_match_result()
+
+    matched_name = resolution["matched_name"]
+    matched = [r for r in rows if r.get("advertiser", "") == matched_name]
 
     # Aggregate by campaign_id to avoid counting individual placements
     campaigns = {}
@@ -76,7 +97,7 @@ def get_campaign_summary(advertiser, csv_path=None):
 
     # Format summary
     summary_lines = [
-        "Campaign history for '%s':" % advertiser,
+        "Direct campaign history for '%s':" % matched_name,
         "- Total campaigns: %d" % len(campaign_list),
         "- Categories: %s" % (", ".join(categories) if categories else "N/A"),
         "- Total impressions: %s" % _format_number(total_impressions),
@@ -90,6 +111,8 @@ def get_campaign_summary(advertiser, csv_path=None):
     return {
         "summary": "\n".join(summary_lines),
         "campaigns": campaign_list,
+        "status": "match",
+        "matched_name": matched_name,
     }
 
 
