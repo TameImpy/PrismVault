@@ -10,7 +10,12 @@ from src.brief import summarise_brief
 from src.formats import load_format_data, load_format_names, validate_format_names
 from src.campaign_history import get_campaign_summary, load_campaign_rows
 from src.alias_table import DEFAULT_UNMATCHED_LOG_PATH
-from src.comparables import get_comparables, format_comparables_block, pick_comparables_llm
+from src.comparables import (
+    get_comparables,
+    format_comparables_block,
+    pick_comparables_llm,
+    pick_comparables_full_roster_llm,
+)
 from src.vertical_classifier import (
     load_brand_verticals,
     load_taxonomy,
@@ -96,7 +101,8 @@ def _build_comparables_block(advertiser, topic):
         query_vertical = classified.get(advertiser, "")
 
         result = get_comparables(
-            advertiser, query_vertical, roster, brand_verticals, rows, pick_comparables_llm
+            advertiser, query_vertical, roster, brand_verticals, rows,
+            pick_comparables_llm, full_pick_fn=pick_comparables_full_roster_llm,
         )
         return format_comparables_block(advertiser, result)
     except Exception:  # pragma: no cover - comparables must never break a response

@@ -113,3 +113,88 @@ def test_format_comparables_block_renders_name_why_and_format():
 def test_format_comparables_block_empty_when_none():
     from src.comparables import format_comparables_block
     assert format_comparables_block("Chime", {"comparables": [], "tier": 1, "note": ""}) == ""
+
+
+# --- Tier 2 (recall) + thin-roster behaviour (#112) ---
+
+# Only one brand sits in Finance, so the Tier-1 shortlist is thin.
+THIN_VERTICALS = {
+    "Monzo": "Finance",
+    "Tesco": "Supermarket",
+    "Aldi": "Supermarket",
+    "Diageo": "Alcohol",
+}
+THIN_ROSTER = ["Monzo", "Tesco", "Aldi", "Diageo"]
+
+
+def test_thin_shortlist_falls_through_to_tier2_full_roster():
+    tier1_called = {"n": 0}
+    tier2_seen = {}
+
+    def pick_fn(advertiser, shortlist):
+        tier1_called["n"] += 1
+        return [{"brand": b, "why_similar": "x"} for b in shortlist]
+
+    def full_pick_fn(advertiser, candidates, brand_verticals):
+        tier2_seen["candidates"] = list(candidates)
+        return [{"brand": "Tesco", "why_similar": "big spender, similar scale"}]
+
+    result = get_comparables(
+        advertiser="Chime",
+        query_vertical="Finance",  # only Monzo -> thin
+        roster=THIN_ROSTER,
+        brand_verticals=THIN_VERTICALS,
+        campaign_rows=[],
+        pick_fn=pick_fn,
+        full_pick_fn=full_pick_fn,
+    )
+
+    # Thin vertical shortlist -> Tier 1 pick is skipped, Tier 2 gets full roster.
+    assert tier1_called["n"] == 0
+    assert set(tier2_seen["candidates"]) == {"Monzo", "Tesco", "Aldi", "Diageo"}
+    assert [c["brand"] for c in result["comparables"]] == ["Tesco"]
+    assert result["tier"] == 2
+
+
+def test_tier2_surfaces_widen_note():
+    def pick_fn(advertiser, shortlist):
+        return []
+
+    def full_pick_fn(advertiser, candidates, brand_verticals):
+        return [{"brand": "Diageo", "why_similar": "premium brand"}]
+
+    result = get_comparables(
+        advertiser="Chime",
+        query_vertical="Finance",
+        roster=THIN_ROSTER,
+        brand_verticals=THIN_VERTICALS,
+        campaign_rows=[],
+        pick_fn=pick_fn,
+        full_pick_fn=full_pick_fn,
+    )
+
+    assert result["tier"] == 2
+    assert result["widened"] is True
+    # The note explicitly tells the reader we widened beyond the vertical.
+    assert "widen" in result["note"].lower() or "adjacent" in result["note"].lower()
+
+
+def test_still_nothing_reports_no_close_comparables():
+    def pick_fn(advertiser, shortlist):
+        return []
+
+    def full_pick_fn(advertiser, candidates, brand_verticals):
+        return [{"brand": "N26", "why_similar": "not a client"}]  # invalid -> dropped
+
+    result = get_comparables(
+        advertiser="Chime",
+        query_vertical="Finance",
+        roster=THIN_ROSTER,
+        brand_verticals=THIN_VERTICALS,
+        campaign_rows=[],
+        pick_fn=pick_fn,
+        full_pick_fn=full_pick_fn,
+    )
+
+    assert result["comparables"] == []
+    assert "no close comparables" in result["note"].lower()
