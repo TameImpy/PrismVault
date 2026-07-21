@@ -1,5 +1,11 @@
+import logging
+
 from src.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
-from src.synthesiser import _format_editorial_insights, _format_advertiser_research
+from src.synthesiser import (
+    _format_editorial_insights,
+    _format_advertiser_research,
+    _run_format_name_guardrail,
+)
 
 
 def test_system_prompt_not_empty():
@@ -93,6 +99,57 @@ def test_system_prompt_recommended_products_has_kpi_mapping():
     assert "Awareness" in recs_section
     assert "Clicks" in recs_section or "CTR" in recs_section
     assert "Viewability" in recs_section
+
+
+def _recommended_products_section():
+    """Slice out the Recommended Products section of SYSTEM_PROMPT."""
+    start = SYSTEM_PROMPT.index("Recommended Products")
+    end = SYSTEM_PROMPT.index("Messaging & Tone")
+    return SYSTEM_PROMPT[start:end]
+
+
+def test_recommended_products_instructs_single_combined_rationale():
+    """The section must end with one combined, brief-aware rationale tying the
+    chosen formats to the specific advertiser and KPI (not per-format prose)."""
+    section = _recommended_products_section().lower()
+    assert "combined rationale" in section
+    assert "advertiser" in section
+    assert "kpi" in section
+
+
+def test_recommended_products_uses_missing_benchmark_wording():
+    """Formats without benchmarks must render the plain-English note, not N/A."""
+    section = _recommended_products_section()
+    assert "benchmarks not currently available for this specific format" in section
+
+
+def test_recommended_products_does_not_surface_indicative_cost():
+    """Indicative cost is model context only — the prompt must instruct the
+    model not to surface it (rather than listing it as a per-format field)."""
+    section = _recommended_products_section().lower().replace("*", "")
+    # The only permitted mention of cost is a prohibition on showing it.
+    assert "do not show indicative cost" in section
+
+
+def test_recommended_products_requires_exact_catalogue_names():
+    """The model must use exact catalogue names only (no renamed/invented formats)."""
+    section = _recommended_products_section().lower()
+    assert "exact" in section
+    assert "catalogue" in section or "catalog" in section
+
+
+def test_recommended_products_per_format_fields():
+    """Each recommendation shows name, CTR average, viewability, and primary objective."""
+    section = _recommended_products_section().lower()
+    assert "ctr" in section
+    assert "viewability" in section
+    assert "primary objective" in section
+
+
+def test_recommended_products_bounds_three_to_five():
+    """Aim for 5, floor of 3, no padding with weak fits."""
+    section = _recommended_products_section()
+    assert "3" in section and "5" in section
 
 
 def test_system_prompt_messaging_section_references_kpi():
@@ -214,3 +271,87 @@ def test_format_advertiser_research():
 def test_format_advertiser_research_empty():
     formatted = _format_advertiser_research([])
     assert "No advertiser research available" in formatted
+
+
+def test_guardrail_logs_unrecognised_format_names(caplog):
+    """The guardrail flags and logs hallucinated/off-catalogue format names."""
+    content = (
+        "## Recommended Products\n"
+        "- **Totally Fake Format 9000** — CTR average 5.00%, Primary objective: Awareness\n"
+    )
+    with caplog.at_level(logging.WARNING):
+        result = _run_format_name_guardrail(content)
+
+    assert "Totally Fake Format 9000" in result["unrecognised"]
+    assert "Totally Fake Format 9000" in caplog.text
+
+
+def test_guardrail_nonblocking_and_silent_for_valid_names(caplog):
+    """Recognised names produce no warning and the guardrail never raises."""
+    content = (
+        "## Recommended Products\n"
+        "- **Host Read** — benchmarks not currently available for this specific format\n"
+    )
+    with caplog.at_level(logging.WARNING):
+        result = _run_format_name_guardrail(content)
+
+    assert result["unrecognised"] == []
+    assert not [r for r in caplog.records if r.levelno >= logging.WARNING]
+
+
+# ---------------------------------------------------------------------------
+# _run_format_name_guardrail — edge cases (#94)
+# ---------------------------------------------------------------------------
+
+def test_guardrail_empty_content_returns_empty_results_and_no_warning(caplog):
+    """An empty string must not crash the guardrail and must produce no warning."""
+    with caplog.at_level(logging.WARNING):
+        result = _run_format_name_guardrail("")
+
+    assert result == {"recognised": [], "unrecognised": []}
+    assert not [r for r in caplog.records if r.levelno >= logging.WARNING]
+
+
+def test_guardrail_none_content_returns_empty_results_and_no_warning(caplog):
+    """None as content must be coerced safely via 'content or \"\"' and must
+    not crash or emit a warning."""
+    with caplog.at_level(logging.WARNING):
+        result = _run_format_name_guardrail(None)
+
+    assert result == {"recognised": [], "unrecognised": []}
+    assert not [r for r in caplog.records if r.levelno >= logging.WARNING]
+
+
+def test_guardrail_returns_safe_fallback_if_load_format_names_raises(caplog):
+    """If load_format_names raises unexpectedly the guardrail must catch the
+    exception, log at ERROR level, and return the empty safe-fallback dict
+    rather than propagating the error."""
+    from unittest.mock import patch
+
+    with patch("src.synthesiser.load_format_names", side_effect=RuntimeError("CSV gone")):
+        with caplog.at_level(logging.ERROR):
+            result = _run_format_name_guardrail("- **Some Format** — CTR 1.00%")
+
+    assert result == {"recognised": [], "unrecognised": []}
+    # The guardrail must have logged the exception at ERROR/CRITICAL level.
+    error_records = [r for r in caplog.records if r.levelno >= logging.ERROR]
+    assert error_records, "Expected at least one ERROR-level log from the guardrail exception handler"
+
+
+def test_guardrail_warning_names_the_module_logger(caplog):
+    """The WARNING must be emitted by the synthesiser module logger, not the
+    root logger or an unexpected name. This pins the logger.warning() call
+    to src.synthesiser so log-routing configuration works correctly in prod."""
+    content = (
+        "## Recommended Products\n"
+        "- **Fictional Ad Unit** — CTR average 9.99%\n"
+    )
+    with caplog.at_level(logging.WARNING, logger="src.synthesiser"):
+        result = _run_format_name_guardrail(content)
+
+    warning_records = [
+        r for r in caplog.records
+        if r.levelno == logging.WARNING and r.name == "src.synthesiser"
+    ]
+    assert warning_records, "Expected a WARNING from the src.synthesiser logger"
+    assert "Fictional Ad Unit" in result["unrecognised"]
