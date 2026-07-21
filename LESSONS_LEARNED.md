@@ -6,6 +6,36 @@ future work doesn't have to rediscover it.
 
 ---
 
+## 2026-07-21 — Decision: raw segment .xlsx kept external, not committed (slice #97)
+
+**Context:** The Audience Segments feature builds a canonical `data/segments.csv`
+from two monthly platform exports (Permutive + AP) via `scripts/build_segments.py`.
+Slice #97 required an explicit decision: commit the raw `.xlsx` into the repo for
+reproducibility, or keep them external and version only the CSV.
+
+**Decision:** Keep the `.xlsx` **external**. Only `data/segments.csv` (the build
+output) and the build script are committed. The exports live in the analyst's
+`~/Documents/AP Audiences.xlsx` (Permutive sheet) and
+`~/Downloads/AP Audience List.xlsx` (AP, latest export with the `Size` reach column).
+
+**Why:** Matches the PRD refresh cycle (drop new export → rerun script → commit
+CSV → redeploy). The CSV is small, text, and diffable, so git history shows exactly
+how segments/reach changed month to month; committing ~270KB of opaque binary blobs
+would not. Trade-off accepted: the CSV isn't reproducible from the repo alone — the
+build needs the two source files, whose locations and expected sheets/columns are
+documented in the `build_segments.py` docstring. `data/*.xlsx` is gitignored so a
+stray export dropped into `data/` can't be committed by accident.
+
+**Data-hygiene gotcha found while building:** 18 Permutive source rows are broken
+CSV-quoting artifacts (a segment-definition query leaked across the `Name`/`Code`/
+`Size` columns), so their `Size` is non-numeric. The build's `to_int_reach()`
+returns `None` for non-numeric/zero/blank reach, so these are excluded automatically
+— no special-casing needed. Also note: AP codes are **not** unique (e.g.
+`ap_x 17713` maps to two genuinely different segments); AP rows are kept as-is
+(collapse is Permutive-only), so don't key AP lookups on `code` expecting uniqueness.
+
+---
+
 ## 2026-07-16 — Sandcastle init failed: "spawn docker ENOENT"
 
 **What went wrong:** `npx @ai-hero/sandcastle init` scaffolded fine but failed

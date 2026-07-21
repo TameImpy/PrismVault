@@ -8,5 +8,12 @@ dist/
 build/
 .streamlit/
 .DS_Store
+node_modules/
+.sandcastle/
 users.db
 .claude/worktrees/
+
+# Raw monthly segment exports are kept external, not committed (slice #97
+# decision — see LESSONS_LEARNED). Only data/segments.csv (build output) is
+# versioned. This guards against a stray export being dropped into data/.
+data/*.xlsx
