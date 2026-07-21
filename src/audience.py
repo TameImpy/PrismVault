@@ -8,6 +8,7 @@ never passes through the LLM.
 """
 import csv
 import json
+import math
 import os
 import re
 
@@ -118,17 +119,53 @@ def _tokenise(text):
     return [_stem(t) for t in re.findall(r"[a-z0-9]+", (text or "").lower())]
 
 
-def _segment_matches_keywords(segment, keywords):
-    """True if any keyword stem appears in the segment's searchable text."""
-    haystack = set(_tokenise(
+def _segment_haystack(segment):
+    """Stemmed token set over a segment's name + description + category."""
+    return set(_tokenise(
         "%s %s %s" % (segment.get("segment_name", ""),
                       segment.get("description", ""),
                       segment.get("category", ""))
     ))
+
+
+def _segment_matches_keywords(segment, keywords):
+    """True if any keyword stem appears in the segment's searchable text."""
+    haystack = _segment_haystack(segment)
     for kw in keywords:
         if set(_tokenise(kw)) & haystack:
             return True
     return False
+
+
+def _keyword_weights(segments, keywords):
+    """Inverse-document-frequency weight per keyword: rarer keywords score higher.
+
+    A keyword like "gut" that matches a handful of segments is far more
+    discriminating than "food", which matches hundreds; weighting by log(N/df)
+    lets a niche, on-topic segment outrank a generic high-reach one.
+    """
+    total = max(len(segments), 1)
+    weights = {}
+    for kw in keywords:
+        kw_stems = set(_tokenise(kw))
+        if not kw_stems:
+            continue
+        df = sum(1 for s in segments if kw_stems & _segment_haystack(s))
+        if df:
+            weights[kw] = math.log(1 + total / df)
+    return weights
+
+
+def _relevance_score(segment, keyword_weights):
+    """Sum of matched keyword weights; matches in the name count for more."""
+    haystack = _segment_haystack(segment)
+    name_stems = set(_tokenise(segment.get("segment_name", "")))
+    score = 0.0
+    for kw, weight in keyword_weights.items():
+        kw_stems = set(_tokenise(kw))
+        if kw_stems & haystack:
+            score += weight * (1.5 if (kw_stems & name_stems) else 1.0)
+    return score
 
 
 def _to_item(segment):
@@ -186,15 +223,23 @@ def recommend_segments(advertiser, topic, client_brief="", segments=None,
     categories = list(expansion.get("categories", [])) if expansion else []
 
     matched = _match_with_fallback(segments, keywords, categories)
+    # Relevance weights are computed over the whole catalogue so a rare, on-topic
+    # keyword ("gut") outweighs a common one ("food"). Segments are then ranked
+    # by relevance first, reach second — so the most relevant niche segments are
+    # never buried under generic high-reach ones (and cut by the per-platform cap).
+    weights = _keyword_weights(segments, keywords)
 
     platforms = []
     for platform in _PLATFORM_ORDER:
-        rows = [_to_item(s) for s in matched if s.get("platform") == platform]
-        rows.sort(key=lambda item: item["reach"], reverse=True)
+        rows = [s for s in matched if s.get("platform") == platform]
+        rows.sort(
+            key=lambda s: (_relevance_score(s, weights), _to_item(s)["reach"]),
+            reverse=True,
+        )
         platforms.append({
             "platform": platform,
             "framing": _PLATFORM_FRAMING[platform],
-            "segments": rows[:per_platform_limit],
+            "segments": [_to_item(s) for s in rows[:per_platform_limit]],
         })
 
     has_any = any(p["segments"] for p in platforms)

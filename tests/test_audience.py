@@ -205,6 +205,35 @@ def test_lurpak_literal_misses_but_expansion_resolves():
     assert "Dairy Free Fans" in names
 
 
+def test_specific_low_reach_segment_beats_generic_high_reach():
+    # A niche segment matching a RARE keyword ("gut") must be selected over
+    # generic segments matching a COMMON keyword ("food"), even though the
+    # generic ones have far higher reach. Relevance gates before reach.
+    segs = [
+        {"segment_name": "Gut-Friendly Fans", "platform": "Permutive", "reach": "40000",
+         "category": "Food & Drink", "description": "browsed for gut friendly content",
+         "plain_english": "Browses gut-friendly content", "code": "1",
+         "frequency": "R", "window": "All Time", "icon_key": "food-drink"},
+    ]
+    # 10 generic, huge-reach food segments that only match the common keyword.
+    segs += [
+        {"segment_name": "Food Fans %d" % i, "platform": "Permutive",
+         "reach": str(1000000 + i), "category": "Food & Drink",
+         "description": "browsed for food content", "plain_english": "Browses food",
+         "code": str(100 + i), "frequency": "R", "window": "All Time",
+         "icon_key": "food-drink"}
+        for i in range(10)
+    ]
+    payload = recommend_segments(
+        advertiser="Yakult", topic="gut health", segments=segs,
+        expansion={"keywords": ["gut", "food"], "categories": []},
+    )
+    perm = payload["platforms"][1]["segments"]
+    names = [s["segment_name"] for s in perm]
+    assert "Gut-Friendly Fans" in names  # survived the ≤8 cap on relevance
+    assert perm[0]["segment_name"] == "Gut-Friendly Fans"  # ranked most relevant first
+
+
 def test_matching_is_stem_based_not_just_exact():
     # Keyword "baking" should still match a segment whose text only says "bakers"
     # (shared stem "bak"), so wording drift doesn't silently drop a relevant segment.
