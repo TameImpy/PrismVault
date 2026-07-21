@@ -149,6 +149,33 @@ def get_campaign_summary(advertiser, csv_path=None, aliases=None, log_path=None)
     }
 
 
+def load_campaign_rows(csv_path=None):
+    # type: (str) -> list
+    """Load raw campaign_history rows (used by the comparables engine)."""
+    if csv_path is None:
+        csv_path = DEFAULT_CSV_PATH
+    if not os.path.exists(csv_path):
+        return []
+    with open(csv_path, newline="") as f:
+        return list(csv.DictReader(f))
+
+
+def brand_best_format_line(brand, rows):
+    # type: (str, list) -> str
+    """Return a one-line 'best-performing format' descriptor for one brand.
+
+    The direct-campaign dataset has no format column, so "best format" is
+    proxied by the brand's best-performing campaign (by CTR) — reusing the
+    existing aggregation logic. Returns "" if the brand has no rows.
+    """
+    brand_rows = [r for r in rows if r.get("advertiser", "") == brand]
+    campaign_list = _aggregate_campaigns(brand_rows)
+    if not campaign_list:
+        return ""
+    best, best_ctr = _best_campaign(campaign_list)
+    return "%s (%.2f%% CTR)" % (best["campaign_name"], best_ctr)
+
+
 def _possible_match_result(candidates, rows):
     # type: (list, list) -> dict
     """Render the ambiguous state: a ⚠ verify callout naming each candidate
