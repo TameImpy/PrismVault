@@ -70,3 +70,35 @@ def test_genuine_no_match():
     assert result["status"] == "no_match"
     assert result["matched_name"] is None
     assert result["candidates"] == []
+
+
+# --- Three-state: the ambiguous "possible_match" band (#109) ---
+
+AMBIGUOUS_ROSTER = ["Virgin Media", "Virgin Atlantic", "Tesco", "Audi"]
+
+
+def test_ambiguous_name_is_possible_match_with_candidates():
+    # "Virgin" is a whole-token subset of two different roster brands, so we
+    # must not assert either — flag both for the salesperson to verify.
+    result = resolve("Virgin", AMBIGUOUS_ROSTER)
+
+    assert result["status"] == "possible_match"
+    assert result["matched_name"] is None
+    assert set(result["candidates"]) == {"Virgin Media", "Virgin Atlantic"}
+
+
+def test_mid_band_near_miss_is_possible_not_match():
+    # "Aldi" vs "Audi" (~75) is a risky near-miss: flag it, never assert it.
+    result = resolve("Aldi", AMBIGUOUS_ROSTER)
+
+    assert result["status"] == "possible_match"
+    assert result["matched_name"] is None
+    assert result["candidates"] == ["Audi"]
+
+
+def test_exact_match_wins_over_subset_candidates():
+    # An exact normalised hit is confident even when subset candidates exist.
+    result = resolve("Virgin Media", AMBIGUOUS_ROSTER)
+
+    assert result["status"] == "match"
+    assert result["matched_name"] == "Virgin Media"

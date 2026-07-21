@@ -19,6 +19,9 @@ from difflib import SequenceMatcher
 
 # Score (0-100) at or above which a candidate is a confident match.
 MATCH_THRESHOLD = 88
+# Score band [POSSIBLE_THRESHOLD, MATCH_THRESHOLD) is the ambiguous "verify"
+# zone. Also, several candidates at/above MATCH_THRESHOLD is ambiguous.
+POSSIBLE_THRESHOLD = 72
 
 # Legal suffixes / corporate-form tokens stripped during normalisation so
 # "Tesco Ltd" resolves to "Tesco". Kept small and conservative.
@@ -89,13 +92,34 @@ def resolve(brand, roster):
     # type: (str, list) -> dict
     """Resolve a queried brand against the roster of canonical names.
 
-    Returns a dict with ``status`` (match / no_match), the ``matched_name``
-    on a confident match, and a ``candidates`` list (unused in this slice).
+    Three-way outcome:
+      - ``match`` — one confident winner (exact normalised hit, or a single
+        candidate at/above ``MATCH_THRESHOLD``). ``matched_name`` is set.
+      - ``possible_match`` — ambiguous: either several strong candidates
+        (e.g. "Virgin" → Virgin Media / Virgin Atlantic) or a single
+        mid-band near-miss. ``matched_name`` is ``None`` and ``candidates``
+        lists the names to verify; we assert nothing.
+      - ``no_match`` — nothing crosses the possible band.
     """
+    normalised_brand = normalise_name(brand)
+
+    # An exact normalised hit is unambiguous and wins over subset candidates
+    # (so "Sky" resolves to "Sky", not to "Sky Betting And Gaming").
+    for candidate in roster:
+        if normalise_name(candidate) == normalised_brand and normalised_brand:
+            return {"status": "match", "matched_name": candidate, "candidates": []}
+
     scored = [(candidate, _score(brand, candidate)) for candidate in roster]
     scored.sort(key=lambda pair: pair[1], reverse=True)
 
-    if scored and scored[0][1] >= MATCH_THRESHOLD:
-        return {"status": "match", "matched_name": scored[0][0], "candidates": []}
+    strong = [name for name, score in scored if score >= MATCH_THRESHOLD]
+    in_band = [name for name, score in scored if score >= POSSIBLE_THRESHOLD]
+
+    if len(strong) == 1:
+        return {"status": "match", "matched_name": strong[0], "candidates": []}
+
+    if in_band:
+        # Multiple strong candidates, or a single mid-band near-miss: ambiguous.
+        return {"status": "possible_match", "matched_name": None, "candidates": in_band}
 
     return {"status": "no_match", "matched_name": None, "candidates": []}
