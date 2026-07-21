@@ -8,8 +8,14 @@ from src.audience import expand_query, recommend_segments, format_audience_segme
 from src.trends import get_trend_data
 from src.brief import summarise_brief
 from src.formats import load_format_data, load_format_names, validate_format_names
-from src.campaign_history import get_campaign_summary
+from src.campaign_history import get_campaign_summary, load_campaign_rows
 from src.alias_table import DEFAULT_UNMATCHED_LOG_PATH
+from src.comparables import get_comparables, format_comparables_block, pick_comparables_llm
+from src.vertical_classifier import (
+    load_brand_verticals,
+    load_taxonomy,
+    classify_new_brands_llm,
+)
 from src.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
 
 logger = logging.getLogger(__name__)
@@ -73,6 +79,31 @@ def _format_advertiser_research(skill_results: list[dict]) -> str:
     return "\n\n".join(sections) if sections else "No advertiser research available."
 
 
+def _build_comparables_block(advertiser, topic):
+    # type: (str, str) -> str
+    """On a no-match, infer the advertiser's vertical, run the comparables
+    engine (Tier 1), and render the validated result for the prompt.
+
+    Best-effort and non-blocking: never raises into the pipeline.
+    """
+    try:
+        rows = load_campaign_rows()
+        roster = sorted({r.get("advertiser", "") for r in rows if r.get("advertiser")})
+        brand_verticals = load_brand_verticals()
+        taxonomy = load_taxonomy()
+
+        classified = classify_new_brands_llm([advertiser], {advertiser: topic}, taxonomy)
+        query_vertical = classified.get(advertiser, "")
+
+        result = get_comparables(
+            advertiser, query_vertical, roster, brand_verticals, rows, pick_comparables_llm
+        )
+        return format_comparables_block(advertiser, result)
+    except Exception:  # pragma: no cover - comparables must never break a response
+        logger.exception("Comparables engine failed; continuing without it.")
+        return ""
+
+
 def generate_insights(
     topic: str,
     advertiser: str,
@@ -113,6 +144,13 @@ def generate_insights(
     #    miss-logging so the reactive alias table can grow from real queries.
     campaign_result = get_campaign_summary(advertiser, log_path=DEFAULT_UNMATCHED_LOG_PATH)
     campaign_history = campaign_result["summary"]
+
+    # 6b. On a genuine no-match ONLY, surface validated comparable brands.
+    #     Matched / possible-match paths make no extra LLM call.
+    if campaign_result.get("status") == "no_match":
+        comparables_block = _build_comparables_block(advertiser, topic)
+        if comparables_block:
+            campaign_history = campaign_history + "\n\n" + comparables_block
 
     # 7. Summarise client brief if provided
     client_brief_summary = summarise_brief(client_brief)
