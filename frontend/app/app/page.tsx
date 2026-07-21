@@ -1138,12 +1138,12 @@ export default function InsightsTool() {
                           </CollapsiblePanel>
                         )}
 
-                      {/* Campaign History panel */}
+                      {/* Client Relationship panel */}
                       {result.campaign_history &&
                         result.campaign_history !==
-                          "No previous campaign data found for this advertiser." && (
+                          "No direct campaign history with this advertiser." && (
                           <CollapsiblePanel
-                            title="Campaign History"
+                            title="Client Relationship"
                             defaultOpen={false}
                           >
                             <p className="text-on-surface-variant text-sm leading-relaxed whitespace-pre-wrap">

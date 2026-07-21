@@ -6,6 +6,30 @@ future work doesn't have to rediscover it.
 
 ---
 
+## 2026-07-21 — Entity resolution: token-set match, not substring (slice #104)
+
+**What went wrong:** The campaign-history lookup used a case-insensitive
+_substring_ match (`search in advertiser.lower()`). This produced false
+positives — querying "Sky" matched "Skyscanner" and wrongly implied a client
+relationship — and false negatives (legal-suffix / punctuation variants like
+"Tesco Ltd." matched nothing). For a self-serve salesperson with no analyst in
+the loop, a false "yes, they're a client" is the worst failure.
+
+**How it was fixed:** New pure module `src/entity_resolution.py` with
+`resolve(brand, roster)`. Normalisation (lowercase, strip legal suffixes
+Ltd/Plc/Inc, strip punctuation, `&`→`and`) then a **token-set ratio** (à la
+rapidfuzz, implemented on stdlib `difflib` so the module stays dependency-free
+and exhaustively testable). Threshold `MATCH_THRESHOLD = 88`.
+
+**The key insight:** a token-set ratio scores a _whole-token subset_ at 100
+("Jaguar" ⊂ "Jaguar Landrover" → match) but scores a _partial-word overlap_
+low ("sky" vs "skyscanner" share no whole token → 46 → no match). That single
+property gives us the true-positive on abbreviations AND the false-positive
+guard, which substring matching could never do. `campaign_history` now resolves
+against the distinct-advertiser roster and filters by the exact matched name,
+returning `status` ∈ {match, no_match}. Prompt section renamed
+"Previous Campaign History" → "Client Relationship", wording scoped to "direct".
+
 ## 2026-07-21 — Segment recall: rank by relevance, not raw reach (slice #98)
 
 **What went wrong:** A brief for "gut health" / Yakult surfaced generic food

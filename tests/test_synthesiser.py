@@ -75,13 +75,16 @@ def test_system_prompt_at_a_glance_has_fixed_labels():
     assert "Top Format" in glance_section
 
 
-def test_system_prompt_has_campaign_history_section():
-    """SYSTEM_PROMPT should contain a Previous Campaign History section after Advertiser Overview."""
-    assert "Previous Campaign History" in SYSTEM_PROMPT
-    history_pos = SYSTEM_PROMPT.index("Previous Campaign History")
+def test_system_prompt_has_client_relationship_section():
+    """SYSTEM_PROMPT should contain a Client Relationship section (scoped to
+    "direct" campaigns) after Advertiser Overview and before Editorial Insights."""
+    assert "Client Relationship" in SYSTEM_PROMPT
+    history_pos = SYSTEM_PROMPT.index("Client Relationship")
     overview_pos = SYSTEM_PROMPT.index("Advertiser Overview")
     editorial_pos = SYSTEM_PROMPT.index("Editorial Insights")
     assert overview_pos < history_pos < editorial_pos
+    # Wording is scoped to "direct" and never an absolute no-relationship claim.
+    assert "direct" in SYSTEM_PROMPT[history_pos:editorial_pos].lower()
 
 
 def test_system_prompt_has_client_brief_instruction():

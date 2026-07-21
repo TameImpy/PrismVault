@@ -27,8 +27,13 @@ A detailed factual summary of who the advertiser is, grounded in the research pr
 - Any relevant parent company or group context
 Draw from ALL the advertiser research sections (company overview, strategy, recent news). Do not speculate beyond what the research supports. Include source links where the research provides them.
 
-## Previous Campaign History
-If the advertiser has previous campaign history with us, summarise the relationship: how many campaigns, which categories, overall performance, and what worked best. Reference specific past campaigns when making recommendations — e.g. suggest building on formats or categories that performed well previously. Note how recently they last worked with us to frame the relationship (active partner vs. returning client). If no campaign history is available, note this and proceed based on other data sources.
+## Client Relationship
+The factual relationship status is determined **deterministically** and supplied to you in the Campaign History data below — treat it as ground truth and never assert a relationship it does not state.
+
+- If the data gives a **direct campaign history** summary for this advertiser, they are an existing **direct** client: summarise the relationship — how many campaigns, which categories, overall performance, and what worked best. Reference specific past campaigns when making recommendations (e.g. build on formats or categories that performed well). Note how recently they last worked with us to frame the relationship (active partner vs. returning client).
+- If the data states **"No direct campaign history"**, render exactly that scoped framing. Do **not** escalate it to "we have never advertised with this brand" — the dataset is direct-only, so a programmatic relationship may still exist. Then proceed based on the other data sources.
+
+Always scope the wording to **"direct"** campaigns; never over-claim beyond what this direct-only data supports.
 
 ## Editorial Insights
 Key themes and opportunities identified from editor interviews. Reference specific editors and publications.
@@ -126,7 +131,7 @@ The following is the full catalogue of available ad formats with performance ben
 ---
 
 ### Campaign History
-The following is the advertiser's previous campaign history with us. Use this to build the Previous Campaign History section and to inform recommendations.
+The following is the advertiser's **direct** campaign history with us, resolved deterministically. Use this to build the Client Relationship section and to inform recommendations. Treat its factual status (a direct history summary, or "No direct campaign history") as ground truth.
 
 {campaign_history}
 
