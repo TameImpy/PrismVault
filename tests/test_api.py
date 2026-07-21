@@ -62,7 +62,17 @@ MOCK_INSIGHTS_RESULT = {
             "error": None,
         }
     ],
-    "audience_timing": "Peak month: March. Top segment: 25-34.",
+    "audience_segments": {
+        "matched": True,
+        "note": "Reach figures are per-segment and must not be summed.",
+        "query_terms": ["skincare"],
+        "platforms": [
+            {"platform": "AP", "framing": "Modelled first-party audience — broad reach",
+             "segments": []},
+            {"platform": "Permutive", "framing": "Behavioural — recently engaged browsers",
+             "segments": []},
+        ],
+    },
     "google_trends": "Rising queries: organic skincare.",
 }
 
