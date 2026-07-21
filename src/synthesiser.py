@@ -4,7 +4,7 @@ from openai import OpenAI
 import config
 from src.vectorstore import search_transcripts
 from src.web_search import research_advertiser
-from src.audience import load_audience_data, get_topic_trends
+from src.audience import expand_query, recommend_segments, format_audience_segments
 from src.trends import get_trend_data
 from src.brief import summarise_brief
 from src.formats import load_format_data, load_format_names, validate_format_names
@@ -82,7 +82,7 @@ def generate_insights(
     """Main pipeline: gather data from all sources, synthesise with GPT-4o.
 
     Returns dict with keys: content, sources, research_skills,
-    audience_timing, google_trends.
+    audience_segments, google_trends.
     """
     # 1. Search vector DB for editorial insights
     results = search_transcripts(topic, n_results=5)
@@ -92,9 +92,11 @@ def generate_insights(
     skill_results = research_advertiser(advertiser)
     advertiser_research = _format_advertiser_research(skill_results)
 
-    # 3. Load audience trend data
-    df = load_audience_data()
-    audience_timing = get_topic_trends(df, topic)
+    # 3. Recommend audience segments (LLM term-expansion + deterministic filter).
+    #    Reach is attached verbatim from data/segments.csv — never via the LLM.
+    expansion = expand_query(advertiser, topic, client_brief)
+    audience_segments = recommend_segments(advertiser, topic, client_brief, expansion=expansion)
+    audience_segments_text = format_audience_segments(audience_segments)
 
     # 4. Optionally pull Google Trends
     if include_google_trends:
@@ -120,7 +122,7 @@ def generate_insights(
         advertiser_kpi=kpi,
         editorial_insights=editorial_insights,
         advertiser_research=advertiser_research,
-        audience_timing=audience_timing,
+        audience_segments=audience_segments_text,
         google_trends=google_trends,
         format_recommendations=format_recommendations,
         campaign_history=campaign_history,
@@ -149,7 +151,7 @@ def generate_insights(
         "content": content,
         "sources": sources,
         "research_skills": skill_results,
-        "audience_timing": audience_timing,
+        "audience_segments": audience_segments,
         "google_trends": google_trends,
         "format_recommendations": format_recommendations,
         "campaign_history": campaign_history,

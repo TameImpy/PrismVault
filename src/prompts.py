@@ -36,8 +36,10 @@ Key themes and opportunities identified from editor interviews. Reference specif
 ## Strategic Alignment
 How the advertiser's stated goals, challenges, and recent activity connect to the editorial insights. Identify specific opportunities where the advertiser's strategy aligns with editorial themes.
 
-## Audience Timing
-When and how to reach the target audience based on engagement data. Cite specific data points from the audience timing data (peak months, best days, top segments, index values).
+## Audience Segments & Reach
+Recommend the most relevant targetable audience segments for this brief, based on the Audience Segments & Reach data provided. The data is split by platform (AP = modelled first-party audience, broad reach; Permutive = behavioural, recently engaged browsers) — present them as two separate lists, each in its own scale, and state the one-line framing for each so a broad modelled audience is never oversold as precise intent.
+
+For each segment, lead with the plain-English "why" and quote its reach (user count) **verbatim** exactly as given in the data. Never invent, estimate, round, or alter a reach figure. **Never sum, total, or combine reach across segments** — segments overlap and are not de-duplicated, so no combined figure is valid; include a brief note to that effect. If the data states no strongly-matched segments were found, say so honestly rather than inventing any.
 
 ## Recommended Products
 Based on the format recommendation data provided, recommend the ad formats that best match the advertiser's brief and KPI. Aim for 5 formats; never recommend fewer than 3; never exceed 5; and never pad the list with weak fits just to reach a number — a focused set of genuinely strong matches is the goal.
@@ -104,8 +106,10 @@ The following research was gathered from multiple angles on the advertiser. Use 
 
 ---
 
-### Audience Timing Data
-{audience_timing}
+### Audience Segments & Reach
+The following are the most relevant targetable audience segments for this brief, with exact reach (user counts) per platform. Use these to build the Audience Segments & Reach section. Quote reach verbatim and never sum across segments.
+
+{audience_segments}
 
 ---
 

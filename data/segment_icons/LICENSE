@@ -1,0 +1,11 @@
+Segment icons — Noto Emoji
+==========================
+
+The PNG files in this directory are from the Google Noto Emoji project and are
+licensed under the Apache License, Version 2.0.
+
+  Source:  https://github.com/googlefonts/noto-emoji
+  Licence: Apache-2.0 (https://www.apache.org/licenses/LICENSE-2.0)
+
+They are bundled here (rather than fetched at runtime) so the deck build is fully
+offline and deterministic. Regenerate with: python3 scripts/fetch_segment_icons.py

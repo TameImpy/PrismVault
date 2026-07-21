@@ -6,9 +6,11 @@ import io
 import os
 
 from pptx import Presentation
-from pptx.util import Pt, Emu
+from pptx.util import Pt, Emu, Inches
 from pptx.enum.text import PP_ALIGN
 from pptx.dml.color import RGBColor
+
+from src.slide_content import build_audience_slide_content
 
 TEMPLATE_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "..", "data", "templates", "prism_plan_template.pptx"
@@ -41,10 +43,85 @@ def build_deck(slide_content, topic, advertiser):
     _populate_body_slide(prs.slides[3], slide_content)
     _populate_closing_slide(prs.slides[4], slide_content)
 
+    # Deterministic "Recommended Audiences" slide (PRD #96 / slice #100). Built
+    # from the audience_segments payload — reach is placed verbatim, never via
+    # the LLM. Skipped entirely when no segments matched.
+    audience = build_audience_slide_content(slide_content.get("audience_segments"))
+    if audience["matched"]:
+        _add_audience_slide(prs, audience)
+        # Slide out with the CTA: move the new (last) slide before the closing one.
+        _move_slide(prs, len(prs.slides._sldIdLst) - 1, len(prs.slides._sldIdLst) - 2)
+
     buf = io.BytesIO()
     prs.save(buf)
     buf.seek(0)
     return buf
+
+
+def _move_slide(prs, from_index, to_index):
+    """Reorder slides by moving the sldId element within the slide id list."""
+    sldIdLst = prs.slides._sldIdLst
+    slides = list(sldIdLst)
+    element = slides[from_index]
+    sldIdLst.remove(element)
+    sldIdLst.insert(to_index, element)
+
+
+def _add_text_lines(slide, left, top, width, height, lines):
+    """Add a textbox whose paragraphs are `lines` — one (text, font, size,
+    colour, bold) tuple per visual line. Each line is its own <a:p> with a
+    single run, so no literal newline ever reaches an <a:t> (PowerPoint-safe).
+    """
+    box = slide.shapes.add_textbox(left, top, width, height)
+    tf = box.text_frame
+    tf.word_wrap = True
+    for i, (text, font_name, size, colour, bold) in enumerate(lines):
+        para = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+        run = para.add_run()
+        run.text = text
+        _apply_font(run, font_name, size, colour, bold)
+    return box
+
+
+def _add_audience_slide(prs, audience):
+    """Append a "Recommended Audiences" slide built from the deterministic payload."""
+    slide = prs.slides.add_slide(prs.slide_layouts[6])  # Blank — inherits dark master bg
+
+    _add_text_lines(
+        slide, Inches(0.55), Inches(0.30), Inches(9.0), Inches(0.7),
+        [("Recommended Audiences", "Barlow ExtraBold", Pt(32), WHITE, True)],
+    )
+    _add_text_lines(
+        slide, Inches(0.55), Inches(1.02), Inches(9.0), Inches(0.4),
+        [("Reach is per segment — never summed; segments overlap and are not de-duplicated.",
+          "Barlow", Pt(10), CYAN_ACCENT, False)],
+    )
+
+    # Two platform columns.
+    col_width = Inches(4.25)
+    col_lefts = [Inches(0.55), Inches(4.9)]
+    for col, platform in enumerate(audience["platforms"][:2]):
+        left = col_lefts[col]
+        _add_text_lines(
+            slide, left, Inches(1.55), col_width, Inches(0.6),
+            [
+                (platform["platform"], "Barlow ExtraBold", Pt(15), WHITE, True),
+                (platform["framing"], "Barlow", Pt(9), LIGHT_GREY, False),
+            ],
+        )
+        row_top = 2.25
+        for seg in platform["segments"]:
+            icon = seg.get("icon_path")
+            if icon and os.path.exists(icon):
+                slide.shapes.add_picture(icon, left, Inches(row_top), height=Inches(0.34))
+            _add_text_lines(
+                slide, left + Inches(0.5), Inches(row_top - 0.04), col_width - Inches(0.5), Inches(0.6),
+                [
+                    (seg["why"], "Barlow Medium", Pt(11), WHITE, False),
+                    ("Reach: %s" % seg["reach"], "Barlow", Pt(9), CYAN_ACCENT, False),
+                ],
+            )
+            row_top += 0.62
 
 
 def _fix_autofit(prs):

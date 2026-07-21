@@ -36,6 +36,20 @@ def test_search_segments_finds_by_query():
         assert "pet" in combined
 
 
+def test_search_segments_sources_from_canonical_segments_csv():
+    """Chat and brief share data/segments.csv, so reach never contradicts.
+
+    "Baking Fans" is a Permutive segment whose reach in the canonical file is
+    2,282,660; the Assistant must return that same figure and a platform tag.
+    """
+    results = search_segments("Baking Fans")
+    match = [r for r in results if r["name"] == "Baking Fans"]
+    assert match, "expected the canonical 'Baking Fans' segment"
+    row = match[0]
+    assert str(row["size"]) == "2282660"
+    assert row["platform"] == "Permutive"
+
+
 def test_search_segments_filters_by_category():
     results = search_segments("", category="Food & Drink")
     assert len(results) > 0

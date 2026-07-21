@@ -23,6 +23,17 @@ def test_system_prompt_has_key_recommendations_section():
     assert "Key Recommendations" in SYSTEM_PROMPT
 
 
+def test_prompt_swaps_audience_timing_for_segments_and_reach():
+    """The dummy 'Audience Timing' section is replaced by 'Audience Segments & Reach'."""
+    assert "Audience Segments & Reach" in SYSTEM_PROMPT
+    assert "Audience Timing" not in SYSTEM_PROMPT
+    # The user template exposes an {audience_segments} placeholder, not {audience_timing}.
+    assert "{audience_segments}" in USER_PROMPT_TEMPLATE
+    assert "{audience_timing}" not in USER_PROMPT_TEMPLATE
+    # The model is instructed to quote reach verbatim and never sum.
+    assert "verbatim" in SYSTEM_PROMPT.lower()
+
+
 def test_system_prompt_key_recommendations_is_first_section():
     """Key Recommendations should appear before Advertiser Overview in SYSTEM_PROMPT."""
     recs_pos = SYSTEM_PROMPT.index("Key Recommendations")
@@ -84,9 +95,9 @@ def test_system_prompt_has_recommended_products_section():
 
 
 def test_system_prompt_recommended_products_position():
-    """Recommended Products should appear after Audience Timing and before Messaging & Tone."""
+    """Recommended Products should appear after Audience Segments & Reach and before Messaging & Tone."""
     recs_pos = SYSTEM_PROMPT.index("Recommended Products")
-    audience_pos = SYSTEM_PROMPT.index("Audience Timing")
+    audience_pos = SYSTEM_PROMPT.index("Audience Segments & Reach")
     messaging_pos = SYSTEM_PROMPT.index("Messaging & Tone")
     assert audience_pos < recs_pos < messaging_pos
 
@@ -165,7 +176,7 @@ def test_user_prompt_template_has_placeholders():
     assert "{advertiser}" in USER_PROMPT_TEMPLATE
     assert "{editorial_insights}" in USER_PROMPT_TEMPLATE
     assert "{advertiser_research}" in USER_PROMPT_TEMPLATE
-    assert "{audience_timing}" in USER_PROMPT_TEMPLATE
+    assert "{audience_segments}" in USER_PROMPT_TEMPLATE
     assert "{google_trends}" in USER_PROMPT_TEMPLATE
     assert "{advertiser_kpi}" in USER_PROMPT_TEMPLATE
     assert "{format_recommendations}" in USER_PROMPT_TEMPLATE
@@ -180,7 +191,7 @@ def test_user_prompt_renders():
         advertiser_kpi="Awareness",
         editorial_insights="some insights",
         advertiser_research="some research",
-        audience_timing="some timing",
+        audience_segments="some segments",
         google_trends="some trends",
         format_recommendations="some formats",
         campaign_history="some history",
@@ -199,15 +210,29 @@ def test_generate_insights_accepts_kpi_and_injects_into_prompt():
     mock_response.choices = [MagicMock()]
     mock_response.choices[0].message.content = "Test brief content"
 
+    sample_payload = {
+        "matched": True,
+        "note": "Reach figures are per-segment and must not be summed.",
+        "query_terms": ["baking"],
+        "platforms": [
+            {"platform": "AP", "framing": "Modelled first-party audience — broad reach",
+             "segments": [{"segment_name": "Home Baking Intenders", "reach": 5000000,
+                           "platform": "AP", "category": "Food & Drink",
+                           "plain_english": "Buy baking ingredients", "description": "",
+                           "code": "ap_x 1", "frequency": "", "window": ""}]},
+            {"platform": "Permutive", "framing": "Behavioural — recently engaged browsers",
+             "segments": []},
+        ],
+    }
+
     with patch("src.synthesiser.search_transcripts") as mock_search, \
          patch("src.synthesiser.research_advertiser", return_value=[]), \
-         patch("src.synthesiser.load_audience_data") as mock_load, \
-         patch("src.synthesiser.get_topic_trends", return_value="No data"), \
+         patch("src.synthesiser.expand_query", return_value={"keywords": ["baking"], "categories": []}), \
+         patch("src.synthesiser.recommend_segments", return_value=sample_payload), \
          patch("src.synthesiser.get_campaign_summary", return_value={"summary": "No previous campaign data found for this advertiser.", "campaigns": []}), \
          patch("src.synthesiser.OpenAI") as mock_openai_cls:
 
         mock_search.return_value = {"documents": [[]], "metadatas": [[]], "distances": [[]]}
-        mock_load.return_value = MagicMock()
         mock_client = MagicMock()
         mock_client.chat.completions.create.return_value = mock_response
         mock_openai_cls.return_value = mock_client
@@ -219,6 +244,12 @@ def test_generate_insights_accepts_kpi_and_injects_into_prompt():
         user_prompt = call_args[1]["messages"][1]["content"]
         assert "Clicks" in user_prompt
         assert "campaign_history" in result
+        # New: the deterministic audience_segments payload is returned and the
+        # dummy audience_timing string is gone.
+        assert result["audience_segments"] == sample_payload
+        assert "audience_timing" not in result
+        # The formatted segment text (with verbatim reach) reached the prompt.
+        assert "Home Baking Intenders" in user_prompt
 
 
 def test_format_editorial_insights_empty():

@@ -295,3 +295,96 @@ def test_api_download_deck_returns_pptx(mock_build, mock_gen, api_client):
     assert resp.status_code == 200
     assert "openxmlformats" in resp.headers["content-type"]
     assert "Prism_Plan_Yakult_gut_health.pptx" in resp.headers["content-disposition"]
+
+
+# --- "Recommended Audiences" slide (slice #100) ---
+
+AUDIENCE_PAYLOAD = {
+    "matched": True,
+    "note": "Reach figures are per-segment and must not be summed.",
+    "query_terms": ["baking"],
+    "platforms": [
+        {"platform": "AP", "framing": "Modelled first-party audience — broad reach",
+         "segments": [
+             {"segment_name": "Confident bakers", "reach": 10486296, "platform": "AP",
+              "category": "Food & Drink", "plain_english": "Feel confident when baking",
+              "description": "", "code": "ap_x 1", "frequency": "", "window": ""}]},
+        {"platform": "Permutive", "framing": "Behavioural — recently engaged browsers",
+         "segments": [
+             {"segment_name": "Baking Fans", "reach": 2282660, "platform": "Permutive",
+              "category": "Food & Drink", "plain_english": "Regularly browses baking content",
+              "description": "browsed for baking content at least 2 times", "code": "101",
+              "frequency": "R", "window": "90 Days"}]},
+    ],
+}
+
+
+def _content_with_audience():
+    content = dict(SAMPLE_CONTENT)
+    content["audience_segments"] = AUDIENCE_PAYLOAD
+    return content
+
+
+def _slide_text(slide):
+    return " ".join(s.text_frame.text for s in slide.shapes if s.has_text_frame)
+
+
+def test_audience_payload_adds_slide_before_closing():
+    prs = Presentation(build_deck(_content_with_audience(), "baking", "Homepride"))
+    assert len(prs.slides) == 6
+    titles = [_slide_text(s) for s in prs.slides]
+    audience_idx = next(i for i, t in enumerate(titles) if "Recommended Audiences" in t)
+    products_idx = next(i for i, t in enumerate(titles) if "Recommended Products" in t)
+    assert audience_idx < products_idx  # audiences sits before the closing/CTA slide
+
+
+def test_audience_slide_shows_why_and_verbatim_reach():
+    prs = Presentation(build_deck(_content_with_audience(), "baking", "Homepride"))
+    text = next(_slide_text(s) for s in prs.slides if "Recommended Audiences" in _slide_text(s))
+    assert "Feel confident when baking" in text  # plain-English why
+    assert "10,486,296" in text  # reach verbatim, formatted
+    assert "Regularly browses baking content" in text
+    assert "2,282,660" in text
+    assert "never summed" in text.lower()  # the hard-rule note
+
+
+def test_audience_slide_embeds_icon_pictures():
+    from pptx.enum.shapes import MSO_SHAPE_TYPE
+    prs = Presentation(build_deck(_content_with_audience(), "baking", "Homepride"))
+    slide = next(s for s in prs.slides if "Recommended Audiences" in _slide_text(s))
+    pictures = [s for s in slide.shapes if s.shape_type == MSO_SHAPE_TYPE.PICTURE]
+    assert len(pictures) >= 2  # one per surfaced segment
+
+
+def test_no_audience_payload_keeps_five_slides():
+    prs = Presentation(build_deck(SAMPLE_CONTENT, "gut health", "Yakult"))
+    assert len(prs.slides) == 5  # backward compatible
+
+
+def test_generated_deck_has_no_ooxml_corruption():
+    import zipfile
+    from lxml import etree
+
+    a_ns = "http://schemas.openxmlformats.org/drawingml/2006/main"
+    buf = build_deck(_content_with_audience(), "baking", "Homepride")
+    buf.seek(0)
+    zf = zipfile.ZipFile(buf)
+    errors = []
+    for name in zf.namelist():
+        if not (name.startswith("ppt/slides/slide") and name.endswith(".xml")):
+            continue
+        root = etree.fromstring(zf.read(name))
+        for t in root.iter("{%s}t" % a_ns):
+            if t.text and "\n" in t.text:
+                errors.append("%s literal newline" % name)
+        for r in root.iter("{%s}r" % a_ns):
+            t = r.find("{%s}t" % a_ns)
+            if t is None or t.text is None:
+                errors.append("%s empty/missing run text" % name)
+        for body in root.iter("{%s}bodyPr" % a_ns):
+            af = [x for x in ("spAutoFit", "normAutofit", "noAutofit")
+                  if body.find("{%s}%s" % (a_ns, x)) is not None]
+            if len(af) > 1:
+                errors.append("%s conflicting autofit" % name)
+    zf.close()
+    assert errors == [], errors

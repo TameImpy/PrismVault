@@ -5,8 +5,57 @@ slide-ready JSON using GPT-4o-mini.
 import json
 from openai import OpenAI
 import config
+from src.segment_icons import icon_path
 
 DECK_CONTENT_MODEL = getattr(config, "DECK_CONTENT_MODEL", "gpt-4o-mini")
+
+
+def build_audience_slide_content(payload, per_platform=5):
+    """Shape the deterministic audience_segments payload into slide rows.
+
+    Reach is taken verbatim from the payload (never via the LLM) and only
+    formatted with thousands separators; each row resolves to a bundled icon.
+    Returns {matched, note, platforms:[{platform, framing, segments:[{name,
+    why, reach, icon_path}]}]}. There is no summed total — reach must never be
+    added across segments.
+    """
+    if not payload or not payload.get("matched"):
+        return {
+            "matched": False,
+            "note": (payload or {}).get("note", ""),
+            "platforms": [],
+        }
+
+    platforms = []
+    for plat in payload.get("platforms", []):
+        rows = []
+        for seg in (plat.get("segments") or [])[:per_platform]:
+            try:
+                reach = int(seg.get("reach") or 0)
+            except (TypeError, ValueError):
+                reach = 0
+            rows.append({
+                "name": seg.get("segment_name", ""),
+                "why": seg.get("plain_english", "") or seg.get("segment_name", ""),
+                "reach": "{:,}".format(reach),
+                "icon_path": icon_path(
+                    category=seg.get("category"),
+                    segment_name=seg.get("segment_name", ""),
+                    icon_key=seg.get("icon_key"),
+                ),
+            })
+        if rows:
+            platforms.append({
+                "platform": plat.get("platform", ""),
+                "framing": plat.get("framing", ""),
+                "segments": rows,
+            })
+
+    return {
+        "matched": bool(platforms),
+        "note": payload.get("note", ""),
+        "platforms": platforms,
+    }
 
 SYSTEM_PROMPT = """You are a presentation content specialist. Your job is to condense a strategic insights brief into concise, slide-ready content for a 5-slide sales deck.
 
