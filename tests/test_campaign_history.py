@@ -171,6 +171,46 @@ def test_no_direct_wording_on_no_match():
     assert "never" not in NO_DATA_MESSAGE.lower()
 
 
+def test_alias_hit_resolves_in_campaign_summary():
+    """A supplied alias maps a query to its canonical roster brand."""
+    rows = [
+        {
+            "advertiser": "Coca-Cola",
+            "campaign_name": "Coke Summer",
+            "campaign_id": "700",
+            "category": "Food",
+            "start_date": "2025-05-01",
+            "impressions": "3000000",
+            "clicks": "9000",
+        },
+    ]
+    with tempfile.TemporaryDirectory() as tmpdir:
+        csv_path = os.path.join(tmpdir, "campaigns.csv")
+        _create_test_csv(csv_path, rows=rows)
+
+        result = get_campaign_summary("Coke", csv_path, aliases={"coke": "Coca-Cola"})
+
+        assert result["status"] == "match"
+        assert result["matched_name"] == "Coca-Cola"
+
+
+def test_no_match_is_logged_when_log_path_given():
+    """A genuine miss is appended to the unmatched-brand growth log."""
+    import csv as _csv
+    with tempfile.TemporaryDirectory() as tmpdir:
+        csv_path = os.path.join(tmpdir, "campaigns.csv")
+        log_path = os.path.join(tmpdir, "unmatched.csv")
+        _create_test_csv(csv_path)
+
+        get_campaign_summary("TotallyUnknownBrand", csv_path, log_path=log_path)
+
+        assert os.path.exists(log_path)
+        with open(log_path, newline="") as f:
+            logged = list(_csv.DictReader(f))
+        assert any(r["queried_brand"] == "TotallyUnknownBrand"
+                   and r["status"] == "no_match" for r in logged)
+
+
 def test_no_match_returns_fallback():
     with tempfile.TemporaryDirectory() as tmpdir:
         csv_path = os.path.join(tmpdir, "campaigns.csv")

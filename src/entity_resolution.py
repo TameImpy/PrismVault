@@ -88,8 +88,8 @@ def _score(brand, candidate):
     return _token_set_ratio(normalise_name(brand), normalise_name(candidate))
 
 
-def resolve(brand, roster):
-    # type: (str, list) -> dict
+def resolve(brand, roster, aliases=None):
+    # type: (str, list, dict) -> dict
     """Resolve a queried brand against the roster of canonical names.
 
     Three-way outcome:
@@ -100,8 +100,21 @@ def resolve(brand, roster):
         mid-band near-miss. ``matched_name`` is ``None`` and ``candidates``
         lists the names to verify; we assert nothing.
       - ``no_match`` — nothing crosses the possible band.
+
+    ``aliases`` is an optional dict of ``{normalised_alias: canonical_name}``
+    (a reactive, manually-maintained table). A known alias (e.g. "Coke" →
+    "Coca-Cola") short-circuits to a confident match, provided its canonical
+    is actually on the roster; a stale alias pointing off-roster is ignored.
     """
     normalised_brand = normalise_name(brand)
+
+    # Reactive alias table: a known alias resolves straight to its canonical,
+    # but only if that canonical is genuinely on the roster.
+    if aliases and normalised_brand in aliases:
+        canonical = aliases[normalised_brand]
+        for candidate in roster:
+            if normalise_name(candidate) == normalise_name(canonical):
+                return {"status": "match", "matched_name": candidate, "candidates": []}
 
     # An exact normalised hit is unambiguous and wins over subset candidates
     # (so "Sky" resolves to "Sky", not to "Sky Betting And Gaming").

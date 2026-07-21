@@ -2,6 +2,7 @@ import csv
 import os
 
 from src.entity_resolution import resolve
+from src.alias_table import load_aliases, log_unmatched
 
 DEFAULT_CSV_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "campaign_history.csv")
 
@@ -84,13 +85,20 @@ def _summarise_brand(brand_name, campaign_list, header=None):
     ])
 
 
-def get_campaign_summary(advertiser, csv_path=None):
-    # type: (str, str) -> dict
+def get_campaign_summary(advertiser, csv_path=None, aliases=None, log_path=None):
+    # type: (str, str, dict, str) -> dict
     """Look up an advertiser's campaign history and return a summary.
 
     Resolution is deterministic (see ``src.entity_resolution``): the queried
     advertiser is matched against the roster of canonical advertiser names,
-    never by crude substring. Returns a dict with:
+    never by crude substring. A reactive ``aliases`` table (loaded from the
+    default artefact when not supplied) maps known aliases to canonical brands.
+
+    When ``log_path`` is given, no-match / possible-match queries are appended
+    to the unmatched-brand growth log (off by default so tests stay clean; the
+    pipeline enables it).
+
+    Returns a dict with:
         summary (str): prompt-ready formatted summary
         campaigns (list): raw campaign records (one per campaign ID)
         status (str): "match", "possible_match", or "no_match"
@@ -99,6 +107,8 @@ def get_campaign_summary(advertiser, csv_path=None):
     """
     if csv_path is None:
         csv_path = DEFAULT_CSV_PATH
+    if aliases is None:
+        aliases = load_aliases()
 
     if not os.path.exists(csv_path):
         return _no_match_result()
@@ -112,8 +122,12 @@ def get_campaign_summary(advertiser, csv_path=None):
 
     # Resolve the queried advertiser against the roster of canonical names.
     roster = sorted({r.get("advertiser", "") for r in rows if r.get("advertiser")})
-    resolution = resolve(advertiser, roster)
+    resolution = resolve(advertiser, roster, aliases=aliases)
     status = resolution["status"]
+
+    # Log misses / near-misses so the alias table can grow from real data.
+    if log_path and status in ("no_match", "possible_match"):
+        log_unmatched(advertiser, status, resolution.get("candidates", []), path=log_path)
 
     if status == "no_match":
         return _no_match_result()

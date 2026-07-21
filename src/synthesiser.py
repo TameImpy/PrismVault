@@ -9,6 +9,7 @@ from src.trends import get_trend_data
 from src.brief import summarise_brief
 from src.formats import load_format_data, load_format_names, validate_format_names
 from src.campaign_history import get_campaign_summary
+from src.alias_table import DEFAULT_UNMATCHED_LOG_PATH
 from src.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
 
 logger = logging.getLogger(__name__)
@@ -108,8 +109,9 @@ def generate_insights(
     # 5. Load format recommendations
     format_recommendations = load_format_data()
 
-    # 6. Look up previous campaign history
-    campaign_result = get_campaign_summary(advertiser)
+    # 6. Look up direct campaign history (deterministic resolution). Enable
+    #    miss-logging so the reactive alias table can grow from real queries.
+    campaign_result = get_campaign_summary(advertiser, log_path=DEFAULT_UNMATCHED_LOG_PATH)
     campaign_history = campaign_result["summary"]
 
     # 7. Summarise client brief if provided
