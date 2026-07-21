@@ -15,7 +15,11 @@ _KNOWLEDGE_FILES = [
     "slas_and_process.md",
 ]
 
-SEGMENT_CSV = os.path.join(ASSISTANT_DATA_DIR, "segment_library.csv")
+# Single source of truth: the Assistant reads the same canonical segment file
+# as the brief pipeline (PRD #96 / slice #101), so chat and brief never
+# contradict each other on segments or reach. The older
+# data/assistant/segment_library.csv is retired as the segment source.
+SEGMENT_CSV = os.path.join(os.path.dirname(__file__), "..", "data", "segments.csv")
 
 
 def load_knowledge_base():
@@ -40,14 +44,14 @@ def _load_segments():
 def build_category_summary():
     """Build a summary of segment categories with counts and example names."""
     segments = _load_segments()
-    categories = Counter(row.get("Segment Category", "Unknown") for row in segments)
+    categories = Counter(row.get("category", "Unknown") for row in segments)
 
     lines = ["## Available Segment Categories\n"]
     for category, count in sorted(categories.items()):
         # Get a few example segment names for this category
         examples = [
-            row["Name"] for row in segments
-            if row.get("Segment Category") == category
+            row["segment_name"] for row in segments
+            if row.get("category") == category
         ][:3]
         example_str = ", ".join(examples)
         lines.append("- **%s** (%d segments) — e.g. %s" % (category, count, example_str))
@@ -56,18 +60,21 @@ def build_category_summary():
 
 
 def search_segments(query, category=None, max_results=20):
-    """Search the segment library by query string and optional category filter.
+    """Search the canonical segment file by query and optional category filter.
 
-    Returns a list of dicts with keys: name, size, category, description.
+    Reads data/segments.csv (the same file the brief pipeline uses). Returns a
+    list of dicts with keys: name, size, category, description, platform.
+    The plain-English descriptor is preferred for `description` so chat mirrors
+    the brief's wording; the raw methodology falls back if it is absent.
     """
     segments = _load_segments()
     query_lower = query.lower()
 
     matches = []
     for row in segments:
-        name = row.get("Name", "")
-        description = row.get("Segment Description", "")
-        seg_category = row.get("Segment Category", "")
+        name = row.get("segment_name", "")
+        description = row.get("plain_english", "") or row.get("description", "")
+        seg_category = row.get("category", "")
 
         # Filter by category if provided
         if category and category.lower() not in seg_category.lower():
@@ -77,9 +84,10 @@ def search_segments(query, category=None, max_results=20):
         if query_lower in name.lower() or query_lower in description.lower():
             matches.append({
                 "name": name,
-                "size": row.get("Size", "0").strip(),
+                "size": (row.get("reach") or "0").strip(),
                 "category": seg_category,
                 "description": description,
+                "platform": row.get("platform", ""),
             })
 
         if len(matches) >= max_results:
