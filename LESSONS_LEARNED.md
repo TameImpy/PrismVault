@@ -6,6 +6,33 @@ future work doesn't have to rediscover it.
 
 ---
 
+## 2026-07-21 — Comparables: LLM judgement, Python-enforced guardrail (#111/#112)
+
+**The design problem:** On a no-match we want to suggest 2-3 similar brands
+we've worked with. Similarity is a judgement call the LLM is good at, but the
+LLM must NEVER name a brand we haven't actually worked with (a salesperson
+would repeat it to a client and be wrong). Prompt-only "please only pick from
+this list" is a hope, not a guarantee.
+
+**The pattern:** separate the _judgement_ from the _guarantee_. The LLM picks
+
+- explains (`pick_fn` / `full_pick_fn`), but every pick passes through a pure
+  `validate_comparables(picks, roster)` that drops any brand not on the roster
+  and rewrites survivors to the canonical spelling. The guarantee is enforced in
+  deterministic Python, so it holds regardless of what the model returns. The
+  validator is a deep, pure module — exhaustively testable with no mocking.
+
+**Two-tier recall vs precision:** Tier 1 filters the roster to the query's
+vertical (precision) using the clean brand→vertical lookup from #105 — NOT the
+messy raw category. If that shortlist is empty/thin (< MIN_SHORTLIST) or yields
+nothing valid, Tier 2 hands the LLM the full ~217-brand roster with verticals
+as hints (recall), so it can apply world knowledge a category column can't
+encode (Sky → NowTV). Widen-once emits a note; still-nothing degrades honestly
+to "no close comparables" rather than reaching cross-vertical. The query
+advertiser isn't in our roster, so its vertical is inferred by the classifier
+in the synthesiser and passed in — keeping the engine's tier logic pure and
+testable without the LLM. See [[entity-resolution-token-set-match]].
+
 ## 2026-07-21 — Entity resolution: token-set match, not substring (slice #104)
 
 **What went wrong:** The campaign-history lookup used a case-insensitive
