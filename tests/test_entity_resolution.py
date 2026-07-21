@@ -102,3 +102,23 @@ def test_exact_match_wins_over_subset_candidates():
 
     assert result["status"] == "match"
     assert result["matched_name"] == "Virgin Media"
+
+
+# --- Reactive alias table (#110) ---
+
+def test_alias_resolves_to_canonical_brand():
+    # "Coke" shares no token with "Coca-Cola" and would otherwise no-match;
+    # the alias table maps it to the canonical roster brand.
+    aliases = {"coke": "Coca-Cola"}
+    result = resolve("Coke", ROSTER, aliases=aliases)
+
+    assert result["status"] == "match"
+    assert result["matched_name"] == "Coca-Cola"
+
+
+def test_stale_alias_pointing_off_roster_is_ignored():
+    # An alias whose canonical is not on the roster must not fabricate a match.
+    aliases = {"coke": "Pepsi"}
+    result = resolve("Coke", ROSTER, aliases=aliases)
+
+    assert result["status"] == "no_match"
