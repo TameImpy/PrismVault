@@ -29,13 +29,16 @@ export default function LandingPage() {
             <StatusDot label="Beta" />
             <h1 className="font-headline text-6xl md:text-8xl font-extrabold tracking-tighter leading-[0.95] mb-8 mt-8">
               The <span className="text-accent-cyan italic">3D View</span> Of
-              <br />Your Audience
+              <br />
+              Your Audience
             </h1>
             <p className="text-xl md:text-2xl text-slate-400 max-w-2xl font-light leading-relaxed mb-12">
-              The 1st party planning tool that draws on our extensive behavioural
-              data, in house research, advertiser understanding and deep editorial
-              expertise for{" "}
-              <span className="text-accent-cyan font-medium">tailored recommendations</span>{" "}
+              The 1st party planning tool that draws on our extensive
+              behavioural data, in house research, advertiser understanding and
+              deep editorial expertise for{" "}
+              <span className="text-accent-cyan font-medium">
+                tailored recommendations
+              </span>{" "}
               on every brief.
             </p>
             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-6">
@@ -44,7 +47,11 @@ export default function LandingPage() {
                   Explore Topic
                 </Button>
               </Link>
-              <Button variant="secondary" className="text-lg" onClick={() => trackCta("Watch Demo")}>
+              <Button
+                variant="secondary"
+                className="text-lg"
+                onClick={() => trackCta("Watch Demo")}
+              >
                 Watch Demo
               </Button>
             </div>
@@ -65,7 +72,10 @@ export default function LandingPage() {
       </header>
 
       {/* Features */}
-      <section id="features" className="py-32 px-8 bg-surface-container-low border-y border-white/5 relative overflow-hidden">
+      <section
+        id="features"
+        className="py-32 px-8 bg-surface-container-low border-y border-white/5 relative overflow-hidden"
+      >
         <div className="max-w-screen-2xl mx-auto relative z-10">
           <SectionHeading>
             Data-Driven <br />
@@ -75,8 +85,18 @@ export default function LandingPage() {
             {/* Editorial Intelligence */}
             <div className="group bg-surface-container-lowest p-10 rounded-2xl border border-white/5 hover:border-accent-cyan/20 transition-all duration-500 relative overflow-hidden">
               <div className="mb-8 inline-flex p-4 rounded-xl bg-accent-cyan/10 text-accent-cyan group-hover:bg-accent-cyan group-hover:text-white transition-colors relative z-10">
-                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                <svg
+                  className="w-8 h-8"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
+                  />
                 </svg>
               </div>
               <h3 className="font-headline text-2xl font-bold mb-4 relative z-10">
@@ -91,8 +111,18 @@ export default function LandingPage() {
             {/* Brand Research — elevated */}
             <div className="group bg-surface-container-highest p-10 rounded-2xl border border-white/5 hover:border-accent-cyan/20 transition-all duration-500 transform lg:scale-105 shadow-2xl relative overflow-hidden">
               <div className="mb-8 inline-flex p-4 rounded-xl bg-accent-cyan/10 text-accent-cyan group-hover:bg-accent-cyan group-hover:text-white transition-colors relative z-10">
-                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                <svg
+                  className="w-8 h-8"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+                  />
                 </svg>
               </div>
               <h3 className="font-headline text-2xl font-bold mb-4 relative z-10">
@@ -107,8 +137,18 @@ export default function LandingPage() {
             {/* Audience & Trends */}
             <div className="group bg-surface-container-lowest p-10 rounded-2xl border border-white/5 hover:border-accent-cyan/20 transition-all duration-500 relative overflow-hidden">
               <div className="mb-8 inline-flex p-4 rounded-xl bg-accent-cyan/10 text-accent-cyan group-hover:bg-accent-cyan group-hover:text-white transition-colors relative z-10">
-                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                <svg
+                  className="w-8 h-8"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"
+                  />
                 </svg>
               </div>
               <h3 className="font-headline text-2xl font-bold mb-4 relative z-10">
@@ -133,9 +173,9 @@ export default function LandingPage() {
                 <span className="text-accent-cyan">One unified strategy.</span>
               </h2>
               <p className="text-xl text-slate-400 leading-relaxed">
-                Every Prism Plan synthesises editorial expertise, brand intelligence,
-                audience behaviour, and live trend data into a single, actionable
-                advertising recommendation.
+                Every Prism Plan synthesises editorial expertise, brand
+                intelligence, audience behaviour, and live trend data into a
+                single, actionable advertising recommendation.
               </p>
             </div>
 
@@ -144,19 +184,23 @@ export default function LandingPage() {
               {[
                 {
                   title: "Editorial Transcripts",
-                  description: "In-depth editor interviews surfacing themes, angles, and audience sentiment.",
+                  description:
+                    "In-depth editor interviews surfacing themes, angles, and audience sentiment.",
                 },
                 {
                   title: "Brand Research",
-                  description: "Automated web research into advertiser positioning, campaigns, and competitors.",
+                  description:
+                    "Automated web research into advertiser positioning, campaigns, and competitors.",
                 },
                 {
-                  title: "Audience Data",
-                  description: "Behavioural engagement trends revealing when and how audiences respond.",
+                  title: "Audience Segments & Reach",
+                  description:
+                    "The most relevant targetable segments per platform, each with real reach.",
                 },
                 {
                   title: "Google Trends",
-                  description: "Real-time search interest, related queries, and multi-timeframe analysis.",
+                  description:
+                    "Real-time search interest, related queries, and multi-timeframe analysis.",
                 },
               ].map((source) => (
                 <div
