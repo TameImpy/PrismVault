@@ -6,6 +6,38 @@ future work doesn't have to rediscover it.
 
 ---
 
+## 2026-07-21 — Segment recall: rank by relevance, not raw reach (slice #98)
+
+**What went wrong:** A brief for "gut health" / Yakult surfaced generic food
+segments (Cooking enthusiasts 31M, Foodies Fans) but **omitted the three
+"Gut-Friendly" segments we actually hold** — the single most on-topic audience.
+
+**Why:** Two compounding issues. (1) Generous LLM keyword expansion plus the
+`Food & Drink` category made the keyword gate very loose — ~297 of ~900
+Permutive segments "matched". (2) The selection then ordered purely by **reach
+descending** and capped at 8 per platform. The Gut-Friendly segments are small
+(305k / 127k / 41k) so they sat far below multi-million-reach generic food
+segments and were cut by the cap. The most _relevant_ segment lost to the
+_biggest loosely-relevant_ one.
+
+**How it was fixed:** Rank by **relevance first, reach second**. Each expansion
+keyword gets an inverse-document-frequency weight `log(1 + N/df)` computed over
+the whole catalogue, so a rare, discriminating keyword ("gut", df≈3) far
+outweighs a common one ("food", df≈360). A segment's score is the sum of matched
+keyword weights (×1.5 for a match in the segment _name_). `recommend_segments`
+sorts by `(relevance_score, reach)` before the ≤8 cap. Now Gut-Friendly leads
+the Permutive list and health-relevant segments lead AP; generic giants are
+demoted but still present lower down. See `_keyword_weights` / `_relevance_score`
+in `src/audience.py`.
+
+**Note / tradeoff:** lists are now ordered _most-relevant-first_, so a small
+high-relevance segment can appear above a larger one. That is intentional (the
+product's job is to surface the most relevant audience), but it changes the old
+"ordered by reach desc" display assumption. If a reach-first display is ever
+preferred, select the top-N by relevance but re-sort the chosen set by reach.
+
+---
+
 ## 2026-07-21 — Decision: raw segment .xlsx kept external, not committed (slice #97)
 
 **Context:** The Audience Segments feature builds a canonical `data/segments.csv`
