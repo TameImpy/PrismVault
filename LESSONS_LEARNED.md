@@ -251,3 +251,34 @@ stops closing prose like `**Combined rationale:**` from being flagged as a fake
 product — the extraction is deliberately coupled to the #93 output format
 (bulleted/numbered list of bold format names). Keep the guardrail and that
 prompt format in sync if either changes.
+
+## 2026-07-21 — Historical Research Catalogue (deterministic relevance gate)
+
+**Word-boundary matching, not bare substring, is the crux of the keyword gate.**
+`src/historical_research.py`'s `get_relevant_research()` decides whether a
+proprietary research file is pulled into a brief by matching each frontmatter
+`topics` + `match_keywords` needle against `topic + advertiser + client_brief`.
+The naive approach — `if needle in brief_text` — silently fires on substrings:
+the keyword `rail` would match `email`, pulling the travel survey into an
+email-marketing brief. Fix: match on a word boundary (`re.search(r"\b" +
+re.escape(needle) + r"\b", brief_text)`). This is what makes "P&O fires, Nike
+doesn't" a reliable, regression-guarded demo. The word-boundary test
+(`email` must NOT match `rail`) is the single most important test in the suite.
+
+**Word boundaries mean plurals need to be listed explicitly.** `\bholiday\b`
+does not match `holidays`. Because the gate is exact-per-word, the curated
+`match_keywords` list carries both singular and plural forms (cruise/cruises,
+holiday/holidays). This is deliberate: the POC prefers a hand-curated,
+demo-proof keyword list over fuzzy stemming (stemming is Phase 2).
+
+**De-dupe `matched_on`.** A term can appear in BOTH `topics` and
+`match_keywords` (e.g. `cruises`), so it matched twice and showed up as a
+duplicate chip on the UI card. `_find_matches` now skips a needle already in
+the hit list.
+
+**Adding a required `{placeholder}` to `USER_PROMPT_TEMPLATE` breaks existing
+render tests.** `str.format()` raises `KeyError` if any `{name}` has no keyword
+arg. Adding `{historical_research}` broke `test_synthesiser.py::test_user_prompt_renders`
+(which calls `.format(...)` with a fixed set of kwargs). Whenever you add a
+placeholder to the template, update every `.format()` call site AND the
+placeholder-presence test in the same commit.
