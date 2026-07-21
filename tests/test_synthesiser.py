@@ -15,7 +15,9 @@ def test_system_prompt_not_empty():
 def test_system_prompt_has_key_sections():
     assert "Advertiser Overview" in SYSTEM_PROMPT
     assert "Strategic Alignment" in SYSTEM_PROMPT
-    assert "Editorial Insights" in SYSTEM_PROMPT
+    # Editorial Insights section removed while editorial vector search is
+    # disabled (Phase 2).
+    assert "Editorial Insights" not in SYSTEM_PROMPT
 
 
 def test_system_prompt_has_key_recommendations_section():
@@ -63,7 +65,8 @@ def test_system_prompt_at_a_glance_is_before_key_recommendations():
 
 
 def test_system_prompt_at_a_glance_has_fixed_labels():
-    """At a Glance section should reference all 6 fixed labels."""
+    """At a Glance section should reference all fixed labels (Editor Voice
+    removed while editorial vector search is disabled — Phase 2)."""
     glance_start = SYSTEM_PROMPT.index("At a Glance")
     key_recs_start = SYSTEM_PROMPT.index("Key Recommendations")
     glance_section = SYSTEM_PROMPT[glance_start:key_recs_start]
@@ -71,20 +74,20 @@ def test_system_prompt_at_a_glance_has_fixed_labels():
     assert "Latest News" in glance_section
     assert "Messaging" in glance_section
     assert "Tone" in glance_section
-    assert "Editor Voice" in glance_section
+    assert "Editor Voice" not in glance_section
     assert "Top Format" in glance_section
 
 
 def test_system_prompt_has_client_relationship_section():
     """SYSTEM_PROMPT should contain a Client Relationship section (scoped to
-    "direct" campaigns) after Advertiser Overview and before Editorial Insights."""
+    "direct" campaigns) after Advertiser Overview and before Strategic Alignment."""
     assert "Client Relationship" in SYSTEM_PROMPT
     history_pos = SYSTEM_PROMPT.index("Client Relationship")
     overview_pos = SYSTEM_PROMPT.index("Advertiser Overview")
-    editorial_pos = SYSTEM_PROMPT.index("Editorial Insights")
-    assert overview_pos < history_pos < editorial_pos
+    alignment_pos = SYSTEM_PROMPT.index("Strategic Alignment")
+    assert overview_pos < history_pos < alignment_pos
     # Wording is scoped to "direct" and never an absolute no-relationship claim.
-    assert "direct" in SYSTEM_PROMPT[history_pos:editorial_pos].lower()
+    assert "direct" in SYSTEM_PROMPT[history_pos:alignment_pos].lower()
 
 
 def test_system_prompt_has_client_brief_instruction():
@@ -177,7 +180,8 @@ def test_system_prompt_messaging_section_references_kpi():
 def test_user_prompt_template_has_placeholders():
     assert "{topic}" in USER_PROMPT_TEMPLATE
     assert "{advertiser}" in USER_PROMPT_TEMPLATE
-    assert "{editorial_insights}" in USER_PROMPT_TEMPLATE
+    # {editorial_insights} placeholder removed while editorial is disabled.
+    assert "{editorial_insights}" not in USER_PROMPT_TEMPLATE
     assert "{advertiser_research}" in USER_PROMPT_TEMPLATE
     assert "{audience_segments}" in USER_PROMPT_TEMPLATE
     assert "{google_trends}" in USER_PROMPT_TEMPLATE
@@ -192,7 +196,6 @@ def test_user_prompt_renders():
         topic="test topic",
         advertiser="test brand",
         advertiser_kpi="Awareness",
-        editorial_insights="some insights",
         advertiser_research="some research",
         audience_segments="some segments",
         google_trends="some trends",
@@ -228,14 +231,12 @@ def test_generate_insights_accepts_kpi_and_injects_into_prompt():
         ],
     }
 
-    with patch("src.synthesiser.search_transcripts") as mock_search, \
-         patch("src.synthesiser.research_advertiser", return_value=[]), \
+    with patch("src.synthesiser.research_advertiser", return_value=[]), \
          patch("src.synthesiser.expand_query", return_value={"keywords": ["baking"], "categories": []}), \
          patch("src.synthesiser.recommend_segments", return_value=sample_payload), \
          patch("src.synthesiser.get_campaign_summary", return_value={"summary": "No previous campaign data found for this advertiser.", "campaigns": []}), \
          patch("src.synthesiser.OpenAI") as mock_openai_cls:
 
-        mock_search.return_value = {"documents": [[]], "metadatas": [[]], "distances": [[]]}
         mock_client = MagicMock()
         mock_client.chat.completions.create.return_value = mock_response
         mock_openai_cls.return_value = mock_client

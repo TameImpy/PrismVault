@@ -2,7 +2,10 @@ import logging
 
 from openai import OpenAI
 import config
-from src.vectorstore import search_transcripts
+# NOTE: Editorial vector search disabled for now (Phase 2). The vector-DB
+# layer (src.vectorstore / src.embeddings / ingest.py) is left intact and
+# dormant; re-enable by restoring the import and the search call below.
+# from src.vectorstore import search_transcripts
 from src.web_search import research_advertiser
 from src.audience import expand_query, recommend_segments, format_audience_segments
 from src.trends import get_trend_data
@@ -122,9 +125,9 @@ def generate_insights(
     Returns dict with keys: content, sources, research_skills,
     audience_segments, google_trends.
     """
-    # 1. Search vector DB for editorial insights
-    results = search_transcripts(topic, n_results=5)
-    editorial_insights, sources = _format_editorial_insights(results)
+    # 1. Editorial vector search disabled for now (Phase 2). `sources` stays an
+    #    empty list so the return contract is unchanged for the API/frontend.
+    sources = []
 
     # 2. Skill-based advertiser research
     skill_results = research_advertiser(advertiser)
@@ -166,7 +169,6 @@ def generate_insights(
         topic=topic,
         advertiser=advertiser,
         advertiser_kpi=kpi,
-        editorial_insights=editorial_insights,
         advertiser_research=advertiser_research,
         audience_segments=audience_segments_text,
         google_trends=google_trends,
