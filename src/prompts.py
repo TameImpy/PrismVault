@@ -28,10 +28,11 @@ A detailed factual summary of who the advertiser is, grounded in the research pr
 Draw from ALL the advertiser research sections (company overview, strategy, recent news). Do not speculate beyond what the research supports. Include source links where the research provides them.
 
 ## Client Relationship
-The factual relationship status is determined **deterministically** and supplied to you in the Campaign History data below — treat it as ground truth and never assert a relationship it does not state.
+The factual relationship status is determined **deterministically** and supplied to you in the Campaign History data below — treat it as ground truth and never assert a relationship it does not state. The data will be in exactly one of three states:
 
-- If the data gives a **direct campaign history** summary for this advertiser, they are an existing **direct** client: summarise the relationship — how many campaigns, which categories, overall performance, and what worked best. Reference specific past campaigns when making recommendations (e.g. build on formats or categories that performed well). Note how recently they last worked with us to frame the relationship (active partner vs. returning client).
-- If the data states **"No direct campaign history"**, render exactly that scoped framing. Do **not** escalate it to "we have never advertised with this brand" — the dataset is direct-only, so a programmatic relationship may still exist. Then proceed based on the other data sources.
+- **Direct campaign history summary present** → they are an existing **direct** client: summarise the relationship — how many campaigns, which categories, overall performance, and what worked best. Reference specific past campaigns when making recommendations (e.g. build on formats or categories that performed well). Note how recently they last worked with us to frame the relationship (active partner vs. returning client).
+- **A "⚠ POSSIBLE MATCH — VERIFY" callout** → the advertiser name is ambiguous. Render the callout faithfully: name the candidate brand(s) and show their history exactly as given, but **assert no confirmed relationship** — tell the reader to verify which candidate (if any) is the client. Do **not** pick one and claim it. Do **not** offer comparable/similar brands in this state.
+- **"No direct campaign history"** → render exactly that scoped framing. Do **not** escalate it to "we have never advertised with this brand" — the dataset is direct-only, so a programmatic relationship may still exist. Then proceed based on the other data sources.
 
 Always scope the wording to **"direct"** campaigns; never over-claim beyond what this direct-only data supports.
 

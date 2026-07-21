@@ -124,6 +124,47 @@ def test_substring_false_positive_now_no_match():
         assert result["summary"] == NO_DATA_MESSAGE
 
 
+def test_possible_match_renders_verify_callout():
+    """An ambiguous query flags candidates to verify, asserts nothing, and
+    shows each candidate's history."""
+    rows = [
+        {
+            "advertiser": "Virgin Media",
+            "campaign_name": "VM Broadband",
+            "campaign_id": "600",
+            "category": "Tech",
+            "start_date": "2025-03-01",
+            "impressions": "2000000",
+            "clicks": "5000",
+        },
+        {
+            "advertiser": "Virgin Atlantic",
+            "campaign_name": "VA Summer",
+            "campaign_id": "601",
+            "category": "Travel",
+            "start_date": "2025-06-01",
+            "impressions": "1500000",
+            "clicks": "3000",
+        },
+    ]
+    with tempfile.TemporaryDirectory() as tmpdir:
+        csv_path = os.path.join(tmpdir, "campaigns.csv")
+        _create_test_csv(csv_path, rows=rows)
+
+        result = get_campaign_summary("Virgin", csv_path)
+
+        assert result["status"] == "possible_match"
+        assert result["matched_name"] is None
+        # Both candidates are named for the salesperson to verify.
+        assert "Virgin Media" in result["summary"]
+        assert "Virgin Atlantic" in result["summary"]
+        # The callout is clearly a verify prompt, not an assertion.
+        assert "verify" in result["summary"].lower()
+        assert "⚠" in result["summary"]
+        # Candidates are exposed structurally too.
+        assert set(result["candidates"]) == {"Virgin Media", "Virgin Atlantic"}
+
+
 def test_no_direct_wording_on_no_match():
     """No-match wording is scoped to 'direct', never an absolute claim."""
     assert "direct" in NO_DATA_MESSAGE.lower()
