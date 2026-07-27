@@ -1,3 +1,4 @@
+import json
 import logging
 
 from src.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
@@ -345,7 +346,7 @@ def test_guardrail_empty_content_returns_empty_results_and_no_warning(caplog):
     with caplog.at_level(logging.WARNING):
         result = _run_format_name_guardrail("")
 
-    assert result == {"recognised": [], "unrecognised": []}
+    assert result == {"recognised": [], "recommended": [], "unrecognised": []}
     assert not [r for r in caplog.records if r.levelno >= logging.WARNING]
 
 
@@ -355,7 +356,7 @@ def test_guardrail_none_content_returns_empty_results_and_no_warning(caplog):
     with caplog.at_level(logging.WARNING):
         result = _run_format_name_guardrail(None)
 
-    assert result == {"recognised": [], "unrecognised": []}
+    assert result == {"recognised": [], "recommended": [], "unrecognised": []}
     assert not [r for r in caplog.records if r.levelno >= logging.WARNING]
 
 
@@ -369,7 +370,7 @@ def test_guardrail_returns_safe_fallback_if_load_format_names_raises(caplog):
         with caplog.at_level(logging.ERROR):
             result = _run_format_name_guardrail("- **Some Format** — CTR 1.00%")
 
-    assert result == {"recognised": [], "unrecognised": []}
+    assert result == {"recognised": [], "recommended": [], "unrecognised": []}
     # The guardrail must have logged the exception at ERROR/CRITICAL level.
     error_records = [r for r in caplog.records if r.levelno >= logging.ERROR]
     assert error_records, "Expected at least one ERROR-level log from the guardrail exception handler"
@@ -392,3 +393,126 @@ def test_guardrail_warning_names_the_module_logger(caplog):
     ]
     assert warning_records, "Expected a WARNING from the src.synthesiser logger"
     assert "Fictional Ad Unit" in result["unrecognised"]
+
+
+# ---------------------------------------------------------------------------
+# Structured deck payload (PRD #131 / slice #133)
+#
+# The deck download reuses what the brief run already produced. These tests pin
+# the structured shape of the three fields the deck consumes so no numeric
+# value ever has to be re-extracted from the generated markdown.
+# ---------------------------------------------------------------------------
+
+RESEARCH_BODY = "## Finding\n72% of travellers book city breaks in Q1."
+
+# A brief naming one real catalogue format, so the deterministic name guardrail
+# has something to recognise.
+BRIEF_NAMING_A_FORMAT = (
+    "## Recommended Products\n"
+    "- **Standard display - Mobile Banner** — efficient mobile reach\n"
+)
+
+
+def _run_generate_insights(historical=None, content=BRIEF_NAMING_A_FORMAT):
+    """Run generate_insights() with every external dependency stubbed out."""
+    from unittest.mock import patch, MagicMock
+
+    mock_response = MagicMock()
+    mock_response.choices = [MagicMock()]
+    mock_response.choices[0].message.content = content
+
+    if historical is None:
+        historical = {"relevant": False, "prompt_text": "No historical research matched this brief."}
+
+    empty_segments = {"matched": False, "note": "", "query_terms": [], "platforms": []}
+
+    with patch("src.synthesiser.research_advertiser", return_value=[]), \
+         patch("src.synthesiser.expand_query", return_value={"keywords": [], "categories": []}), \
+         patch("src.synthesiser.recommend_segments", return_value=empty_segments), \
+         patch("src.synthesiser.get_campaign_summary",
+               return_value={"summary": "No previous campaign data found.", "campaigns": []}), \
+         patch("src.synthesiser.get_relevant_research", return_value=historical), \
+         patch("src.synthesiser.OpenAI") as mock_openai_cls:
+
+        mock_client = MagicMock()
+        mock_client.chat.completions.create.return_value = mock_response
+        mock_openai_cls.return_value = mock_client
+
+        from src.synthesiser import generate_insights
+        result = generate_insights(
+            topic="city breaks", advertiser="TestCo", kpi="Clicks", include_google_trends=False
+        )
+        user_prompt = mock_client.chat.completions.create.call_args[1]["messages"][1]["content"]
+
+    return result, user_prompt
+
+
+def test_generate_insights_returns_only_the_recommended_formats():
+    """The rows are narrowed to the formats the brief actually named, with the
+    metrics straight off the CSV — so the deck knows which format is which
+    without re-reading the prose, and no number came from the LLM."""
+    from src.formats import load_format_rows
+
+    result, user_prompt = _run_generate_insights()
+
+    rows = result["format_recommendations"]
+    assert [r["format"] for r in rows] == ["Standard display - Mobile Banner"]
+    source = [
+        r for r in load_format_rows()
+        if r["format"] == "Standard display - Mobile Banner"
+    ][0]
+    assert rows[0] == source
+    # The prompt still gets the whole catalogue as prose — narrowing is for the deck.
+    assert "Primary objective:" in user_prompt
+
+
+def test_generate_insights_recommends_no_formats_when_the_brief_names_none():
+    """A brief naming no confirmed format yields an empty list rather than the
+    whole catalogue — the deck shows nothing before it shows the wrong product."""
+    result, _ = _run_generate_insights(content="A brief with no product names.")
+
+    assert result["format_recommendations"] == []
+
+
+def test_generate_insights_names_the_matched_research_file_not_its_body():
+    """On a match the payload identifies the source file. The ~30KB body stays
+    server-side: it is not persisted per brief nor round-tripped via the client."""
+    historical = {
+        "relevant": True,
+        "prompt_text": RESEARCH_BODY,
+        "file": "travel_audience_research_2024_25.md",
+        "title": "Travel Audience Research",
+        "organisation": "Prism",
+        "fieldwork": "2024 to 2025",
+        "total_respondents": 2000,
+        "matched_on": ["city breaks"],
+    }
+    result, _ = _run_generate_insights(historical=historical)
+
+    research = result["historical_research"]
+    assert research["relevant"] is True
+    assert research["file"] == "travel_audience_research_2024_25.md"
+    assert research["title"] == "Travel Audience Research"
+    # The body must not leave the server under any key.
+    assert RESEARCH_BODY not in json.dumps(research)
+    assert "prompt_text" not in research
+
+
+def test_generate_insights_omits_research_file_when_nothing_matched():
+    """No match means nothing to ground insights in — the deck omits the section."""
+    result, _ = _run_generate_insights()
+
+    research = result["historical_research"]
+    assert research["relevant"] is False
+    assert "file" not in research
+    assert "prompt_text" not in research
+
+
+def test_generate_insights_payload_is_json_serialisable():
+    """The whole result is persisted to briefs.result_json and re-posted to the
+    deck endpoint, so every deck-bearing field must survive a JSON round-trip."""
+    result, _ = _run_generate_insights()
+    revived = json.loads(json.dumps(result))
+
+    for key in ("audience_segments", "format_recommendations", "historical_research"):
+        assert revived[key] == result[key]
