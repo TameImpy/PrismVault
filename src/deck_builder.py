@@ -10,6 +10,7 @@ from pptx.util import Pt, Emu, Inches
 from pptx.enum.text import PP_ALIGN
 from pptx.dml.color import RGBColor
 
+from src.font_embed import embed_fonts
 from src.slide_content import build_audience_slide_content
 
 TEMPLATE_PATH = os.path.join(
@@ -54,8 +55,8 @@ def build_deck(slide_content, topic, advertiser):
 
     buf = io.BytesIO()
     prs.save(buf)
-    buf.seek(0)
-    return buf
+    # Embed Barlow so the deck renders on-brand on a machine without it installed.
+    return embed_fonts(buf)
 
 
 def _move_slide(prs, from_index, to_index):
