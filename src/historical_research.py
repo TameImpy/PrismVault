@@ -119,3 +119,28 @@ def get_relevant_research(topic, advertiser, client_brief, catalogue_dir=None):
         "relevant": False,
         "prompt_text": FALLBACK_TEXT,
     }
+
+
+def load_research_body(research, catalogue_dir=None):
+    # type: (dict, str) -> str
+    """Return the verbatim body of the research file a brief matched.
+
+    The deck download posts the matched-research payload back to the server
+    with the body stripped out (only ``file`` identifies it), so the body is
+    re-read here from the same catalogue the brief matched against. Returns ""
+    when nothing matched, which is the signal to omit the section entirely.
+    """
+    if not research or not research.get("relevant"):
+        return ""
+
+    if research.get("prompt_text"):
+        return research["prompt_text"]
+
+    filename = research.get("file")
+    if not filename:
+        return ""
+
+    for f in load_catalogue(catalogue_dir):
+        if f["file"] == filename:
+            return f["body"]
+    return ""

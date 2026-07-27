@@ -1,57 +1,58 @@
 """
-Deck builder module. Populates a branded PowerPoint template with structured
-slide content and returns the finished .pptx as a BytesIO buffer.
+Deck builder. Populates the official 8-slide template with the structured brief
+payload and returns the finished .pptx as a BytesIO buffer.
+
+The template is the single source of truth for styling (PRD #131): this module
+injects text into the template's own marker runs and never touches a font, size
+or colour. Change the look by editing the template, not this file.
 """
 import io
 import os
+import re
 
+from lxml import etree
 from pptx import Presentation
-from pptx.util import Pt, Emu, Inches
-from pptx.enum.text import PP_ALIGN
-from pptx.dml.color import RGBColor
+from pptx.oxml.ns import qn
 
 from src.font_embed import embed_fonts
-from src.slide_content import build_audience_slide_content
-
-TEMPLATE_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "..", "data", "templates", "prism_plan_template.pptx"
+from src.slide_content import (
+    INSIGHT_TILES,
+    PRODUCT_TILES,
+    SEGMENT_TILES,
+    build_product_rows,
+    build_segment_rows,
 )
 
-# Brand colours
-WHITE = RGBColor(0xFF, 0xFF, 0xFF)
-LIGHT_GREY = RGBColor(0xC0, 0xC0, 0xC0)
-CYAN_ACCENT = RGBColor(0x1F, 0x89, 0xDF)
+TEMPLATE_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "..", "data", "templates", "prism_plan_template_export.pptx",
+)
+
+# The Historical Insights slide is dropped whole when no research matched.
+INSIGHT_SLIDE_MARKER = "[INSIGHT_1]"
+
+_MARKER_RE = re.compile(r"\[[A-Z0-9_]+\]")
+_XML_SPACE = "{http://www.w3.org/XML/1998/namespace}space"
 
 
-def build_deck(slide_content, topic, advertiser):
-    """Build a branded PowerPoint deck from structured slide content.
+def build_deck(slide_content, advertiser):
+    """Build the deck from the brief's structured payload.
 
     Args:
-        slide_content: dict from generate_slide_content() with all slide fields.
-        topic: The editorial topic.
-        advertiser: The advertiser name.
+        slide_content: the deck payload — ``advertiser_overview`` and
+            ``insights`` from the LLM step, plus the brief's own
+            ``audience_segments`` and ``format_recommendations``.
+        advertiser: the advertiser name, as the brief was run for.
 
     Returns:
-        io.BytesIO containing the finished .pptx file.
+        io.BytesIO containing the finished .pptx, with Barlow embedded.
     """
     prs = Presentation(TEMPLATE_PATH)
 
-    _fix_autofit(prs)
+    if not slide_content.get("insights"):
+        _drop_slide_with_marker(prs, INSIGHT_SLIDE_MARKER)
 
-    _populate_title_slide(prs.slides[0], topic, advertiser, slide_content)
-    _populate_stats_slide(prs.slides[1], slide_content)
-    _populate_two_column_slide(prs.slides[2], slide_content)
-    _populate_body_slide(prs.slides[3], slide_content)
-    _populate_closing_slide(prs.slides[4], slide_content)
-
-    # Deterministic "Recommended Audiences" slide (PRD #96 / slice #100). Built
-    # from the audience_segments payload — reach is placed verbatim, never via
-    # the LLM. Skipped entirely when no segments matched.
-    audience = build_audience_slide_content(slide_content.get("audience_segments"))
-    if audience["matched"]:
-        _add_audience_slide(prs, audience)
-        # Slide out with the CTA: move the new (last) slide before the closing one.
-        _move_slide(prs, len(prs.slides._sldIdLst) - 1, len(prs.slides._sldIdLst) - 2)
+    _fill_markers(prs, _build_fields(slide_content, advertiser))
 
     buf = io.BytesIO()
     prs.save(buf)
@@ -59,252 +60,119 @@ def build_deck(slide_content, topic, advertiser):
     return embed_fonts(buf)
 
 
-def _move_slide(prs, from_index, to_index):
-    """Reorder slides by moving the sldId element within the slide id list."""
-    sldIdLst = prs.slides._sldIdLst
-    slides = list(sldIdLst)
-    element = slides[from_index]
-    sldIdLst.remove(element)
-    sldIdLst.insert(to_index, element)
+def _build_fields(slide_content, advertiser):
+    """Map the payload onto every marker the template defines.
 
-
-def _add_text_lines(slide, left, top, width, height, lines):
-    """Add a textbox whose paragraphs are `lines` — one (text, font, size,
-    colour, bold) tuple per visual line. Each line is its own <a:p> with a
-    single run, so no literal newline ever reaches an <a:t> (PowerPoint-safe).
+    Every marker gets an entry — tiles with no data behind them resolve to ""
+    and are blanked, so no `[MARKER]` can survive into a client-facing deck.
     """
-    box = slide.shapes.add_textbox(left, top, width, height)
-    tf = box.text_frame
-    tf.word_wrap = True
-    for i, (text, font_name, size, colour, bold) in enumerate(lines):
-        para = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
-        run = para.add_run()
-        run.text = text
-        _apply_font(run, font_name, size, colour, bold)
-    return box
+    fields = {
+        "[ADVERTISER_NAME]": advertiser,
+        "[ADVERTISER_OVERVIEW]": slide_content.get("advertiser_overview"),
+    }
+
+    products = build_product_rows(slide_content.get("format_recommendations"))
+    for i in range(PRODUCT_TILES):
+        row = products[i] if i < len(products) else {}
+        fields["[PRODUCT_%d_FORMAT]" % (i + 1)] = row.get("format")
+        fields["[PRODUCT_%d_CTR]" % (i + 1)] = row.get("ctr")
+        fields["[PRODUCT_%d_VIEW]" % (i + 1)] = row.get("viewability")
+
+    segments = build_segment_rows(slide_content.get("audience_segments"))
+    for i in range(SEGMENT_TILES):
+        row = segments[i] if i < len(segments) else {}
+        fields["[SEGMENT_%d_NAME]" % (i + 1)] = row.get("name")
+        fields["[SEGMENT_%d_REACH]" % (i + 1)] = row.get("reach")
+
+    insights = slide_content.get("insights") or []
+    for i in range(INSIGHT_TILES):
+        row = insights[i] if i < len(insights) else {}
+        # The hero line of each tile is the figure (40pt ExtraBold, mirroring
+        # the product CTR tile); the supporting phrase sits beneath it.
+        fields["[INSIGHT_%d]" % (i + 1)] = row.get("stat")
+        fields["[INSIGHT_%d_STAT]" % (i + 1)] = row.get("text")
+
+    return {marker: _one_line(value) for marker, value in fields.items()}
 
 
-def _add_audience_slide(prs, audience):
-    """Append a "Recommended Audiences" slide built from the deterministic payload."""
-    slide = prs.slides.add_slide(prs.slide_layouts[6])  # Blank — inherits dark master bg
+def _one_line(value):
+    """Collapse a value to a single line of text.
 
-    _add_text_lines(
-        slide, Inches(0.55), Inches(0.30), Inches(9.0), Inches(0.7),
-        [("Recommended Audiences", "Barlow ExtraBold", Pt(32), WHITE, True)],
-    )
-    _add_text_lines(
-        slide, Inches(0.55), Inches(1.02), Inches(9.0), Inches(0.4),
-        [("Reach is per segment — never summed; segments overlap and are not de-duplicated.",
-          "Barlow", Pt(10), CYAN_ACCENT, False)],
-    )
-
-    # Two platform columns.
-    col_width = Inches(4.25)
-    col_lefts = [Inches(0.55), Inches(4.9)]
-    for col, platform in enumerate(audience["platforms"][:2]):
-        left = col_lefts[col]
-        _add_text_lines(
-            slide, left, Inches(1.55), col_width, Inches(0.6),
-            [
-                (platform["platform"], "Barlow ExtraBold", Pt(15), WHITE, True),
-                (platform["framing"], "Barlow", Pt(9), LIGHT_GREY, False),
-            ],
-        )
-        row_top = 2.25
-        for seg in platform["segments"]:
-            icon = seg.get("icon_path")
-            if icon and os.path.exists(icon):
-                slide.shapes.add_picture(icon, left, Inches(row_top), height=Inches(0.34))
-            _add_text_lines(
-                slide, left + Inches(0.5), Inches(row_top - 0.04), col_width - Inches(0.5), Inches(0.6),
-                [
-                    (seg["why"], "Barlow Medium", Pt(11), WHITE, False),
-                    ("Reach: %s" % seg["reach"], "Barlow", Pt(9), CYAN_ACCENT, False),
-                ],
-            )
-            row_top += 0.62
-
-
-def _fix_autofit(prs):
-    """Remove conflicting autofit elements from the template.
-
-    The template has both <a:spAutoFit/> and <a:normAutofit fontScale="62500"/>
-    inside every <a:bodyPr>. The OOXML spec requires at most one autofit child.
-    PowerPoint tolerates this in an unmodified template but flags it as corrupt
-    once python-pptx re-serialises the file with modified content.
-    We keep normAutofit (shrink text to fit) and remove spAutoFit.
+    Every marker sits in a one-line placeholder, and a literal newline inside
+    an <a:t> element is what PowerPoint reads as a corrupt file.
     """
-    from pptx.oxml.ns import qn
+    return " ".join(str(value or "").split())
 
+
+def _drop_slide_with_marker(prs, marker):
+    """Remove the slide carrying `marker`, along with its relationship."""
+    for index, slide in enumerate(prs.slides):
+        if marker in _slide_text(slide):
+            sldId = list(prs.slides._sldIdLst)[index]
+            prs.part.drop_rel(sldId.rId)
+            prs.slides._sldIdLst.remove(sldId)
+            return
+
+
+def _slide_text(slide):
+    return " ".join(s.text_frame.text for s in slide.shapes if s.has_text_frame)
+
+
+def _fill_markers(prs, fields):
+    """Replace every marker in the deck with its value, in place.
+
+    Text is written into the template's own runs, so each populated run keeps
+    the placeholder's font, size and colour untouched.
+    """
     for slide in prs.slides:
         for shape in slide.shapes:
-            if not shape.has_text_frame:
-                continue
-            bodyPr = shape.text_frame._txBody.find(qn("a:bodyPr"))
-            if bodyPr is None:
-                continue
-            sp_auto = bodyPr.find(qn("a:spAutoFit"))
-            norm_auto = bodyPr.find(qn("a:normAutofit"))
-            if sp_auto is not None and norm_auto is not None:
-                bodyPr.remove(sp_auto)
+            if shape.has_text_frame:
+                for para in shape.text_frame.paragraphs:
+                    _fill_paragraph(para, fields)
 
 
-def _apply_font(run, font_name=None, font_size=None, font_color=None, bold=None):
-    """Apply font formatting to a run."""
-    if font_name:
-        run.font.name = font_name
-    if font_size:
-        run.font.size = font_size
-    if font_color:
-        run.font.color.rgb = font_color
-    if bold is not None:
-        run.font.bold = bold
+def _fill_paragraph(para, fields):
+    markers = _MARKER_RE.findall(para.text)
+    if not markers:
+        return
+
+    # A marker occupies a single run in the template. If a template revision
+    # ever splits one across runs, collapse the paragraph into its first run so
+    # the fill still lands — that run's formatting is the placeholder's.
+    if any(not any(m in r.text for r in para.runs) for m in markers):
+        _collapse_runs(para)
+
+    for run in para.runs:
+        text = run.text
+        for marker in markers:
+            if marker in text:
+                text = text.replace(marker, fields.get(marker, ""))
+        if text != run.text:
+            _set_run_text(run, text)
+
+    _drop_empty_runs(para)
 
 
-def _set_text(shape, text, font_name=None, font_size=None, font_color=None, bold=None):
-    """Replace all text in a shape's text frame.
-
-    Handles newlines by creating proper OOXML paragraph elements instead of
-    embedding literal '\\n' in a single run, which PowerPoint treats as corrupt.
-    """
-    from copy import deepcopy
-    from pptx.oxml.ns import qn
-
-    tf = shape.text_frame
-    txBody = tf._txBody
-
-    # Capture the first paragraph element as a formatting template
-    first_para_elem = txBody.findall(qn("a:p"))[0]
-
-    # Remove all existing paragraphs
-    for p in txBody.findall(qn("a:p")):
-        txBody.remove(p)
-
-    # Split on newlines and create one <a:p> per line
-    lines = text.split("\n")
-    for line in lines:
-        new_p = deepcopy(first_para_elem)
-        # Remove all runs and breaks from the copied paragraph
-        for child in new_p.findall(qn("a:r")):
-            new_p.remove(child)
-        for child in new_p.findall(qn("a:br")):
-            new_p.remove(child)
-        if line:
-            # Add a single run with the line text
-            from lxml import etree
-            r_elem = etree.SubElement(new_p, qn("a:r"))
-            t_elem = etree.SubElement(r_elem, qn("a:t"))
-            t_elem.text = line
-            t_elem.set("{http://www.w3.org/XML/1998/namespace}space", "preserve")
-        # Empty lines become empty paragraphs (visual spacing) — no run needed
-        txBody.append(new_p)
-
-    # Apply font formatting to all runs
-    for para in tf.paragraphs:
-        for run in para.runs:
-            _apply_font(run, font_name, font_size, font_color, bold)
+def _collapse_runs(para):
+    """Merge a paragraph's runs into the first one, keeping its formatting."""
+    runs = para.runs
+    if len(runs) < 2:
+        return
+    _set_run_text(runs[0], para.text)
+    for run in runs[1:]:
+        run._r.getparent().remove(run._r)
 
 
-def _get_text_shapes(slide):
-    """Return all shapes with text frames, ordered by position (top, left)."""
-    shapes = [s for s in slide.shapes if s.has_text_frame]
-    shapes.sort(key=lambda s: (s.top, s.left))
-    return shapes
+def _set_run_text(run, text):
+    run.text = text
+    # Leading/trailing spaces are meaningful here ("[ADVERTISER_NAME] Brief").
+    t = run._r.find(qn("a:t"))
+    if t is not None:
+        t.set(_XML_SPACE, "preserve")
 
 
-def _populate_title_slide(slide, topic, advertiser, content):
-    """Slide 1: Topic, advertiser, KPI."""
-    text_shapes = _get_text_shapes(slide)
-    # Find and replace placeholder text
-    for shape in text_shapes:
-        text = shape.text_frame.text
-        if "[TOPIC]" in text:
-            _set_text(shape, topic, font_name="Barlow ExtraBold", font_size=Pt(50), font_color=WHITE)
-        elif "[ADVERTISER]" in text:
-            _set_text(shape, advertiser, font_name="Barlow Medium", font_size=Pt(16), font_color=LIGHT_GREY)
-        elif "[KPI]" in text:
-            _set_text(shape, "KPI: %s" % content.get("kpi", ""), font_name="Barlow", font_size=Pt(14), font_color=CYAN_ACCENT)
-
-
-def _populate_stats_slide(slide, content):
-    """Slide 2: At a Glance — 6 stat value/label pairs."""
-    text_shapes = _get_text_shapes(slide)
-    stats = content.get("stats", [])
-
-    # Find value and label placeholders (alternating [VALUE]/[LABEL])
-    value_shapes = [s for s in text_shapes if "[VALUE]" in s.text_frame.text]
-    label_shapes = [s for s in text_shapes if "[LABEL]" in s.text_frame.text]
-
-    for i, stat in enumerate(stats[:6]):
-        if i < len(value_shapes):
-            _set_text(value_shapes[i], stat["value"],
-                      font_name="Barlow ExtraBold", font_size=Pt(40), font_color=WHITE)
-        if i < len(label_shapes):
-            _set_text(label_shapes[i], stat["label"],
-                      font_name="Barlow", font_size=Pt(11), font_color=LIGHT_GREY)
-
-
-def _format_bullets(items):
-    """Format a list of strings as bullet text."""
-    return "\n".join("  %s" % item for item in items)
-
-
-def _populate_two_column_slide(slide, content):
-    """Slide 3: Two-column — Advertiser Overview + Editorial Insights."""
-    text_shapes = _get_text_shapes(slide)
-
-    for shape in text_shapes:
-        text = shape.text_frame.text
-        if "Advertiser Overview" in text:
-            _set_text(shape, content.get("left_heading", "Advertiser Overview"),
-                      font_name="Barlow ExtraBold", font_size=Pt(22), font_color=WHITE)
-        elif "[LEFT_BODY]" in text:
-            bullets = content.get("left_bullets", [])
-            _set_text(shape, _format_bullets(bullets),
-                      font_name="Barlow", font_size=Pt(14), font_color=LIGHT_GREY)
-        elif "Editorial Insights" in text:
-            _set_text(shape, content.get("right_heading", "Editorial Insights"),
-                      font_name="Barlow ExtraBold", font_size=Pt(22), font_color=WHITE)
-        elif "[RIGHT_BODY]" in text:
-            bullets = content.get("right_bullets", [])
-            _set_text(shape, _format_bullets(bullets),
-                      font_name="Barlow", font_size=Pt(14), font_color=LIGHT_GREY)
-
-
-def _populate_body_slide(slide, content):
-    """Slide 4: Messaging & Tone Recommendations."""
-    text_shapes = _get_text_shapes(slide)
-
-    for shape in text_shapes:
-        text = shape.text_frame.text
-        if "Messaging" in text:
-            _set_text(shape, content.get("messaging_heading", "Messaging & Tone"),
-                      font_name="Barlow ExtraBold", font_size=Pt(32), font_color=WHITE)
-        elif "[BODY]" in text:
-            items = content.get("messaging_items", [])
-            lines = []
-            for item in items:
-                lines.append("%s — %s" % (item["headline"], item["detail"]))
-            _set_text(shape, "\n\n".join(lines),
-                      font_name="Barlow", font_size=Pt(14), font_color=LIGHT_GREY)
-
-
-def _populate_closing_slide(slide, content):
-    """Slide 5: Recommended Products + CTA."""
-    text_shapes = _get_text_shapes(slide)
-
-    for shape in text_shapes:
-        text = shape.text_frame.text
-        if "Recommended" in text:
-            _set_text(shape, "Recommended Products",
-                      font_name="Barlow ExtraBold", font_size=Pt(32), font_color=WHITE)
-        elif "[PRODUCTS]" in text:
-            products = content.get("products", [])
-            lines = []
-            for prod in products:
-                lines.append("%s  |  %s" % (prod["name"], prod["metric"]))
-            _set_text(shape, "\n\n".join(lines),
-                      font_name="Barlow", font_size=Pt(14), font_color=LIGHT_GREY)
-        elif "[CTA]" in text:
-            _set_text(shape, content.get("cta", ""),
-                      font_name="Barlow Medium", font_size=Pt(14), font_color=CYAN_ACCENT)
+def _drop_empty_runs(para):
+    """Remove runs left with no text — an empty <a:t/> reads as corrupt."""
+    for run in para.runs:
+        if not run.text:
+            run._r.getparent().remove(run._r)

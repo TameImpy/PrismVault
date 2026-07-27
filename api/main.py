@@ -157,20 +157,21 @@ async def download_deck(req: DownloadDeckRequest, user: dict = Depends(get_curre
     if not config.OPENAI_API_KEY:
         raise HTTPException(status_code=500, detail="Missing OPENAI_API_KEY on the server.")
     try:
+        # The LLM writes only the advertiser-overview prose and picks 3 insights
+        # from the research the brief matched.
         slide_content = generate_slide_content(
             brief_content=req.content,
             topic=req.topic,
             advertiser=req.advertiser,
             kpi=req.kpi,
+            historical_research=req.historical_research,
         )
-        slide_content["kpi"] = req.kpi
-        # Structured payload from the brief run, placed verbatim: segment reach,
-        # format CTR/viewability and the matched research body are never
-        # regenerated or re-extracted by the LLM.
+        # Structured payload from the brief run, placed verbatim: segment reach
+        # and format CTR/viewability are never regenerated or re-extracted.
         slide_content["audience_segments"] = req.audience_segments
         slide_content["format_recommendations"] = req.format_recommendations
         slide_content["historical_research"] = req.historical_research
-        buf = build_deck(slide_content, req.topic, req.advertiser)
+        buf = build_deck(slide_content, req.advertiser)
 
         filename = "Prism_Plan_%s_%s.pptx" % (
             _sanitize_filename(req.advertiser),

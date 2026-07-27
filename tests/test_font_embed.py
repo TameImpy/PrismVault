@@ -232,10 +232,10 @@ def test_missing_font_file_is_reported(monkeypatch):
 
 
 def test_built_deck_embeds_the_brand_fonts():
-    from tests.test_deck_builder import SAMPLE_CONTENT
+    from tests.test_deck_builder import _content
     from src.deck_builder import build_deck
 
-    zf = _zip(build_deck(SAMPLE_CONTENT, "gut health", "Yakult"))
+    zf = _zip(build_deck(_content(), "Yakult"))
     pres = _presentation_xml(zf)
 
     assert pres.get("embedTrueTypeFonts") == "1"
@@ -254,10 +254,10 @@ def test_built_deck_embeds_the_brand_fonts():
 def test_built_deck_is_structurally_intact():
     """Every relationship in the built deck resolves to a part that exists, and every
     part is typed — the two package-level rules PowerPoint fails a file's repair check on."""
-    from tests.test_deck_builder import SAMPLE_CONTENT
+    from tests.test_deck_builder import _content
     from src.deck_builder import build_deck
 
-    zf = _zip(build_deck(SAMPLE_CONTENT, "gut health", "Yakult"))
+    zf = _zip(build_deck(_content(), "Yakult"))
     names = set(zf.namelist())
 
     defaults = {}

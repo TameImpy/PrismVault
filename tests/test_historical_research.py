@@ -2,7 +2,11 @@ import os
 
 import pytest
 
-from src.historical_research import get_relevant_research, load_catalogue
+from src.historical_research import (
+    get_relevant_research,
+    load_catalogue,
+    load_research_body,
+)
 
 # A minimal fixture file that mirrors the real travel catalogue file's shape:
 # YAML frontmatter with `topics` (verbose phrases) + `match_keywords` (single
@@ -307,3 +311,39 @@ def test_gate_none_inputs_do_not_crash(catalogue_dir):
     result = get_relevant_research(None, None, None, catalogue_dir=catalogue_dir)
     assert result["relevant"] is False
     assert result["prompt_text"] == "No historical research matched this brief."
+
+
+# ---------------------------------------------------------------------------
+# Body lookup for the deck (PRD #131 / slice #134)
+#
+# The deck download posts the matched-research payload back with the body
+# stripped out, so the body is re-read here from the same catalogue.
+# ---------------------------------------------------------------------------
+
+
+def test_body_lookup_returns_the_matched_file_body(catalogue_dir):
+    research = get_relevant_research("cruise holiday", "P&O", "", catalogue_dir=catalogue_dir)
+    research.pop("prompt_text")  # what the API strips before it reaches the client
+
+    body = load_research_body(research, catalogue_dir=catalogue_dir)
+
+    assert "P&O Cruises led consideration at 38%" in body
+
+
+def test_body_lookup_prefers_a_body_already_on_the_payload(catalogue_dir):
+    """A caller holding the body (the brief run itself) needs no second read."""
+    research = {"relevant": True, "file": "travel.md", "prompt_text": "already here"}
+    assert load_research_body(research, catalogue_dir=catalogue_dir) == "already here"
+
+
+def test_body_lookup_is_empty_when_nothing_matched(catalogue_dir):
+    assert load_research_body(None) == ""
+    assert load_research_body({"relevant": False}) == ""
+    assert load_research_body({"relevant": True}, catalogue_dir=catalogue_dir) == ""
+
+
+def test_body_lookup_is_empty_when_the_file_is_gone(catalogue_dir):
+    """A brief saved before a research file was retired must not crash a later
+    deck download — it just loses the section."""
+    research = {"relevant": True, "file": "retired.md"}
+    assert load_research_body(research, catalogue_dir=catalogue_dir) == ""

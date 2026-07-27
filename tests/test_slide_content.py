@@ -1,7 +1,12 @@
 """
-Tests for the slide content generator at src/slide_content.py.
+Tests for the slide content step at src/slide_content.py.
 
-Uses a mocked OpenAI client — no real API calls.
+Two halves, matching the module's two jobs (PRD #131 / slice #134):
+
+- the deterministic transforms that shape the structured brief payload into
+  slide rows — reach, CTR and viewability never pass through the LLM;
+- the single LLM call, which is reduced to advertiser-overview prose plus the
+  selection of 3 grounded research insights. Mocked — no real API calls.
 """
 import sys
 import os
@@ -13,163 +18,292 @@ if PROJECT_ROOT not in sys.path:
 
 import pytest
 from unittest.mock import patch, MagicMock
-from src.slide_content import generate_slide_content
+
+from src.slide_content import (
+    build_product_rows,
+    build_segment_rows,
+    generate_slide_content,
+    _parse_and_validate,
+)
+
+# ---------------------------------------------------------------------------
+# Deterministic transforms
+# ---------------------------------------------------------------------------
+
+
+def _audience_payload():
+    return {
+        "matched": True,
+        "note": "Reach figures are per-segment and must not be summed.",
+        "query_terms": ["baking"],
+        "platforms": [
+            {
+                "platform": "AP",
+                "framing": "Modelled first-party audience — broad reach",
+                "segments": [
+                    {"segment_name": "Confident bakers", "reach": 10486296,
+                     "platform": "AP", "category": "Food & Drink",
+                     "plain_english": "Feel confident when baking"},
+                    {"segment_name": "Cake decorators", "reach": 3401118,
+                     "platform": "AP", "category": "Food & Drink",
+                     "plain_english": "Decorate cakes at home"},
+                ],
+            },
+            {
+                "platform": "Permutive",
+                "framing": "Behavioural — recently engaged browsers",
+                "segments": [
+                    {"segment_name": "Segment %d" % i, "reach": 1000 * (10 - i),
+                     "platform": "Permutive", "category": "Food & Drink",
+                     "plain_english": "Browses food content"}
+                    for i in range(8)
+                ],
+            },
+        ],
+    }
+
+
+def test_segment_rows_carry_name_and_verbatim_reach():
+    rows = build_segment_rows(_audience_payload())
+    assert rows[0]["name"] == "Confident bakers"
+    assert rows[0]["reach"] == "10,486,296"  # digits verbatim, separators only
+
+
+def test_segment_rows_are_capped_at_the_tile_count():
+    assert len(build_segment_rows(_audience_payload(), limit=4)) == 4
+
+
+def test_segment_rows_alternate_between_platforms():
+    """Both audience engines are represented rather than the first one filling
+    every tile."""
+    rows = build_segment_rows(_audience_payload(), limit=4)
+    names = [r["name"] for r in rows]
+    assert names == ["Confident bakers", "Segment 0", "Cake decorators", "Segment 1"]
+
+
+def test_segment_rows_fall_back_to_one_platform_when_only_one_matched():
+    payload = _audience_payload()
+    payload["platforms"] = payload["platforms"][:1]
+    rows = build_segment_rows(payload, limit=4)
+    assert [r["name"] for r in rows] == ["Confident bakers", "Cake decorators"]
+
+
+def test_segment_rows_empty_when_nothing_matched():
+    assert build_segment_rows({"matched": False, "platforms": []}) == []
+    assert build_segment_rows(None) == []
+
+
+def test_segment_reach_is_never_summed():
+    rows = build_segment_rows(_audience_payload())
+    total = "{:,}".format(sum(s["reach"] for s in _audience_payload()["platforms"][0]["segments"]))
+    assert total not in [r["reach"] for r in rows]
+
+
+def test_segment_row_tolerates_a_non_numeric_reach():
+    payload = {"matched": True, "platforms": [
+        {"platform": "AP", "segments": [{"segment_name": "Odd one", "reach": "n/a"}]}]}
+    assert build_segment_rows(payload)[0]["reach"] == "n/a"
+
+
+FORMAT_ROWS = [
+    {"format": "Infinity Skin", "ctr": "0.42%", "viewability": "78.30%"},
+    {"format": "Playstream Video", "ctr": "0.31%", "viewability": "91.04%"},
+    {"format": "Standard display - MPU", "ctr": "0.05%", "viewability": "39.89%"},
+    {"format": "Podcast read", "ctr": "", "viewability": ""},
+]
+
+
+def test_product_rows_are_verbatim():
+    rows = build_product_rows(FORMAT_ROWS, limit=3)
+    assert rows[0] == {"format": "Infinity Skin", "ctr": "0.42%", "viewability": "78.30%"}
+    assert len(rows) == 3
+
+
+def test_product_rows_keep_formats_without_benchmarks():
+    """A non-digital format has no CTR — the tile goes blank, the row stays."""
+    rows = build_product_rows(FORMAT_ROWS[3:], limit=3)
+    assert rows[0]["format"] == "Podcast read"
+    assert rows[0]["ctr"] == ""
+
+
+def test_product_rows_empty_without_a_payload():
+    assert build_product_rows(None) == []
+    assert build_product_rows([]) == []
+
+
+# ---------------------------------------------------------------------------
+# LLM step — advertiser overview + grounded insight selection only
+# ---------------------------------------------------------------------------
 
 
 def _mock_openai_response(content):
-    """Create a mock OpenAI chat completion response."""
-    mock_message = MagicMock()
-    mock_message.content = content
-    mock_choice = MagicMock()
-    mock_choice.message = mock_message
-    mock_response = MagicMock()
-    mock_response.choices = [mock_choice]
-    return mock_response
+    message = MagicMock()
+    message.content = content
+    choice = MagicMock()
+    choice.message = message
+    response = MagicMock()
+    response.choices = [choice]
+    return response
 
 
 SAMPLE_LLM_OUTPUT = json.dumps({
-    "stats": [
-        {"value": "40%", "label": "addressable audience share"},
-        {"value": "112", "label": "audience index health enthusiasts"},
-        {"value": "2.7x", "label": "average frequency reach"},
-        {"value": "Q3", "label": "peak engagement quarter"},
-        {"value": "85%", "label": "brand safe inventory"},
-        {"value": "3.2m", "label": "monthly active food audience"},
+    "advertiser_overview": (
+        "Yakult is the UK's leading probiotic drinks brand, sold mainly through "
+        "grocery multiples and increasingly positioned around everyday gut health."
+    ),
+    "insights": [
+        {"stat": "68%", "text": "of readers say gut health shapes their food choices"},
+        {"stat": "2.4x", "text": "more likely to try a new functional drink"},
+        {"stat": "41%", "text": "read health content at least weekly"},
     ],
-    "left_heading": "Advertiser Overview",
-    "left_bullets": [
-        "Leading probiotic brand in UK market",
-        "Targeting health-conscious ABC1 consumers",
-        "Recent campaign focused on gut-brain axis",
-    ],
-    "right_heading": "Editorial Insights & Alignment",
-    "right_bullets": [
-        "Editors report growing reader interest in gut health",
-        "Strong alignment with wellness editorial calendar",
-        "Opportunity for sponsored content partnerships",
-    ],
-    "messaging_heading": "Messaging & Tone",
-    "messaging_items": [
-        {"headline": "Lead with science", "detail": "Ground claims in clinical research and editor-endorsed health content"},
-        {"headline": "Warm and approachable", "detail": "Avoid clinical jargon, use everyday wellness language"},
-        {"headline": "Seasonal hooks", "detail": "Tie messaging to January wellness and September back-to-routine peaks"},
-    ],
-    "products": [
-        {"name": "Infinity Skin", "metric": "CTR 0.42%, Viewability 78%"},
-        {"name": "Playstream Video", "metric": "Viewability 91%, strong mobile"},
-        {"name": "IM Masthead", "metric": "Premium impact, 2.1m impressions"},
-    ],
-    "cta": "We'd love to explore how these insights can shape your next campaign. Let's book a call to discuss.",
 })
+
+RESEARCH = {"relevant": True, "file": "gut_health.md", "prompt_text": "68% of readers ..."}
+
+
+def _mock_client(mock_openai_cls, payload=SAMPLE_LLM_OUTPUT):
+    client = MagicMock()
+    mock_openai_cls.return_value = client
+    client.chat.completions.create.return_value = _mock_openai_response(payload)
+    return client
 
 
 @patch("src.slide_content.OpenAI")
-def test_generate_slide_content_returns_valid_structure(mock_openai_cls):
-    """generate_slide_content() returns a dict with all required slide fields."""
-    mock_client = MagicMock()
-    mock_openai_cls.return_value = mock_client
-    mock_client.chat.completions.create.return_value = _mock_openai_response(SAMPLE_LLM_OUTPUT)
+def test_generate_slide_content_returns_overview_and_insights(mock_openai_cls):
+    _mock_client(mock_openai_cls)
 
     result = generate_slide_content(
         brief_content="## Key Recommendations\n1. Align with gut health...",
         topic="gut health",
         advertiser="Yakult",
         kpi="Awareness",
+        historical_research=RESEARCH,
     )
 
-    # Verify all required keys
-    assert "stats" in result
-    assert len(result["stats"]) == 6
-    assert "left_heading" in result
-    assert "left_bullets" in result
-    assert "right_heading" in result
-    assert "right_bullets" in result
-    assert "messaging_heading" in result
-    assert "messaging_items" in result
-    assert "products" in result
-    assert "cta" in result
+    assert set(result) == {"advertiser_overview", "insights"}
+    assert result["advertiser_overview"].startswith("Yakult is the UK's leading")
+    assert len(result["insights"]) == 3
+    assert result["insights"][0] == {
+        "stat": "68%",
+        "text": "of readers say gut health shapes their food choices",
+    }
 
 
 @patch("src.slide_content.OpenAI")
 def test_uses_gpt4o_mini(mock_openai_cls):
-    """generate_slide_content() calls GPT-4o-mini."""
-    mock_client = MagicMock()
-    mock_openai_cls.return_value = mock_client
-    mock_client.chat.completions.create.return_value = _mock_openai_response(SAMPLE_LLM_OUTPUT)
-
+    client = _mock_client(mock_openai_cls)
     generate_slide_content("brief", "topic", "advertiser", "Awareness")
-
-    call_kwargs = mock_client.chat.completions.create.call_args[1]
-    assert call_kwargs["model"] == "gpt-4o-mini"
+    assert client.chat.completions.create.call_args[1]["model"] == "gpt-4o-mini"
 
 
 @patch("src.slide_content.OpenAI")
 def test_prompt_includes_inputs(mock_openai_cls):
-    """The user prompt contains the advertiser, topic, KPI, and brief content."""
-    mock_client = MagicMock()
-    mock_openai_cls.return_value = mock_client
-    mock_client.chat.completions.create.return_value = _mock_openai_response(SAMPLE_LLM_OUTPUT)
+    client = _mock_client(mock_openai_cls)
 
     generate_slide_content("some brief content here", "gut health", "Yakult", "Viewability")
 
-    call_kwargs = mock_client.chat.completions.create.call_args[1]
-    user_msg = call_kwargs["messages"][1]["content"]
+    user_msg = client.chat.completions.create.call_args[1]["messages"][1]["content"]
     assert "Yakult" in user_msg
     assert "gut health" in user_msg
     assert "Viewability" in user_msg
     assert "some brief content here" in user_msg
 
 
-def test_truncation_enforces_limits():
-    """Post-processing truncates overlong fields to hard limits."""
-    from src.slide_content import _parse_and_validate
+@patch("src.slide_content.OpenAI")
+def test_matched_research_body_is_put_in_front_of_the_model(mock_openai_cls):
+    """Insights are selected from the research body, so the body must be in the
+    prompt — grounded, not recalled."""
+    client = _mock_client(mock_openai_cls)
 
+    generate_slide_content("brief", "gut health", "Yakult", "Awareness",
+                           historical_research=RESEARCH)
+
+    user_msg = client.chat.completions.create.call_args[1]["messages"][1]["content"]
+    assert "68% of readers ..." in user_msg
+
+
+@patch("src.slide_content.OpenAI")
+def test_research_body_is_reread_from_the_catalogue_by_filename(mock_openai_cls, tmp_path):
+    """The client posts back only the matched file name; the body is re-read
+    server-side rather than shipped to the browser and back."""
+    from src import historical_research
+
+    (tmp_path / "gut.md").write_text(
+        "---\ntitle: Gut\ntopics: [gut health]\n---\nSeventy per cent of readers.\n"
+    )
+    client = _mock_client(mock_openai_cls)
+
+    with patch.object(historical_research, "CATALOGUE_DIR", str(tmp_path)):
+        generate_slide_content("brief", "gut health", "Yakult", "Awareness",
+                               historical_research={"relevant": True, "file": "gut.md"})
+
+    user_msg = client.chat.completions.create.call_args[1]["messages"][1]["content"]
+    assert "Seventy per cent of readers." in user_msg
+
+
+@patch("src.slide_content.OpenAI")
+def test_no_insights_without_matched_research(mock_openai_cls):
+    """Nothing matched — the section is omitted rather than filled with prose
+    the model made up."""
+    _mock_client(mock_openai_cls)
+
+    result = generate_slide_content("brief", "gut health", "Yakult", "Awareness")
+
+    assert result["insights"] == []
+
+
+@patch("src.slide_content.OpenAI")
+def test_no_insights_when_research_is_marked_irrelevant(mock_openai_cls):
+    _mock_client(mock_openai_cls)
+
+    result = generate_slide_content("brief", "topic", "Yakult", "Awareness",
+                                    historical_research={"relevant": False})
+
+    assert result["insights"] == []
+
+
+def test_validation_enforces_tile_limits():
     overlong = json.dumps({
-        "stats": [
-            {"value": "123456789", "label": "one two three four five six seven eight nine ten"},
-        ] * 8,  # 8 stats, should be capped to 6
-        "left_heading": "Advertiser Overview",
-        "left_bullets": ["word " * 20] * 6,  # 6 bullets of 20 words, capped to 4 bullets of 15 words
-        "right_heading": "Editorial",
-        "right_bullets": ["short"],
-        "messaging_heading": "Messaging",
-        "messaging_items": [
-            {"headline": "one two three four five six seven eight", "detail": "word " * 25}
-        ],
-        "products": [{"name": "x" * 50, "metric": "word " * 15}],
-        "cta": "word " * 40,
+        "advertiser_overview": "word " * 120,
+        "insights": [{"stat": "sixty eight per cent", "text": "word " * 30}] * 6,
     })
 
-    result = _parse_and_validate(overlong)
+    result = _parse_and_validate(overlong, has_research=True)
 
-    # Stats capped to 6, values to 5 chars, labels to 8 words
-    assert len(result["stats"]) == 6
-    assert len(result["stats"][0]["value"]) <= 5
-    assert len(result["stats"][0]["label"].split()) <= 8
+    assert len(result["advertiser_overview"].split()) <= 60
+    assert len(result["insights"]) == 3
+    for insight in result["insights"]:
+        assert len(insight["stat"]) <= 12
+        assert len(insight["text"].split()) <= 12
 
-    # Bullets capped to 4 items, 15 words each
-    assert len(result["left_bullets"]) <= 4
-    for bullet in result["left_bullets"]:
-        assert len(bullet.split()) <= 15
 
-    # Messaging headline max 6 words, detail max 20 words
-    for item in result["messaging_items"]:
-        assert len(item["headline"].split()) <= 6
-        assert len(item["detail"].split()) <= 20
+def test_validation_drops_a_partial_insight():
+    """An insight missing its figure would leave half a tile — drop it."""
+    payload = json.dumps({
+        "advertiser_overview": "Fine.",
+        "insights": [
+            {"stat": "68%", "text": "of readers care"},
+            {"stat": "", "text": "no figure here"},
+            {"stat": "41%", "text": ""},
+        ],
+    })
 
-    # Product name max 30 chars, metric max 10 words
-    for prod in result["products"]:
-        assert len(prod["name"]) <= 30
-        assert len(prod["metric"].split()) <= 10
+    result = _parse_and_validate(payload, has_research=True)
 
-    # CTA max 30 words
-    assert len(result["cta"].split()) <= 30
+    assert result["insights"] == [{"stat": "68%", "text": "of readers care"}]
 
 
 def test_parse_handles_markdown_code_fences():
-    """LLM responses wrapped in ```json fences are handled correctly."""
-    from src.slide_content import _parse_and_validate
-
     wrapped = "```json\n" + SAMPLE_LLM_OUTPUT + "\n```"
-    result = _parse_and_validate(wrapped)
-    assert len(result["stats"]) == 6
+    assert len(_parse_and_validate(wrapped, has_research=True)["insights"]) == 3
+
+
+@patch("src.slide_content.OpenAI")
+def test_unparseable_response_degrades_to_empty_content(mock_openai_cls):
+    """A malformed model response must not fail the download — the deck still
+    builds, just without the prose."""
+    _mock_client(mock_openai_cls, payload="not json at all")
+
+    result = generate_slide_content("brief", "topic", "Yakult", "Awareness")
+
+    assert result == {"advertiser_overview": "", "insights": []}
