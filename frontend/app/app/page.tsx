@@ -38,13 +38,30 @@ interface SkillResult {
   error?: string;
 }
 
+/**
+ * One row of the ad-format catalogue, verbatim from the backend. Carried
+ * through the deck download so CTR and viewability are placed on the slide as
+ * sourced, never re-read out of the generated brief.
+ */
+interface FormatRecommendation {
+  format: string;
+  format_family: string;
+  ctr: string;
+  viewability: string;
+  indicative_cost: string;
+  primary_objective: string;
+  secondary_objective: string;
+  best_for_brief: string;
+  best_for_advertiser_type: string;
+}
+
 interface InsightsResult {
   content: string;
   sources: Source[];
   research_skills: SkillResult[];
   audience_segments: AudienceSegmentsPayload;
   google_trends: string;
-  format_recommendations: string;
+  format_recommendations: FormatRecommendation[];
   campaign_history: string;
   client_brief_summary: string;
   historical_research?: HistoricalResearch;
@@ -1243,7 +1260,13 @@ export default function InsightsTool() {
                             topic: topic.trim(),
                             advertiser: advertiser.trim(),
                             kpi,
+                            // Structured data the brief already produced —
+                            // sent back so the deck reuses it verbatim rather
+                            // than re-extracting numbers from the markdown.
                             audience_segments: result.audience_segments,
+                            format_recommendations:
+                              result.format_recommendations,
+                            historical_research: result.historical_research,
                           }),
                         });
                         if (!res.ok) {

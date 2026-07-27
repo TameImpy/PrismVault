@@ -19,6 +19,12 @@ import ReactMarkdown from "react-markdown";
  */
 export interface HistoricalResearch {
   relevant: boolean;
+  /**
+   * Filename of the matched research file. Not rendered here — it rides along
+   * so the deck download can name the source whose body the server re-reads
+   * when grounding its insights. Absent when nothing matched.
+   */
+  file?: string;
   title?: string;
   organisation?: string;
   fieldwork?: string;

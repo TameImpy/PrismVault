@@ -104,6 +104,10 @@ def get_relevant_research(topic, advertiser, client_brief, catalogue_dir=None):
             return {
                 "relevant": True,
                 "prompt_text": f["body"],
+                # Identifies the matched catalogue file so a downstream consumer
+                # (the deck) can re-read the same body from load_catalogue()
+                # rather than the body being shipped to the client and back.
+                "file": f["file"],
                 "title": meta.get("title", ""),
                 "organisation": meta.get("organisation", ""),
                 "fieldwork": fieldwork,

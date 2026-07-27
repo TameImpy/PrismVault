@@ -2,7 +2,12 @@ import os
 import tempfile
 import csv
 
-from src.formats import load_format_data, load_format_names, validate_format_names
+from src.formats import (
+    load_format_data,
+    load_format_names,
+    load_format_rows,
+    validate_format_names,
+)
 
 # V2 schema: `When to use this` and `avoid_when` are dropped; all other columns retained.
 V2_FIELDNAMES = [
@@ -422,14 +427,14 @@ def test_validate_format_names_empty_content_returns_empty_results():
     """Passing an empty string must not crash and must return empty lists."""
     result = validate_format_names("", VALID_NAMES)
 
-    assert result == {"recognised": [], "unrecognised": []}
+    assert result == {"recognised": [], "recommended": [], "unrecognised": []}
 
 
 def test_validate_format_names_whitespace_only_content_returns_empty_results():
     """Whitespace-only content must not crash and must return empty lists."""
     result = validate_format_names("   \n\n  \t  ", VALID_NAMES)
 
-    assert result == {"recognised": [], "unrecognised": []}
+    assert result == {"recognised": [], "recommended": [], "unrecognised": []}
 
 
 def test_validate_format_names_bold_label_on_non_list_line_not_flagged():
@@ -478,3 +483,130 @@ def test_validate_format_names_empty_valid_names_everything_unrecognised():
     assert result["recognised"] == []
     assert "Host Read" in result["unrecognised"]
     assert "Masthead" in result["unrecognised"]
+
+
+# ---------------------------------------------------------------------------
+# load_format_rows — structured catalogue for the deck payload (PRD #131 / #133)
+# ---------------------------------------------------------------------------
+
+def test_load_format_rows_returns_structured_rows_with_verbatim_metrics():
+    """Rows carry CTR and viewability exactly as the CSV holds them, so the
+    deck can place them without re-deriving anything from prose."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        csv_path = os.path.join(tmpdir, "format_recommendations.csv")
+        _create_test_csv(csv_path)
+
+        rows = load_format_rows(csv_path)
+
+        assert [r["format"] for r in rows] == [
+            "Standard display - Mobile Banner",
+            "Host Read",
+            "Masthead",
+        ]
+        display = rows[0]
+        assert display["ctr"] == "0.08%"
+        assert display["viewability"] == "72.49%"
+        assert display["format_family"] == "Standard display"
+        assert display["primary_objective"] == "Reach"
+
+
+def test_load_format_rows_blank_benchmarks_stay_empty_strings():
+    """Non-digital rows have no benchmarks. Structured data says so with an
+    empty string — the plain-English note is a prose concern, not a data one."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        csv_path = os.path.join(tmpdir, "format_recommendations.csv")
+        _create_test_csv(csv_path)
+
+        rows = load_format_rows(csv_path)
+        host_read = [r for r in rows if r["format"] == "Host Read"][0]
+
+        assert host_read["ctr"] == ""
+        assert host_read["viewability"] == ""
+        assert "benchmarks not currently available" not in str(host_read)
+
+
+def test_load_format_rows_missing_csv_returns_empty_list():
+    rows = load_format_rows("/nonexistent/path/format_recommendations.csv")
+
+    assert rows == []
+
+
+def test_load_format_rows_header_only_csv_returns_empty_list():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        csv_path = os.path.join(tmpdir, "format_recommendations.csv")
+        with open(csv_path, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=V2_FIELDNAMES)
+            writer.writeheader()
+
+        assert load_format_rows(csv_path) == []
+
+
+def test_load_format_rows_is_json_serialisable():
+    """The rows travel to the browser and back in the deck-download request."""
+    import json
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        csv_path = os.path.join(tmpdir, "format_recommendations.csv")
+        _create_test_csv(csv_path)
+
+        rows = load_format_rows(csv_path)
+
+        assert json.loads(json.dumps(rows)) == rows
+
+
+# ---------------------------------------------------------------------------
+# validate_format_names — `recommended`: the selection signal for the deck
+#
+# `recognised` is a lenient substring scan, right for "did the model invent a
+# name?". Choosing which products go on a slide needs the stricter reading:
+# names actually presented as recommendation entries (PRD #131 / #133).
+# ---------------------------------------------------------------------------
+
+RECOMMENDATION_BRIEF = (
+    "## Recommended Products\n"
+    "- **Standard display - Mobile Banner** — efficient mobile reach\n"
+    "- **Host Read** — authentic podcast endorsement\n"
+)
+
+
+def test_recommended_excludes_names_only_mentioned_in_prose():
+    """"Podcast" is a catalogue format, but here the word only appears inside
+    another entry's description. It must not be selected as a product."""
+    valid = ["Standard display - Mobile Banner", "Host Read", "Podcast"]
+
+    result = validate_format_names(RECOMMENDATION_BRIEF, valid)
+
+    assert result["recommended"] == ["Standard display - Mobile Banner", "Host Read"]
+    # The lenient scan still sees it — the two answer different questions.
+    assert "Podcast" in result["recognised"]
+
+
+def test_recommended_preserves_catalogue_casing_not_the_brief_s():
+    """The deck joins on these names, so they must match the catalogue exactly."""
+    content = "- **standard display - MOBILE banner** — reach\n"
+
+    result = validate_format_names(content, ["Standard display - Mobile Banner"])
+
+    assert result["recommended"] == ["Standard display - Mobile Banner"]
+
+
+def test_recommended_lists_each_format_once_in_presentation_order():
+    content = (
+        "- **Host Read** — first\n"
+        "- **Standard display - Mobile Banner** — second\n"
+        "- **Host Read** — repeated\n"
+    )
+
+    result = validate_format_names(content, ["Standard display - Mobile Banner", "Host Read"])
+
+    assert result["recommended"] == ["Host Read", "Standard display - Mobile Banner"]
+
+
+def test_recommended_is_empty_when_the_brief_names_no_confirmed_format():
+    """Better an empty product slide than a wrong one."""
+    content = "- **Totally Fake Format 9000** — invented\n"
+
+    result = validate_format_names(content, ["Host Read"])
+
+    assert result["recommended"] == []
+    assert result["unrecognised"] == ["Totally Fake Format 9000"]

@@ -388,3 +388,77 @@ def test_generated_deck_has_no_ooxml_corruption():
                 errors.append("%s conflicting autofit" % name)
     zf.close()
     assert errors == [], errors
+
+
+# ---------------------------------------------------------------------------
+# Structured deck payload forwarding (PRD #131 / slice #133)
+#
+# The deck download reuses the structured data the brief already produced.
+# These tests pin that the endpoint accepts all three fields and hands them to
+# build_deck untouched — reach, CTR and viewability never pass back through the
+# LLM, so they cannot drift from the brief.
+# ---------------------------------------------------------------------------
+
+RESEARCH_PAYLOAD = {
+    "relevant": True,
+    "file": "travel_audience_research_2024_25.md",
+    "title": "Travel Audience Research",
+    "organisation": "Prism",
+    "fieldwork": "2024 to 2025",
+    "total_respondents": 2000,
+    "matched_on": ["city breaks"],
+}
+
+
+def _post_deck(api_client, mock_build, **payload):
+    """Sign in, post a deck request, and return (response, slide_content)."""
+    api_client.post(
+        "/api/auth/signup",
+        json={"email": "payload@example.com", "name": "Test", "password": "password123"},
+    )
+    mock_build.return_value = io.BytesIO(b"pptx")
+    body = {"content": "brief", "topic": "city breaks", "advertiser": "Yakult", "kpi": "Awareness"}
+    body.update(payload)
+    resp = api_client.post("/api/download-deck", json=body)
+    return resp, (mock_build.call_args[0][0] if mock_build.call_args else None)
+
+
+@patch("api.main.generate_slide_content")
+@patch("api.main.build_deck")
+def test_api_download_deck_forwards_structured_payload(mock_build, mock_gen, api_client):
+    """All three structured fields reach build_deck exactly as the brief run
+    produced them. The format rows are the real loader's output, so a change to
+    the CSV schema or the loader breaks this test rather than passing silently."""
+    from src.formats import load_format_rows
+
+    mock_gen.return_value = dict(SAMPLE_CONTENT)
+    format_rows = load_format_rows()[:2]
+
+    resp, slide_content = _post_deck(
+        api_client, mock_build,
+        audience_segments=AUDIENCE_PAYLOAD,
+        format_recommendations=format_rows,
+        historical_research=RESEARCH_PAYLOAD,
+    )
+
+    assert resp.status_code == 200
+    assert slide_content["audience_segments"] == AUDIENCE_PAYLOAD
+    assert slide_content["historical_research"] == RESEARCH_PAYLOAD
+    # Verbatim, byte-for-byte — the drift this slice exists to eliminate.
+    assert slide_content["format_recommendations"] == format_rows
+    assert slide_content["format_recommendations"][0]["ctr"] == format_rows[0]["ctr"]
+    assert slide_content["audience_segments"]["platforms"][0]["segments"][0]["reach"] == 10486296
+
+
+@patch("api.main.generate_slide_content")
+@patch("api.main.build_deck")
+def test_api_download_deck_structured_fields_are_optional(mock_build, mock_gen, api_client):
+    """Older clients that post none of the new fields still get a deck; the
+    absent fields arrive as None rather than raising a validation error."""
+    mock_gen.return_value = dict(SAMPLE_CONTENT)
+
+    resp, slide_content = _post_deck(api_client, mock_build)
+
+    assert resp.status_code == 200
+    assert slide_content["format_recommendations"] is None
+    assert slide_content["historical_research"] is None

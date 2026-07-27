@@ -10,7 +10,12 @@ from src.web_search import research_advertiser
 from src.audience import expand_query, recommend_segments, format_audience_segments
 from src.trends import get_trend_data
 from src.brief import summarise_brief
-from src.formats import load_format_data, load_format_names, validate_format_names
+from src.formats import (
+    load_format_data,
+    load_format_names,
+    load_format_rows,
+    validate_format_names,
+)
 from src.campaign_history import get_campaign_summary, load_campaign_rows
 from src.historical_research import get_relevant_research
 from src.alias_table import DEFAULT_UNMATCHED_LOG_PATH
@@ -43,7 +48,7 @@ def _run_format_name_guardrail(content):
         result = validate_format_names(content or "", valid_names)
     except Exception:  # pragma: no cover - guardrail must never break a response
         logger.exception("Format-name guardrail failed; continuing without it.")
-        return {"recognised": [], "unrecognised": []}
+        return {"recognised": [], "recommended": [], "unrecognised": []}
 
     if result["unrecognised"]:
         logger.warning(
@@ -147,8 +152,12 @@ def generate_insights(
     else:
         google_trends = "Google Trends data not requested."
 
-    # 5. Load format recommendations
-    format_recommendations = load_format_data()
+    # 5. Load the format catalogue. The prompt takes the prose rendering; the
+    #    structured rows are narrowed to the recommended formats at step 11 and
+    #    returned so the deck can place CTR and viewability verbatim instead of
+    #    re-reading them out of the generated brief.
+    format_catalogue = load_format_rows()
+    format_recommendations_text = load_format_data()
 
     # 6. Look up direct campaign history (deterministic resolution). Enable
     #    miss-logging so the reactive alias table can grow from real queries.
@@ -170,7 +179,11 @@ def generate_insights(
     #     a fallback string tells the model to omit the section entirely.
     historical = get_relevant_research(topic, advertiser, client_brief)
     historical_research_text = historical["prompt_text"]
-    # The return object carries only the card metadata (never the prompt body).
+    # The return object carries the card metadata plus, on a match, the `file`
+    # that matched. The body itself stays server-side: the deck re-reads it from
+    # the catalogue by filename, so a ~30KB static document is never persisted
+    # per brief nor round-tripped through the browser (and a client cannot post
+    # a forged body back as if it were sourced research).
     historical_research = {k: v for k, v in historical.items() if k != "prompt_text"}
 
     # 8. Assemble prompt
@@ -181,7 +194,7 @@ def generate_insights(
         advertiser_research=advertiser_research,
         audience_segments=audience_segments_text,
         google_trends=google_trends,
-        format_recommendations=format_recommendations,
+        format_recommendations=format_recommendations_text,
         campaign_history=campaign_history,
         client_brief=client_brief_summary,
         historical_research=historical_research_text,
@@ -203,7 +216,18 @@ def generate_insights(
 
     # 10. Guardrail: flag any recommended format names not in the catalogue
     # (best-effort, non-blocking — logs server-side, never fails the response).
-    _run_format_name_guardrail(content)
+    guardrail = _run_format_name_guardrail(content)
+
+    # 11. Narrow the catalogue to the formats this brief actually recommended.
+    #     `recommended` is the guardrail's strict reading — confirmed names
+    #     presented as recommendation entries, not merely mentioned in prose.
+    #     Selection is deterministic string matching and every metric comes
+    #     straight from the CSV, so the deck never has to work out which format
+    #     is which by re-reading the generated brief.
+    recommended = set(guardrail["recommended"])
+    format_recommendations = [
+        row for row in format_catalogue if row["format"] in recommended
+    ]
 
     return {
         "content": content,
