@@ -20,7 +20,7 @@ def run(coro):
     return asyncio.get_event_loop().run_until_complete(coro)
 
 
-def _make_user(email="alice@example.com"):
+def _make_user(email="alice@immediate.co.uk"):
     """Helper to create a user and return the user dict."""
     return run(create_user(email, "Alice", "hashed_pw"))
 
@@ -46,8 +46,8 @@ def test_create_sample_and_retrieve(db_url):
 
 def test_samples_isolated_per_user(db_url):
     """Each user can only see their own samples."""
-    alice = _make_user("alice@example.com")
-    bob = _make_user("bob@example.com")
+    alice = _make_user("alice@immediate.co.uk")
+    bob = _make_user("bob@immediate.co.uk")
     run(create_email_sample(alice["id"], "Alice's email"))
     run(create_email_sample(bob["id"], "Bob's email"))
 
@@ -79,8 +79,8 @@ def test_delete_own_sample(db_url):
 
 def test_cannot_delete_other_users_sample(db_url):
     """Deleting another user's sample returns False and leaves it intact."""
-    alice = _make_user("alice@example.com")
-    bob = _make_user("bob@example.com")
+    alice = _make_user("alice@immediate.co.uk")
+    bob = _make_user("bob@immediate.co.uk")
     sample = run(create_email_sample(alice["id"], "Alice's email"))
 
     deleted = run(delete_email_sample(sample["id"], bob["id"]))
@@ -102,7 +102,7 @@ def api_client(db_url):
     yield TestClient(app)
 
 
-def _signup(client, email="test@example.com"):
+def _signup(client, email="test@immediate.co.uk"):
     """Helper to sign up a user. Returns the client (cookies persist)."""
     client.post(
         "/api/auth/signup",
@@ -162,14 +162,14 @@ def test_api_post_rejects_at_max_capacity(api_client):
 def test_api_delete_returns_404_for_other_users_sample(api_client):
     """DELETE /api/email-samples/{id} returns 404 for another user's sample."""
     # User A creates a sample
-    _signup(api_client, "alice@example.com")
+    _signup(api_client, "alice@immediate.co.uk")
     resp = api_client.post("/api/email-samples", json={"content": "Alice's email"})
     alice_sample_id = resp.json()["id"]
 
     # Sign up as User B (new cookies)
     api_client.post(
         "/api/auth/signup",
-        json={"email": "bob@example.com", "name": "Bob", "password": "password123"},
+        json={"email": "bob@immediate.co.uk", "name": "Bob", "password": "password123"},
     )
     # Try to delete Alice's sample as Bob
     resp = api_client.delete("/api/email-samples/%d" % alice_sample_id)

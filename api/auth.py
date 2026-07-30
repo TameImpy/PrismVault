@@ -53,6 +53,27 @@ class SignupRequest(BaseModel):
     password: str
 
 
+def _email_domain_allowed(email):
+    """True if the email's domain is on the signup allowlist.
+
+    Read from config at call time (not import time) so tests and deploys can
+    change the allowlist. An empty allowlist means any domain is accepted.
+    """
+    allowed = config.ALLOWED_EMAIL_DOMAINS
+    if not allowed:
+        return True
+    domain = email.rsplit("@", 1)[-1].strip().lower()
+    return domain in allowed
+
+
+def _allowed_domains_message():
+    """Human-readable list of permitted domains for the error response."""
+    domains = ["@%s" % d for d in config.ALLOWED_EMAIL_DOMAINS]
+    if len(domains) == 1:
+        return domains[0]
+    return "%s or %s" % (", ".join(domains[:-1]), domains[-1])
+
+
 @router.post("/signup")
 async def signup(req: SignupRequest, response: Response):
     if len(req.password) < 8:
@@ -61,6 +82,11 @@ async def signup(req: SignupRequest, response: Response):
         raise HTTPException(status_code=422, detail="Name is required.")
     if not req.email.strip() or "@" not in req.email:
         raise HTTPException(status_code=422, detail="Valid email is required.")
+    if not _email_domain_allowed(req.email):
+        raise HTTPException(
+            status_code=403,
+            detail="Prism is only available to %s email addresses." % _allowed_domains_message(),
+        )
 
     existing = await get_user_by_email(req.email)
     if existing:

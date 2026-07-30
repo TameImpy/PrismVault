@@ -22,6 +22,13 @@ EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
 CHAT_MODEL = os.getenv("CHAT_MODEL", "gpt-4o")
 CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "500"))
 CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "50"))
+# Signup is restricted to these email domains. Comma-separated, case-insensitive.
+# Set ALLOWED_EMAIL_DOMAINS="" to allow any domain (local dev / open demo only).
+ALLOWED_EMAIL_DOMAINS = [
+    d.strip().lower()
+    for d in os.getenv("ALLOWED_EMAIL_DOMAINS", "immediate.co.uk").split(",")
+    if d.strip()
+]
 JWT_SECRET = os.getenv("JWT_SECRET")
 if not JWT_SECRET:
     raise RuntimeError(

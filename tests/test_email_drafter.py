@@ -159,7 +159,7 @@ def test_api_draft_email_returns_subject_and_body(mock_draft, api_client):
 
     api_client.post(
         "/api/auth/signup",
-        json={"email": "test@example.com", "name": "Test", "password": "password123"},
+        json={"email": "test@immediate.co.uk", "name": "Test", "password": "password123"},
     )
     resp = api_client.post(
         "/api/draft-email",

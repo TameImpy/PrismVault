@@ -30,10 +30,10 @@ def client(db_url):
 def test_signup_returns_200_and_sets_cookie(client):
     response = client.post(
         "/api/auth/signup",
-        json={"email": "alice@example.com", "name": "Alice", "password": "password123"},
+        json={"email": "alice@immediate.co.uk", "name": "Alice", "password": "password123"},
     )
     assert response.status_code == 200
-    assert response.json()["email"] == "alice@example.com"
+    assert response.json()["email"] == "alice@immediate.co.uk"
     assert response.json()["name"] == "Alice"
     assert "id" in response.json()
     assert "access_token" in response.cookies
@@ -42,11 +42,11 @@ def test_signup_returns_200_and_sets_cookie(client):
 def test_signup_duplicate_email_returns_409(client):
     client.post(
         "/api/auth/signup",
-        json={"email": "dup@example.com", "name": "First", "password": "password123"},
+        json={"email": "dup@immediate.co.uk", "name": "First", "password": "password123"},
     )
     response = client.post(
         "/api/auth/signup",
-        json={"email": "dup@example.com", "name": "Second", "password": "password456"},
+        json={"email": "dup@immediate.co.uk", "name": "Second", "password": "password456"},
     )
     assert response.status_code == 409
 
@@ -54,13 +54,13 @@ def test_signup_duplicate_email_returns_409(client):
 def test_signup_short_password_returns_422(client):
     response = client.post(
         "/api/auth/signup",
-        json={"email": "short@example.com", "name": "Short", "password": "abc"},
+        json={"email": "short@immediate.co.uk", "name": "Short", "password": "abc"},
     )
     assert response.status_code == 422
 
 
 def test_signup_missing_fields_returns_422(client):
-    response = client.post("/api/auth/signup", json={"email": "only@example.com"})
+    response = client.post("/api/auth/signup", json={"email": "only@immediate.co.uk"})
     assert response.status_code == 422
 
 
@@ -72,7 +72,7 @@ def test_signup_missing_fields_returns_422(client):
 def _create_test_user(client):
     return client.post(
         "/api/auth/signup",
-        json={"email": "login@example.com", "name": "Login User", "password": "password123"},
+        json={"email": "login@immediate.co.uk", "name": "Login User", "password": "password123"},
     )
 
 
@@ -80,10 +80,10 @@ def test_login_returns_200_and_sets_cookie(client):
     _create_test_user(client)
     response = client.post(
         "/api/auth/login",
-        json={"email": "login@example.com", "password": "password123"},
+        json={"email": "login@immediate.co.uk", "password": "password123"},
     )
     assert response.status_code == 200
-    assert response.json()["email"] == "login@example.com"
+    assert response.json()["email"] == "login@immediate.co.uk"
     assert "access_token" in response.cookies
 
 
@@ -91,7 +91,7 @@ def test_login_wrong_password_returns_401(client):
     _create_test_user(client)
     response = client.post(
         "/api/auth/login",
-        json={"email": "login@example.com", "password": "wrongpassword"},
+        json={"email": "login@immediate.co.uk", "password": "wrongpassword"},
     )
     assert response.status_code == 401
 
@@ -99,7 +99,7 @@ def test_login_wrong_password_returns_401(client):
 def test_login_nonexistent_email_returns_401(client):
     response = client.post(
         "/api/auth/login",
-        json={"email": "nobody@example.com", "password": "password123"},
+        json={"email": "nobody@immediate.co.uk", "password": "password123"},
     )
     assert response.status_code == 401
 
@@ -112,11 +112,11 @@ def test_login_nonexistent_email_returns_401(client):
 def test_me_with_valid_cookie_returns_user(client):
     client.post(
         "/api/auth/signup",
-        json={"email": "me@example.com", "name": "Me User", "password": "password123"},
+        json={"email": "me@immediate.co.uk", "name": "Me User", "password": "password123"},
     )
     response = client.get("/api/me")
     assert response.status_code == 200
-    assert response.json()["email"] == "me@example.com"
+    assert response.json()["email"] == "me@immediate.co.uk"
     assert response.json()["name"] == "Me User"
 
 
@@ -140,7 +140,7 @@ def test_me_with_invalid_token_returns_401(db_url):
 def test_logout_clears_cookie(client):
     client.post(
         "/api/auth/signup",
-        json={"email": "logout@example.com", "name": "Logout", "password": "password123"},
+        json={"email": "logout@immediate.co.uk", "name": "Logout", "password": "password123"},
     )
     assert client.get("/api/me").status_code == 200
     response = client.post("/api/auth/logout")

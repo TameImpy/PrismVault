@@ -40,7 +40,7 @@ def _authed_client():
     client = TestClient(app)
     client.post(
         "/api/auth/signup",
-        json={"email": "test@example.com", "name": "Test User", "password": "password123"},
+        json={"email": "test@immediate.co.uk", "name": "Test User", "password": "password123"},
     )
     return client
 
@@ -325,7 +325,7 @@ def test_insights_returns_200_with_auth():
     # Create a user to get a valid cookie
     client.post(
         "/api/auth/signup",
-        json={"email": "authed@example.com", "name": "Authed", "password": "password123"},
+        json={"email": "authed@immediate.co.uk", "name": "Authed", "password": "password123"},
     )
     with patch("api.main.config") as mock_config, \
          patch("api.main.generate_insights", return_value=MOCK_INSIGHTS_RESULT):

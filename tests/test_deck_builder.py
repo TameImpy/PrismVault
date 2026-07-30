@@ -415,7 +415,7 @@ def _post_deck(api_client, mock_build, **payload):
     """Sign in, post a deck request, and return (response, slide_content)."""
     api_client.post(
         "/api/auth/signup",
-        json={"email": "payload@example.com", "name": "Test", "password": "password123"},
+        json={"email": "payload@immediate.co.uk", "name": "Test", "password": "password123"},
     )
     mock_build.return_value = io.BytesIO(b"pptx")
     body = {"content": "brief", "topic": "city breaks", "advertiser": "Yakult", "kpi": "Awareness"}
@@ -432,7 +432,7 @@ def test_api_download_deck_returns_pptx(mock_build, mock_gen, api_client):
 
     api_client.post(
         "/api/auth/signup",
-        json={"email": "test@example.com", "name": "Test", "password": "password123"},
+        json={"email": "test@immediate.co.uk", "name": "Test", "password": "password123"},
     )
     resp = api_client.post(
         "/api/download-deck",

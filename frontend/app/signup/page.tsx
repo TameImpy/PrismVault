@@ -42,7 +42,9 @@ export default function SignupPage() {
             Create an account
           </h1>
           <p className="text-slate-400 mb-8">
-            Sign up to access the Prism Data Vault insights tool.
+            Sign up to access the Prism Data Vault insights tool. Accounts are
+            limited to <span className="text-slate-300">@immediate.co.uk</span>{" "}
+            email addresses.
           </p>
 
           {error && (
@@ -53,7 +55,10 @@ export default function SignupPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="name" className="block text-sm font-semibold text-slate-300 mb-2">
+              <label
+                htmlFor="name"
+                className="block text-sm font-semibold text-slate-300 mb-2"
+              >
                 Full name
               </label>
               <input
@@ -68,7 +73,10 @@ export default function SignupPage() {
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-slate-300 mb-2">
+              <label
+                htmlFor="email"
+                className="block text-sm font-semibold text-slate-300 mb-2"
+              >
                 Email
               </label>
               <input
@@ -78,12 +86,15 @@ export default function SignupPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl bg-surface-container-highest border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-accent-cyan transition-colors"
-                placeholder="jane@company.com"
+                placeholder="jane.smith@immediate.co.uk"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-slate-300 mb-2">
+              <label
+                htmlFor="password"
+                className="block text-sm font-semibold text-slate-300 mb-2"
+              >
                 Password
               </label>
               <input

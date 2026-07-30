@@ -19,10 +19,10 @@ def test_send_email_logs_when_smtp_not_configured(capsys):
     for key in ("SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD"):
         os.environ.pop(key, None)
 
-    send_email("user@example.com", "Reset your password", "<p>Click here</p>")
+    send_email("user@immediate.co.uk", "Reset your password", "<p>Click here</p>")
 
     captured = capsys.readouterr()
-    assert "user@example.com" in captured.out
+    assert "user@immediate.co.uk" in captured.out
     assert "Reset your password" in captured.out
 
 
@@ -37,7 +37,7 @@ def test_send_email_sends_when_smtp_configured(mock_smtplib):
         "SMTP_USER": "user",
         "SMTP_PASSWORD": "pass",
     }):
-        send_email("to@example.com", "Subject", "<p>Body</p>")
+        send_email("to@immediate.co.uk", "Subject", "<p>Body</p>")
 
     mock_smtplib.SMTP.assert_called_once_with("smtp.example.com", 587)
     mock_server.starttls.assert_called_once()
@@ -68,7 +68,7 @@ def api_client(db_url):
     yield TestClient(app)
 
 
-def _signup(client, email="reset@example.com", password="password123"):
+def _signup(client, email="reset@immediate.co.uk", password="password123"):
     """Sign up a user and return the client."""
     client.post(
         "/api/auth/signup",
@@ -82,7 +82,7 @@ def test_forgot_password_returns_200_for_existing_email(api_client):
     _signup(api_client)
     resp = api_client.post(
         "/api/auth/forgot-password",
-        json={"email": "reset@example.com"},
+        json={"email": "reset@immediate.co.uk"},
     )
     assert resp.status_code == 200
     assert "reset link" in resp.json()["detail"].lower()
@@ -92,18 +92,18 @@ def test_forgot_password_returns_200_for_nonexistent_email(api_client):
     """POST /api/auth/forgot-password returns 200 even for unknown email (no enumeration)."""
     resp = api_client.post(
         "/api/auth/forgot-password",
-        json={"email": "nobody@example.com"},
+        json={"email": "nobody@immediate.co.uk"},
     )
     assert resp.status_code == 200
 
 
 def test_reset_password_full_roundtrip(api_client):
     """User can request a reset token and use it to change their password, then log in."""
-    _signup(api_client, "roundtrip@example.com", "oldpassword1")
+    _signup(api_client, "roundtrip@immediate.co.uk", "oldpassword1")
 
     # Generate a reset token directly (simulating what forgot-password does)
     from api.auth import _create_reset_token
-    user = run(get_user_by_email("roundtrip@example.com"))
+    user = run(get_user_by_email("roundtrip@immediate.co.uk"))
     token = _create_reset_token(user["id"])
 
     # Reset password
@@ -116,14 +116,14 @@ def test_reset_password_full_roundtrip(api_client):
     # Log in with new password
     resp = api_client.post(
         "/api/auth/login",
-        json={"email": "roundtrip@example.com", "password": "newpassword1"},
+        json={"email": "roundtrip@immediate.co.uk", "password": "newpassword1"},
     )
     assert resp.status_code == 200
 
     # Old password no longer works
     resp = api_client.post(
         "/api/auth/login",
-        json={"email": "roundtrip@example.com", "password": "oldpassword1"},
+        json={"email": "roundtrip@immediate.co.uk", "password": "oldpassword1"},
     )
     assert resp.status_code == 401
 

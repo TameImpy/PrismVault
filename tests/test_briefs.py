@@ -29,7 +29,7 @@ def _fresh_db(db_url):
     yield
 
 
-def _make_user(email="test@example.com", name="Test User"):
+def _make_user(email="test@immediate.co.uk", name="Test User"):
     return _run(create_user(email, name, "hashedpw"))
 
 
@@ -60,7 +60,7 @@ def test_insights_endpoint_auto_saves_brief(mock_gen):
 
     client = TestClient(app)
     client.post("/api/auth/signup", json={
-        "email": "autosave@test.com",
+        "email": "autosave@immediate.co.uk",
         "name": "Auto Save",
         "password": "testpass123",
     })
@@ -83,8 +83,8 @@ def test_insights_endpoint_auto_saves_brief(mock_gen):
 
 
 def test_get_user_briefs_returns_only_own_briefs():
-    user1 = _make_user("user1@test.com", "User One")
-    user2 = _make_user("user2@test.com", "User Two")
+    user1 = _make_user("user1@immediate.co.uk", "User One")
+    user2 = _make_user("user2@immediate.co.uk", "User Two")
     result = json.dumps({"content": "test"})
 
     _run(save_brief(user1["id"], "Topic A", "Brand A", "KPI A", "", result))
@@ -115,8 +115,8 @@ def test_get_brief_by_id_returns_full_brief_with_result_json():
 
 
 def test_get_all_briefs_returns_all_with_author_names():
-    user1 = _make_user("all1@test.com", "Alice")
-    user2 = _make_user("all2@test.com", "Bob")
+    user1 = _make_user("all1@immediate.co.uk", "Alice")
+    user2 = _make_user("all2@immediate.co.uk", "Bob")
     result = json.dumps({"content": "test"})
 
     _run(save_brief(user1["id"], "T1", "B1", "K1", "", result))
@@ -131,8 +131,8 @@ def test_get_all_briefs_returns_all_with_author_names():
 
 
 def test_delete_brief_only_deletes_if_owned():
-    user1 = _make_user("del1@test.com", "Owner")
-    user2 = _make_user("del2@test.com", "Other")
+    user1 = _make_user("del1@immediate.co.uk", "Owner")
+    user2 = _make_user("del2@immediate.co.uk", "Other")
     result = json.dumps({"content": "test"})
     saved = _run(save_brief(user1["id"], "T", "B", "K", "", result))
 
@@ -147,7 +147,7 @@ def test_delete_brief_only_deletes_if_owned():
 # --- API endpoint tests ---
 
 
-def _signup_and_get_client(email="api@test.com", name="API User"):
+def _signup_and_get_client(email="api@immediate.co.uk", name="API User"):
     client = TestClient(app)
     client.post("/api/auth/signup", json={
         "email": email, "name": name, "password": "testpass123",
@@ -179,8 +179,8 @@ def test_api_get_briefs_mine_returns_own_briefs(mock_gen):
 
 
 def test_api_get_brief_by_id_returns_full_brief():
-    client = _signup_and_get_client("detail@test.com")
-    user = _make_user("detaildb@test.com", "Detail")
+    client = _signup_and_get_client("detail@immediate.co.uk")
+    user = _make_user("detaildb@immediate.co.uk", "Detail")
     result = json.dumps({"content": "Full detail"})
     saved = _run(save_brief(user["id"], "T", "B", "K", "", result))
 
@@ -195,8 +195,8 @@ def test_api_get_brief_by_id_returns_full_brief():
 def test_api_get_briefs_team_returns_all_briefs(mock_gen):
     mock_gen.return_value = {"content": "test"}
 
-    client1 = _signup_and_get_client("team1@test.com", "Alice")
-    client2 = _signup_and_get_client("team2@test.com", "Bob")
+    client1 = _signup_and_get_client("team1@immediate.co.uk", "Alice")
+    client2 = _signup_and_get_client("team2@immediate.co.uk", "Bob")
 
     client1.post("/api/insights", json={
         "topic": "Cars", "advertiser": "BMW", "kpi": "Clicks",
@@ -215,8 +215,8 @@ def test_api_get_briefs_team_returns_all_briefs(mock_gen):
 
 
 def test_api_delete_brief_only_own():
-    client1 = _signup_and_get_client("delapi1@test.com", "Owner")
-    client2 = _signup_and_get_client("delapi2@test.com", "Other")
+    client1 = _signup_and_get_client("delapi1@immediate.co.uk", "Owner")
+    client2 = _signup_and_get_client("delapi2@immediate.co.uk", "Other")
 
     me1 = client1.get("/api/me").json()
     result = json.dumps({"content": "test"})

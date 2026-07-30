@@ -282,3 +282,41 @@ arg. Adding `{historical_research}` broke `test_synthesiser.py::test_user_prompt
 (which calls `.format(...)` with a fixed set of kwargs). Whenever you add a
 placeholder to the template, update every `.format()` call site AND the
 placeholder-presence test in the same commit.
+
+## 2026-07-30 — Signup was open to any email domain
+
+**Anyone could create an account.** `POST /api/auth/signup` validated only
+password length, non-blank name, and the presence of an `@` — no domain
+restriction, no allowlist, no invite. Combined with the fact that
+`GET /api/briefs?scope=team` returns every user's briefs and
+`GET /api/briefs/{id}` has no ownership check, any stranger who reached the URL
+could read all client brief content and burn OpenAI credits. Fixed with
+`config.ALLOWED_EMAIL_DOMAINS` (default `immediate.co.uk`, comma-separated,
+empty = allow any) enforced in `signup()` → 403.
+
+**Read the allowlist from `config` at call time, not import time.** The check
+does `config.ALLOWED_EMAIL_DOMAINS` inside `_email_domain_allowed()` rather
+than binding the list at module import. Import-time binding cannot be
+monkeypatched by tests once `api.auth` is imported, and would need a process
+restart to change in a deploy.
+
+**Compare the parsed domain, never a substring of the address.** `email.endswith(
+"immediate.co.uk")` passes `attacker@not-immediate.co.uk`, and
+`"immediate.co.uk" in email` passes `immediate.co.uk@gmail.com` and
+`attacker@immediate.co.uk.evil.com`. The check splits on the last `@` and
+compares the whole domain for equality, lowercased. All three lookalikes have
+regression tests in `tests/test_signup_domain_gate.py`.
+
+**Turning on a signup gate breaks every test that signs up.** 7 tests failed
+because their fixture emails were `@example.com` / `@test.com`. Rather than
+disabling the gate in `conftest.py` (which would leave the control unexercised
+across the suite), the endpoint-level tests were repointed at
+`@immediate.co.uk`. `tests/test_database.py` deliberately keeps `@example.com`
+— it calls `create_user()` directly, which documents that the gate lives at the
+endpoint, not in the data layer.
+
+**`EmailStr` is not free.** Tightening `SignupRequest.email` from `str` to
+pydantic's `EmailStr` raises `ModuleNotFoundError: email_validator` — the
+package is neither installed nor pinned in `requirements.txt`. Not worth a new
+runtime dependency for this; the manual `@` check plus the domain allowlist
+covers it.

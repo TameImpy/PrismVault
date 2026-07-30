@@ -129,7 +129,7 @@ def test_assistant_chat_returns_200_with_auth(mock_openai_cls):
     client = TestClient(app)
     # Sign up to get auth cookie
     client.post("/api/auth/signup", json={
-        "email": "assistant@test.com",
+        "email": "assistant@immediate.co.uk",
         "name": "Test",
         "password": "testpass123",
     })
@@ -240,7 +240,7 @@ def test_assistant_chat_stream_endpoint_returns_sse(mock_openai_cls):
 
     client = TestClient(app)
     client.post("/api/auth/signup", json={
-        "email": "stream@test.com",
+        "email": "stream@immediate.co.uk",
         "name": "Test",
         "password": "testpass123",
     })
