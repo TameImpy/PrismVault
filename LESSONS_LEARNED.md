@@ -320,3 +320,38 @@ pydantic's `EmailStr` raises `ModuleNotFoundError: email_validator` — the
 package is neither installed nor pinned in `requirements.txt`. Not worth a new
 runtime dependency for this; the manual `@` check plus the domain allowlist
 covers it.
+
+## 2026-07-30 — `git push` 403 while `gh` reads fine (two credential stores)
+
+**Symptom:** `git push origin main` → `remote: Permission to TameImpy/PrismVault.git
+denied to TameImpy` / HTTP 403, while `gh api repos/...` reads worked normally.
+
+**Root cause:** the fine-grained PAT lacked `Contents: write`. Two traps made this
+slow to diagnose:
+
+1. `gh api repos/OWNER/REPO --jq .permissions` returns `{"admin":true,"push":true}`.
+   That is the **account's role on the repo**, not the **token's** granted scopes.
+   It is a red herring — do not read it as proof the token can write.
+2. `gh` and `git` read from **different credential stores**. `gh` uses the macOS
+   login keyring; `git push` uses the macOS **keychain** via the `osxkeychain`
+   helper configured in Xcode's system gitconfig
+   (`/Applications/Xcode.app/Contents/Developer/usr/share/git-core/gitconfig`).
+   Updating a token in one leaves the other stale, so a "fixed" token can still
+   fail to push.
+
+**Distinguishing a stale credential from an under-scoped token:** retry with
+`git -c credential.helper='!gh auth git-credential' push origin main`. That forces
+git to use gh's token. Still 403 → the token genuinely lacks the permission.
+Succeeds → the keychain copy was stale; clear it with
+`printf "protocol=https\nhost=github.com\n" | git credential-osxkeychain erase`.
+
+**Fix that worked:** `gh auth login --hostname github.com --git-protocol https`
+taking the default **"Login with a web browser"** option. That mints an OAuth token
+with `repo` scope (confirmed via `gh api -i user | grep -i x-oauth-scopes`), which
+covers contents, issues, labels and PRs in one go. Faster than working out which
+fine-grained permission was missing. Follow with `gh auth setup-git` so git and gh
+share one token instead of drifting apart again.
+
+**For OAuth tokens `x-oauth-scopes` is the reliable check; fine-grained PATs return
+no scopes header at all** — an absent header is itself the signal that you are on a
+fine-grained token whose grants cannot be introspected via the API.
