@@ -11,6 +11,8 @@ build/
 node_modules/
 .sandcastle/
 users.db
+# Auto-created at runtime (Tetris scores) — see docs/PROJECT_OVERVIEW.md
+data/leaderboard.db
 .claude/worktrees/
 
 # Raw monthly segment exports are kept external, not committed (slice #97
