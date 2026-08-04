@@ -17,3 +17,6 @@ users.db
 # decision — see LESSONS_LEARNED). Only data/segments.csv (build output) is
 # versioned. This guards against a stray export being dropped into data/.
 data/*.xlsx
+
+# QA debrief working files (ledgers) — not versioned
+.scratch/

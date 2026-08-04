@@ -1,0 +1,18 @@
+# Data files — large/generated, never auto-reformat
+data/
+
+# Python is handled by its own tooling (black/ruff), not Prettier
+*.py
+
+# Build output & dependencies
+.next/
+node_modules/
+dist/
+build/
+
+# Lockfiles (npm manages these)
+package-lock.json
+frontend/package-lock.json
+
+# Databases / binaries
+*.db

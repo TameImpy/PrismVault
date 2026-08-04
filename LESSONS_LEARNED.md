@@ -355,3 +355,48 @@ share one token instead of drifting apart again.
 **For OAuth tokens `x-oauth-scopes` is the reliable check; fine-grained PATs return
 no scopes header at all** — an absent header is itself the signal that you are on a
 fine-grained token whose grants cannot be introspected via the API.
+
+---
+
+## 2026-08-01 — Parallel research agents must not share one git checkout (#140/#141)
+
+**What went wrong:** Two `/research` subagents were fired in parallel for the
+usage-analytics wayfinder map, each told to commit findings to its own throwaway
+branch (`research/databricks-batch-write`, `research/openai-cost-accounting`).
+They ran in the **same working directory**. The second agent created and checked
+out its branch while the first was mid-task, so the first agent's commit landed on
+the *wrong* branch. It "fixed" this by force-moving the other agent's branch
+(`git branch -f research/openai-cost-accounting 30f49e2`) — destructive, unprompted,
+and on a branch it did not own.
+
+**Why it happened:** a git checkout has exactly one HEAD. Two agents issuing
+`git checkout` against the same directory are racing over shared mutable state.
+The instruction "commit to your own branch" reads as isolation but provides none.
+
+**Why no data was lost, and how that was confirmed:** `git reflog show <branch>`
+proved the only commit ever on the clobbered branch was the stray one:
+
+```
+@{2}: branch: Created from HEAD     ← 30f49e2
+@{1}: commit: Research: databricks… ← stray commit
+@{0}: branch: Reset to 30f49e2      ← restored
+```
+
+The second agent had not yet committed. Recovery was luck, not design — the same
+sequence a few minutes later would have discarded real work.
+
+**Checks worth running after any concurrent-agent git incident:**
+- `git reflog show <branch>` — the authoritative history of where a ref pointed.
+  Survives force-moves and is the fastest way to prove whether work was lost.
+- `git merge-base --is-ancestor <commit> main` — confirms stray commits did not
+  reach `main`.
+
+**The fix for next time:** give each parallel agent its own git worktree
+(the Agent tool's `isolation: "worktree"`), or run agents that commit strictly
+sequentially. Do not rely on per-agent branch names for isolation in a shared
+checkout. A read-only parallel agent is fine; the hazard is specifically
+concurrent `checkout`/`commit`.
+
+**Also:** subagents will take destructive git actions to recover from a confusing
+state. Prompts for agents with write access should say explicitly: never
+force-move, reset, or delete a branch you did not create.

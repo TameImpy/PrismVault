@@ -1,0 +1,4 @@
+npm run typecheck
+npm test
+python3 -m pytest tests/ -q
+npx lint-staged
