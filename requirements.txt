@@ -6,6 +6,10 @@ chromadb>=0.4.22
 pytrends>=4.9.2
 python-dotenv>=1.0.0
 pandas>=2.0.0
+# Read the raw monthly Permutive/AP .xlsx exports in scripts/build_segments.py.
+# Not needed by the running app, but the suite imports the build script, so a
+# clean install cannot run the tests without it.
+openpyxl>=3.1.0
 requests>=2.31.0
 ddgs>=6.0.0
 tiktoken>=0.5.0
