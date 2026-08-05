@@ -4,9 +4,13 @@ The deterministic engine (match / rank / fallback) is exercised through
 `recommend_segments` with injected `segments` and `expansion`, so no test here
 touches OpenAI or the real data/segments.csv.
 """
-from unittest.mock import MagicMock
+import csv
+import os
+from unittest.mock import MagicMock, patch
 
-from src.audience import recommend_segments, expand_query, format_audience_segments
+from src.audience import (
+    recommend_segments, expand_query, format_audience_segments, load_segments,
+)
 
 
 def _fixtures():
@@ -68,10 +72,10 @@ def test_reach_is_int_copied_verbatim_from_source():
 
 
 def test_capped_at_eight_per_platform_ordered_by_reach_desc():
-    # 10 matching Permutive segments with ascending reach.
+    # 10 matching Permutive segments with ascending reach, all above the floor.
     segs = [
         {"segment_name": "Baking Fans %d" % i, "platform": "Permutive",
-         "reach": str((i + 1) * 1000), "category": "Food & Drink",
+         "reach": str((i + 1) * 10000), "category": "Food & Drink",
          "description": "baking", "plain_english": "Browses baking", "code": str(i),
          "frequency": "R", "window": "All Time", "icon_key": "food-drink"}
         for i in range(10)
@@ -84,7 +88,7 @@ def test_capped_at_eight_per_platform_ordered_by_reach_desc():
     assert len(perm) == 8  # capped
     reaches = [s["reach"] for s in perm]
     assert reaches == sorted(reaches, reverse=True)  # ordered by reach desc
-    assert reaches[0] == 10000  # the largest survived the cap
+    assert reaches[0] == 100000  # the largest survived the cap
 
 
 def _all_keys(obj):
@@ -249,6 +253,159 @@ def test_matching_is_stem_based_not_just_exact():
     )
     names = [s["segment_name"] for p in payload["platforms"] for s in p["segments"]]
     assert "Home Bakers" in names
+
+
+# --- Minimum reach floor (#159) -------------------------------------------
+
+
+def _tiny_and_usable():
+    """One unbuyably small segment and one usable one, both on-topic."""
+    return [
+        {"segment_name": "Sourdough Starter Obsessives", "platform": "Permutive",
+         "reach": "13", "category": "Food & Drink",
+         "description": "browsed for sourdough baking content",
+         "plain_english": "Browses sourdough content", "code": "1",
+         "frequency": "R", "window": "All Time", "icon_key": "food-drink"},
+        {"segment_name": "Home Bakers", "platform": "Permutive", "reach": "70000",
+         "category": "Food & Drink", "description": "browsed for baking content",
+         "plain_english": "Browses baking content", "code": "2",
+         "frequency": "R", "window": "All Time", "icon_key": "food-drink"},
+    ]
+
+
+def test_segments_below_the_reach_floor_are_excluded():
+    payload = recommend_segments(
+        advertiser="X", topic="baking", segments=_tiny_and_usable(),
+        expansion={"keywords": ["baking", "sourdough"], "categories": []},
+    )
+    names = [s["segment_name"] for p in payload["platforms"] for s in p["segments"]]
+    assert "Sourdough Starter Obsessives" not in names
+    assert "Home Bakers" in names
+
+
+def test_next_most_relevant_above_the_floor_takes_the_slot():
+    # "sourdough" is the rarer keyword, so without a floor the 13-reach segment
+    # ranks first. With the floor it is dropped and the next most relevant
+    # segment above the floor is recommended in its place.
+    segs = _tiny_and_usable()
+    expansion = {"keywords": ["baking", "sourdough"], "categories": []}
+
+    unfloored = recommend_segments(
+        advertiser="X", topic="baking", segments=segs,
+        expansion=expansion, min_reach=0,
+    )
+    perm = _by_platform(unfloored)["Permutive"]["segments"]
+    assert perm[0]["segment_name"] == "Sourdough Starter Obsessives"
+
+    floored = recommend_segments(
+        advertiser="X", topic="baking", segments=segs, expansion=expansion,
+    )
+    perm = _by_platform(floored)["Permutive"]["segments"]
+    assert perm[0]["segment_name"] == "Home Bakers"
+
+
+def test_floor_boundary_is_inclusive_at_5000():
+    segs = [
+        {"segment_name": "Just Under", "platform": "Permutive", "reach": "4999",
+         "category": "Food & Drink", "description": "baking",
+         "plain_english": "Browses baking", "code": "1",
+         "frequency": "R", "window": "All Time", "icon_key": "food-drink"},
+        {"segment_name": "Exactly At", "platform": "Permutive", "reach": "5000",
+         "category": "Food & Drink", "description": "baking",
+         "plain_english": "Browses baking", "code": "2",
+         "frequency": "R", "window": "All Time", "icon_key": "food-drink"},
+    ]
+    payload = recommend_segments(
+        advertiser="X", topic="baking", segments=segs,
+        expansion={"keywords": ["baking"], "categories": []},
+    )
+    names = [s["segment_name"] for p in payload["platforms"] for s in p["segments"]]
+    assert names == ["Exactly At"]
+
+
+def test_threshold_is_configurable_without_touching_the_dataset():
+    segs = _tiny_and_usable()
+    expansion = {"keywords": ["baking", "sourdough"], "categories": []}
+
+    # Explicit override at the call site.
+    off = recommend_segments("X", "baking", segments=segs, expansion=expansion,
+                             min_reach=0)
+    assert len(_by_platform(off)["Permutive"]["segments"]) == 2
+
+    # Config-driven default, read at call time so an env change is enough.
+    with patch("config.MIN_SEGMENT_REACH", 100000):
+        raised = recommend_segments("X", "baking", segments=segs, expansion=expansion)
+    assert raised["matched"] is False
+
+
+def test_segments_with_unreadable_reach_are_treated_as_below_the_floor():
+    segs = [
+        {"segment_name": "Blank Reach", "platform": "Permutive", "reach": "",
+         "category": "Food & Drink", "description": "baking",
+         "plain_english": "Browses baking", "code": "1",
+         "frequency": "R", "window": "All Time", "icon_key": "food-drink"},
+        {"segment_name": "Home Bakers", "platform": "Permutive", "reach": "70000",
+         "category": "Food & Drink", "description": "baking",
+         "plain_english": "Browses baking", "code": "2",
+         "frequency": "R", "window": "All Time", "icon_key": "food-drink"},
+    ]
+    payload = recommend_segments(
+        advertiser="X", topic="baking", segments=segs,
+        expansion={"keywords": ["baking"], "categories": []},
+    )
+    names = [s["segment_name"] for p in payload["platforms"] for s in p["segments"]]
+    assert names == ["Home Bakers"]
+
+
+def test_floor_applies_before_the_category_fallback_ladder():
+    # Two keyword hits are below the floor, leaving one eligible keyword match —
+    # under the ladder's threshold — so category broadening must still fire.
+    segs = [
+        {"segment_name": "Allotment Growers", "platform": "Permutive", "reach": "50000",
+         "category": "Gardening", "description": "browsed for garden allotment content",
+         "plain_english": "Browses allotment content", "code": "1",
+         "frequency": "R", "window": "All Time", "icon_key": "gardening"},
+        {"segment_name": "Garden Pond Owners", "platform": "Permutive", "reach": "40",
+         "category": "Gardening", "description": "browsed for garden pond content",
+         "plain_english": "Browses pond content", "code": "2",
+         "frequency": "R", "window": "All Time", "icon_key": "gardening"},
+        {"segment_name": "Garden Furniture Buyers", "platform": "Permutive", "reach": "900",
+         "category": "Gardening", "description": "browsed for garden furniture content",
+         "plain_english": "Browses furniture content", "code": "3",
+         "frequency": "R", "window": "All Time", "icon_key": "gardening"},
+        {"segment_name": "Rose Enthusiasts", "platform": "Permutive", "reach": "40000",
+         "category": "Gardening", "description": "browsed for rose growing content",
+         "plain_english": "Browses rose content", "code": "4",
+         "frequency": "R", "window": "All Time", "icon_key": "gardening"},
+    ]
+    payload = recommend_segments(
+        advertiser="GardenCo", topic="gardening", segments=segs,
+        expansion={"keywords": ["garden"], "categories": ["Gardening"]},
+    )
+    names = [s["segment_name"] for p in payload["platforms"] for s in p["segments"]]
+    assert "Allotment Growers" in names
+    assert "Rose Enthusiasts" in names  # pulled in by the broadened ladder
+    assert "Garden Pond Owners" not in names
+    assert "Garden Furniture Buyers" not in names
+
+
+def test_floor_is_applied_at_recommendation_time_not_at_load(tmp_path):
+    # segments.csv stays the faithful record of what Permutive and AP returned;
+    # nothing is stripped on the way in.
+    path = os.path.join(str(tmp_path), "segments.csv")
+    fields = ["segment_name", "platform", "reach", "category", "description",
+              "plain_english", "code", "frequency", "window", "icon_key"]
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fields)
+        writer.writeheader()
+        for row in _tiny_and_usable():
+            writer.writerow(row)
+
+    loaded = load_segments(path)
+    assert [r["segment_name"] for r in loaded] == [
+        "Sourdough Starter Obsessives", "Home Bakers",
+    ]
+    assert loaded[0]["reach"] == "13"
 
 
 def _fake_client(content):

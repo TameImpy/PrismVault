@@ -168,15 +168,35 @@ def _relevance_score(segment, keyword_weights):
     return score
 
 
+def _reach_of(segment):
+    """Reach as an int; 0 when the source value is missing or unreadable."""
+    try:
+        return int(float(segment.get("reach")))
+    except (TypeError, ValueError):
+        return 0
+
+
+def _drop_below_reach_floor(segments, min_reach):
+    """Drop segments too small to plan against (#159).
+
+    Applied here, at recommendation time, rather than at ingest, so
+    data/segments.csv remains the faithful record of what Permutive and
+    AudienceProject returned. Segments whose reach cannot be read are treated
+    as below the floor — an unreadable figure is not something to plan against
+    either.
+
+    Scope is the recommender only. The Assistant's `search_segments`
+    (src/assistant.py) answers "what segments exist?" rather than "what should
+    I buy?", so it still sees the whole catalogue on purpose.
+    """
+    return [s for s in segments if _reach_of(s) >= min_reach]
+
+
 def _to_item(segment):
     """Project a raw segment row into a clean payload item (reach as int)."""
-    try:
-        reach = int(float(segment.get("reach")))
-    except (TypeError, ValueError):
-        reach = 0
     return {
         "segment_name": segment.get("segment_name", ""),
-        "reach": reach,
+        "reach": _reach_of(segment),
         "platform": segment.get("platform", ""),
         "category": segment.get("category", ""),
         "plain_english": segment.get("plain_english", ""),
@@ -213,17 +233,33 @@ def _match_with_fallback(segments, keywords, categories):
 
 
 def recommend_segments(advertiser, topic, client_brief="", segments=None,
-                       expansion=None, client=None, per_platform_limit=8):
+                       expansion=None, client=None, per_platform_limit=8,
+                       min_reach=None):
     # type: (...) -> dict
-    """Return the deterministic audience_segments payload."""
+    """Return the deterministic audience_segments payload.
+
+    `min_reach` defaults to `config.MIN_SEGMENT_REACH`; pass 0 to recommend from
+    the whole catalogue.
+    """
     if segments is None:
         segments = load_segments()
+
+    # The floor is applied to the candidate pool before anything else, so the
+    # match ladder, the relevance weights and the per-platform cap all work over
+    # segments that are actually buyable. A brief that would once have surfaced
+    # a sub-floor segment now gets the next most relevant one above it. The
+    # config default is read here, at call time, so moving the threshold is an
+    # environment change rather than a restart-and-rebuild.
+    if min_reach is None:
+        min_reach = getattr(config, "MIN_SEGMENT_REACH", 5000)
+    segments = _drop_below_reach_floor(segments, min_reach)
 
     keywords = list(expansion.get("keywords", [])) if expansion else []
     categories = list(expansion.get("categories", [])) if expansion else []
 
     matched = _match_with_fallback(segments, keywords, categories)
-    # Relevance weights are computed over the whole catalogue so a rare, on-topic
+    # Relevance weights are computed over every segment that could be recommended
+    # — the catalogue after the floor, not the raw file — so a rare, on-topic
     # keyword ("gut") outweighs a common one ("food"). Segments are then ranked
     # by relevance first, reach second — so the most relevant niche segments are
     # never buried under generic high-reach ones (and cut by the per-platform cap).
@@ -233,7 +269,7 @@ def recommend_segments(advertiser, topic, client_brief="", segments=None,
     for platform in _PLATFORM_ORDER:
         rows = [s for s in matched if s.get("platform") == platform]
         rows.sort(
-            key=lambda s: (_relevance_score(s, weights), _to_item(s)["reach"]),
+            key=lambda s: (_relevance_score(s, weights), _reach_of(s)),
             reverse=True,
         )
         platforms.append({

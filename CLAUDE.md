@@ -40,7 +40,7 @@ Requires a `.env` file at root with:
 - `JWT_SECRET` (required — no default, app will not start without it)
 - `DATABASE_URL` (defaults to `sqlite:///users.db` for local dev)
 
-Optional overrides: `CHROMA_PERSIST_DIR`, `EMBEDDING_MODEL`, `CHAT_MODEL`, `CHUNK_SIZE`, `CHUNK_OVERLAP`.
+Optional overrides: `CHROMA_PERSIST_DIR`, `EMBEDDING_MODEL`, `CHAT_MODEL`, `CHUNK_SIZE`, `CHUNK_OVERLAP`, `MIN_SEGMENT_REACH`.
 
 Optional Chroma Cloud: `CHROMA_CLOUD_API_KEY`, `CHROMA_CLOUD_TENANT`, `CHROMA_CLOUD_DATABASE` (leave empty for local ChromaDB).
 
@@ -84,7 +84,7 @@ Prism Data Vault is a RAG-based advertising strategy insights tool. The frontend
 
 1. **Editorial transcripts** — JSON files in `data/transcripts/`, embedded into ChromaDB (`src/embeddings.py`, `src/vectorstore.py`)
 2. **Advertiser web research** — skill-based DuckDuckGo + GPT-4o (`src/web_search.py`)
-3. **Audience data** — CSV trends in `data/audience_trends.csv` (`src/audience.py`)
+3. **Audience segments** — canonical Permutive + AudienceProject rows in `data/segments.csv`, matched and ranked by `src/audience.py`. Segments below `config.MIN_SEGMENT_REACH` (default 5,000) are dropped at recommendation time, not at ingest, so the CSV stays the faithful record of what the platforms returned and the floor can move without a rebuild
 4. **Google Trends** — live pytrends data (`src/trends.py`)
 5. **Format recommendations** — ad format benchmarks in `data/format_recommendations.csv` (`src/formats.py`)
 6. **Client brief summary** — optional GPT-4o summarisation (`src/brief.py`)
@@ -146,7 +146,7 @@ DuckDuckGo searches use the `ddgs` package (not the deprecated `duckduckgo_searc
 
 ### Key data contracts
 
-- `generate_insights()` returns: `{content, sources, research_skills, audience_timing, google_trends, format_recommendations, client_brief_summary}`
+- `generate_insights()` returns: `{content, sources, research_skills, audience_segments, google_trends, format_recommendations, campaign_history, client_brief_summary, historical_research}`
 - Each skill result: `{skill_name, raw_results, processed_summary, error}`; each entry in `raw_results` is `{title, body, href, topic_anchored}`, where `topic_anchored` records whether that hit came from a topic query or a brand-only one
 - `USER_PROMPT_TEMPLATE` placeholders: `{topic}`, `{advertiser}`, `{advertiser_kpi}`, `{editorial_insights}`, `{advertiser_research}`, `{audience_timing}`, `{google_trends}`, `{format_recommendations}`, `{client_brief}`
 
