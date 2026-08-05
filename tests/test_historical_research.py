@@ -27,6 +27,10 @@ match_keywords:
   - cruise
   - flight
   - hotel
+audience_terms:
+  - affluent empty-nesters
+  - empty nesters
+  - over-55s
 ---
 
 # Immediate Media Travel Audience Research 2024/25
@@ -311,6 +315,125 @@ def test_gate_none_inputs_do_not_crash(catalogue_dir):
     result = get_relevant_research(None, None, None, catalogue_dir=catalogue_dir)
     assert result["relevant"] is False
     assert result["prompt_text"] == "No historical research matched this brief."
+
+
+# --- Subject relevance vs shared demographic (#157) ------------------------
+#
+# A research file's vocabulary is not all of one kind. Its topics and
+# match_keywords describe what the research is ABOUT; its audience_terms
+# describe WHO was surveyed. Only the first kind may admit a file — otherwise a
+# hearing-aids brief aimed at over-55s pulls in travel research on the strength
+# of the demographic alone, which is what Abel hit in the August 2026 QA round.
+
+# A file whose audience descriptors are (wrongly) left in `topics` as well as in
+# `audience_terms`. Listing a term as an audience term must demote it wherever
+# else it appears, so a mis-authored file cannot re-open the hole.
+FIXTURE_DEMOGRAPHIC_IN_TOPICS = """\
+---
+title: "Later Life Leisure Study 2025"
+organisation: "TestOrg"
+fieldwork_start: "2025-02-01"
+fieldwork_end: "2025-02-28"
+total_respondents: 900
+topics:
+  - garden centres
+  - affluent empty-nesters
+match_keywords:
+  - gardening
+audience_terms:
+  - affluent empty-nesters
+---
+
+# Later Life Leisure Study 2025
+
+Survey of 900 adults aged 55 and over.
+"""
+
+
+@pytest.fixture()
+def catalogue_dir_demographic_in_topics(tmp_path):
+    d = tmp_path / "historical_research"
+    d.mkdir()
+    (d / "leisure.md").write_text(FIXTURE_DEMOGRAPHIC_IN_TOPICS)
+    return str(d)
+
+
+def test_shared_demographic_alone_does_not_admit_research(catalogue_dir):
+    """Abel's report: a hearing-aids brief must not pull in travel research."""
+    result = get_relevant_research(
+        "hearing aids", "Boots Hearingcare",
+        "Reach affluent empty-nesters, over-55s, in the market for hearing aids",
+        catalogue_dir=catalogue_dir,
+    )
+    assert result["relevant"] is False
+    assert result["prompt_text"] == "No historical research matched this brief."
+    assert "title" not in result
+
+
+def test_subject_match_still_admits_when_the_demographic_is_shared_too(catalogue_dir):
+    """The demographic must not disqualify research that is genuinely on-subject."""
+    result = get_relevant_research(
+        "river cruises", "Riviera Travel",
+        "Reach affluent empty-nesters, over-55s, planning a cruise",
+        catalogue_dir=catalogue_dir,
+    )
+    assert result["relevant"] is True
+    # Both kinds of term are reported, subject first, so the hero card can say
+    # what actually earned the match rather than only who was surveyed.
+    assert result["matched_on"][0] in ("cruises", "travel", "cruise")
+    assert "affluent empty-nesters" in result["matched_on"]
+
+
+def test_subject_match_alone_still_admits(catalogue_dir):
+    """No demographic overlap at all is still a match on subject."""
+    result = get_relevant_research(
+        "city breaks push", "SomeBrand", "Reach students",
+        catalogue_dir=catalogue_dir,
+    )
+    assert result["relevant"] is True
+    assert result["matched_on"] == ["city breaks"]
+
+
+def test_audience_term_is_demoted_even_where_topics_repeats_it(
+    catalogue_dir_demographic_in_topics,
+):
+    result = get_relevant_research(
+        "hearing aids", "Boots Hearingcare", "Reach affluent empty-nesters",
+        catalogue_dir=catalogue_dir_demographic_in_topics,
+    )
+    assert result["relevant"] is False
+
+
+def test_loader_exposes_audience_terms(catalogue_dir):
+    files = load_catalogue(catalogue_dir)
+    assert files[0]["audience_terms"] == [
+        "affluent empty-nesters", "empty nesters", "over-55s",
+    ]
+    # ...and they are kept out of the subject vocabulary.
+    assert "affluent empty-nesters" not in files[0]["topics"]
+
+
+def test_loader_defaults_audience_terms_to_empty(catalogue_dir_no_match_keywords):
+    """A file predating the field keeps its whole vocabulary as subject terms."""
+    files = load_catalogue(catalogue_dir_no_match_keywords)
+    assert files[0]["audience_terms"] == []
+
+
+def test_real_catalogue_hearing_aids_brief_gets_no_travel_research():
+    """The shipped catalogue, against the brief Abel actually reported."""
+    result = get_relevant_research(
+        "hearing aids", "Boots Hearingcare",
+        "Audience is affluent empty-nesters, over-55s, with mild hearing loss",
+    )
+    assert result["relevant"] is False
+
+
+def test_real_catalogue_still_admits_an_over_55s_travel_brief():
+    result = get_relevant_research(
+        "cruises", "P&O Cruises", "Audience is affluent empty-nesters, over-55s",
+    )
+    assert result["relevant"] is True
+    assert result["total_respondents"] == 1589
 
 
 # ---------------------------------------------------------------------------

@@ -23,7 +23,6 @@ topics:
   - cultural travel
   - food and dining travel
   - special-interest holidays
-  - affluent empty-nesters
 match_keywords:
   - travel
   - travelling
@@ -53,6 +52,21 @@ match_keywords:
   - tours
   - destination
   - destinations
+# Who this research surveyed, as distinct from what it is about. These terms
+# never admit the file on their own — a brief that shares only the demographic
+# gets no research (#157) — but they are reported alongside a subject match so
+# the overlap is visible for what it is.
+audience_terms:
+  - empty-nester
+  - empty-nesters
+  - empty nester
+  - empty nesters
+  - affluent older audience
+  - affluent older audiences
+  - older traveller
+  - older travellers
+  - solo traveller
+  - solo travellers
 ---
 
 # Immediate Media Travel Audience Research 2024/25
