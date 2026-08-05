@@ -11,9 +11,14 @@ build/
 node_modules/
 .sandcastle/
 users.db
+# Auto-created at runtime (Tetris scores) — see docs/PROJECT_OVERVIEW.md
+data/leaderboard.db
 .claude/worktrees/
 
 # Raw monthly segment exports are kept external, not committed (slice #97
 # decision — see LESSONS_LEARNED). Only data/segments.csv (build output) is
 # versioned. This guards against a stray export being dropped into data/.
 data/*.xlsx
+
+# QA debrief working files (ledgers) — not versioned
+.scratch/
