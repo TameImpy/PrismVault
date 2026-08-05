@@ -602,3 +602,71 @@ removed, "cancer patients for Cancer Research UK" still blocks. The line is the
 _targeting basis_, not the advertiser's industry — which is why "audiences for a
 hearing aid brand" stays blocked: that is #164's own example wearing a client's
 hat.
+
+---
+
+## 2026-08-05 — A keyword list needs roles, not just terms (#157)
+
+**What went wrong.** A hearing-aids brief aimed at over-55s pulled in the travel
+research file. The gate in `src/historical_research.py` flattened each catalogue
+file's `topics` + `match_keywords` into one list of needles and admitted the file
+on any single hit. `affluent empty-nesters` was sitting in the travel file's
+`topics`, so one demographic overlap — nothing to do with the subject — was
+enough to admit 33 KB of travel research into a hearing-aids brief.
+
+**Why.** The bug was in the _vocabulary_, not the matcher. The word-boundary
+matching was already careful (`rail` does not fire on `email`); it matched
+exactly what it was asked to match. What was missing is that a research file's
+terms are not all of one kind: some say what the research is _about_, one said
+who was _surveyed_, and the gate treated them as equally sufficient. Tuning the
+matcher — fuzzier, stricter, a second required hit — would not have touched this.
+When a list-driven gate misfires, check whether the list is secretly holding two
+kinds of thing before you touch the matching logic.
+
+**How it was fixed.** A third frontmatter field, `audience_terms`, names the
+demographic explicitly. Admission now requires a hit in `topics`/`match_keywords`;
+`audience_terms` can never admit a file alone, but still ride along in
+`matched_on` after the subject terms, so a genuinely on-subject travel brief for
+over-55s shows the full overlap without the demographic having been the reason.
+Two properties were worth the extra lines:
+
+- **The demotion is not advisory.** A term listed under `audience_terms` is
+  stripped out of `topics`/`match_keywords` at load time wherever it also appears
+  there. Without that, a future file that leaves a demographic in both lists
+  re-opens the hole silently, and the frontmatter is authored by hand.
+- **Absent means unchanged.** A file with no `audience_terms` key keeps its whole
+  vocabulary as subject terms, so the catalogue's zero-code drop-in property
+  survives and no existing file needed editing to keep working.
+
+**The near-miss.** The first instinct was a central recogniser in code — age
+patterns, `affluent`, `empty-nester`, `ABC1` — applied across every file, on the
+theory that it also catches files nobody has authored yet. It would have
+over-blocked: `family holidays` is a genuine subject term that a demographic
+recogniser reads as a demographic, and the failure mode is silent (a research
+file quietly stops matching briefs it should). Per-file explicit declaration
+gives up automatic coverage of unwritten files in exchange for never guessing
+wrong about the file in front of it. For a catalogue of one, curated by hand,
+that is the right trade — and it is the same reason the segment gate in #164
+needed its guard pointed at real inputs rather than a plausible-looking list.
+
+**Postscript — `\b` is the wrong boundary for a hand-authored term list.** The
+spec review found a trap I had walked closer to rather than away from. The gate
+guarded whole words with `r"\b" + re.escape(needle) + r"\b"`, which cannot ever
+match a term ending in punctuation: `\b55\+\b` demands a word character
+immediately after the `+`, so the term `55+` is silently dead. Nothing errors,
+no test fails — the term just never fires. That is the worst failure mode for a
+list a human curates by hand, and #157's own ticket wording is "a 55+ audience",
+so the very next author would have hit it. Fixed by defining the boundary by
+what sits _outside_ the needle — `(?<!\w)needle(?!\w)` — which matches `55+` and
+still refuses `rail` inside `email` (both directions are pinned by tests). The
+general lesson: `\b` is a boundary _between_ word and non-word characters, so it
+is only equivalent to "whole token" when the token starts and ends with word
+characters. Domain vocabularies rarely promise that.
+
+**And a claim-discipline catch.** The first version of the frontmatter comment
+called `audience_terms` "who this research surveyed". It isn't — the survey base
+is a general UK panel of 1,589 with no age or affluence screen, and the terms
+come from the file's own "best fit" passages. In a product whose whole selling
+point is defensible sourcing, a comment that turns a positioning statement into
+a sample definition is the same over-claim the prompt's citation rules exist to
+prevent. Reworded to "who this research speaks to", with the real base named.

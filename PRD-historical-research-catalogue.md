@@ -4,9 +4,9 @@
 
 When a salesperson generates a brief, the tool draws on live, generic sources (web research, Google Trends, audience segments, formats, direct campaign history). What it **cannot** do today is reference the company's own **proprietary research** — the audience surveys and category studies that are the actual differentiator a media owner brings to a client conversation. That evidence currently lives in 53-slide decks that no salesperson opens mid-brief.
 
-This is a **proof-of-concept** to prove one specific thing, live, in a demo: **a catalogue of "historical research" files can be referenced by the agent flow and pulled through into the brief — automatically, only when relevant, and visibly to the salesperson.** We are starting with a single, real file — the *Immediate Media Travel Audience Research 2024/25* reference — and proving the end-to-end path. The value we are demonstrating is **grounded, cited, defensible proprietary evidence** appearing in the brief without anyone hunting for a deck.
+This is a **proof-of-concept** to prove one specific thing, live, in a demo: **a catalogue of "historical research" files can be referenced by the agent flow and pulled through into the brief — automatically, only when relevant, and visibly to the salesperson.** We are starting with a single, real file — the _Immediate Media Travel Audience Research 2024/25_ reference — and proving the end-to-end path. The value we are demonstrating is **grounded, cited, defensible proprietary evidence** appearing in the brief without anyone hunting for a deck.
 
-The bar for the POC is deliberately narrow: prove the *pull-through*, not build a research platform. Everything that makes it scale to N files is explicitly Phase 2.
+The bar for the POC is deliberately narrow: prove the _pull-through_, not build a research platform. Everything that makes it scale to N files is explicitly Phase 2.
 
 ## Solution
 
@@ -24,45 +24,52 @@ The proof is the contrast: a non-travel brief shows nothing; a travel brief make
 
 1. As a salesperson, I want the brief to automatically pull in our own proprietary research when it's relevant to the advertiser, so that I bring evidence a competitor can't.
 2. As a salesperson, I want that research to appear as a clearly-labelled card showing the source and its date, so that I can see exactly where the evidence came from and cite it with confidence.
-3. As a salesperson, I want the pulled findings to be tailored to *this* brief (e.g. cruise data for a cruise brand), so that they're immediately usable rather than a generic data dump.
+3. As a salesperson, I want the pulled findings to be tailored to _this_ brief (e.g. cruise data for a cruise brand), so that they're immediately usable rather than a generic data dump.
 4. As a salesperson running a brief with no relevant research, I want the brief to look completely normal (no empty or broken research box), so that the feature only ever adds value, never noise.
 5. As a salesperson, I want every figure quoted from the research to carry its audience and base (e.g. "n=334 cruise intenders, late-2024"), so that I don't accidentally over-claim a survey stat in front of a client.
 6. As the feature owner (Matt), I want to add a new research file by dropping a markdown file into a folder, so that growing the catalogue is zero-code.
 7. As the feature owner, I want the relevance gate to be deterministic and testable, so that "P&O fires, Nike doesn't" is a guaranteed, regression-guarded behaviour I can rely on in a live demo.
-8. As a demo audience member, I want to see the research card appear on a travel brief and *not* appear on a non-travel brief, so that I understand the system is selectively reasoning about relevance, not always bolting research on.
+8. As a demo audience member, I want to see the research card appear on a travel brief and _not_ appear on a non-travel brief, so that I understand the system is selectively reasoning about relevance, not always bolting research on.
 
 ## Implementation Decisions
 
 **Catalogue & storage**
+
 - Files live in `data/historical_research/*.md` — consistent with `data/` holding the pipeline's other file-backed sources.
 - Each file is markdown with YAML frontmatter. The travel file already has this shape; we add one field: **`match_keywords`** — a curated list of the single words a brief is likely to contain (e.g. `travel, holiday, cruise, flight, hotel, airline, tourism`). This de-risks matching against the verbose `topics` phrases.
 - Loading reuses the frontmatter-parsing pattern already in `src/web_search.py` (`re.match(r"^---\n(.+?)\n---\n(.+)", raw, re.DOTALL)` + `yaml.safe_load`). `pyyaml` is already a dependency.
 
 **Relevance gate (deterministic — the selection decision)**
+
 - New module `src/historical_research.py`. Interface shape: `get_relevant_research(topic, advertiser, client_brief) → {relevant, files/metadata, prompt_text}`.
 - Logic: concatenate `topic + advertiser + client_brief`, lowercase → for each file, test intersection against the flattened set of `topics` + `match_keywords` → **any single overlap includes the file**.
 - No LLM. No ranking or top-N — at N=1, every match is simply included.
+- **Revised by #157 (Aug 2026).** Not every term in a file's frontmatter is a reason to include it. A third field, **`audience_terms`**, names _who_ the research surveyed (`empty-nesters`, `older travellers`) as distinct from _what_ it is about. Only `topics` + `match_keywords` admit a file; `audience_terms` never admit on their own, and a term named as an audience term is stripped out of `topics`/`match_keywords` wherever it is also listed there, so a mis-authored file cannot re-open the hole. Where the brief shares the demographic as well as the subject, the audience terms still ride along in `matched_on`, after the subject terms. Files with no `audience_terms` key behave exactly as before. This closed the reported failure where a hearing-aids brief aimed at over-55s pulled in travel research on the strength of `affluent empty-nesters` alone, which had been sitting in `topics`.
 
 **Prompt injection (weaving)**
+
 - New `{historical_research}` placeholder in `USER_PROMPT_TEMPLATE`. On a match it carries the **whole file body** (verbatim — no chunking/extraction at N=1). On no-match it carries a fallback string (`"No historical research matched this brief."`).
 - SYSTEM_PROMPT gains a new `## Historical Research` output section instruction: when relevant research is present, produce 2–3 tailored findings bullets grounded in it; when it's the fallback, **omit the section entirely** (do not write "none found" into the prose).
 - SYSTEM_PROMPT gains one **minimal claim-use sentence**, matching the existing audience-segments citation-discipline house style: name the source audience, state fieldwork date, quote the base `n=` with any percentage, present as stated intention not behaviour, never sum multi-select percentages.
 
 **UI surfacing (the hero card)**
+
 - Single GPT-4o call, unchanged in count. The tailored bullets ride in the parsed `## Historical Research` section (reusing the frontend's existing `parseSections()` machinery — the same path "At a Glance" and "Key Recommendations" already use).
 - `generate_insights()` returns a `historical_research` object in the result dict: `{relevant: bool, ...}` and on a match `{title, organisation, fieldwork, total_respondents, matched_on}` — all pulled **verbatim from frontmatter** (deterministic, no hallucination risk).
 - The frontend composes the hero card from (metadata dict object) + (parsed prose bullets). Card renders **only** when `historical_research.relevant === true` — mirroring the conditional render already used for `campaign_history`.
 
 **Modules**
+
 - **New:** `src/historical_research.py` (loader + deterministic gate + prompt/fallback formatting).
 - **Modified:** `synthesiser` (call the gate, inject `{historical_research}`, return the dict object); `prompts` (new placeholder, `## Historical Research` section spec, claim-use sentence); frontend `/app` page (type + hero-card render, guarded on `relevant`).
 - **Data:** the travel `.md` file placed in `data/historical_research/`, with `match_keywords` added to its frontmatter.
 
 ## Testing Decisions
 
-**What makes a good test here:** the selection logic is a pure function over file metadata and brief text — no LLM, no network — so it's deterministic and exhaustively testable. The gate tests *are* the regression guard for the demo passing ("P&O fires, Nike doesn't"). LLM output (the tailored bullets and woven prose) and the UI card are **not** unit-tested — they're verified by eye in a dry run.
+**What makes a good test here:** the selection logic is a pure function over file metadata and brief text — no LLM, no network — so it's deterministic and exhaustively testable. The gate tests _are_ the regression guard for the demo passing ("P&O fires, Nike doesn't"). LLM output (the tailored bullets and woven prose) and the UI card are **not** unit-tested — they're verified by eye in a dry run.
 
 **Module to be tested — `src/historical_research.py`:**
+
 1. **Loader** — globs `data/historical_research/*.md`, parses frontmatter, returns metadata + body. Cover: valid file parses; `match_keywords` read correctly; empty/missing folder returns no files gracefully.
 2. **Relevance gate** (the money logic) — Cover: travel brief ("P&O Cruises" / "cruise campaign") → matches; non-travel brief ("Nike" / "running shoes") → no match; case-insensitivity; matching hits on `match_keywords` as well as `topics`; the `topic+advertiser+client_brief` concatenation (a keyword only in `client_brief` still matches).
 3. **No-match fallback & contract** — returns the fallback string and a `{relevant: false}` object when nothing matches; the `historical_research` dict key is always present with the correct shape in both states.
@@ -74,7 +81,7 @@ The proof is the contrast: a non-travel brief shows nothing; a travel brief make
 ## Out of Scope (explicitly deferred to Phase 2)
 
 - **LLM relevance classifier** — the semantic "Cunard → travel" leap. POC uses the deterministic keyword gate only.
-- **Multi-file ranking / top-N selection** — the loader globs many files, but no relevance *scoring* or "best N when several match." Moot at N=1; every match is included.
+- **Multi-file ranking / top-N selection** — the loader globs many files, but no relevance _scoring_ or "best N when several match." Moot at N=1; every match is included.
 - **Section-level extraction / chunking** — the whole file goes into the prompt; no per-section retrieval.
 - **Vector search** — the dormant ChromaDB layer is not revived for this; it stays Phase 2 alongside the editorial vector work.
 - **Upload / catalogue-management UI** — files are added by dropping a `.md` in the folder, not via any interface.
@@ -85,7 +92,7 @@ The proof is the contrast: a non-travel brief shows nothing; a travel brief make
 
 - **Demo script (the whole point):** two-brief contrast. (1) Non-travel brief — advertiser "Nike", topic "running shoes launch" → no Historical Research card, output looks normal. (2) Travel brief — advertiser "P&O Cruises", topic "cruise campaign for over-50s", KPI "Awareness" → card appears; the synthesis cites the survey's cruise data (23% consideration, n=334 intenders, P&O top at 38%, ocean/river/adults-only split). P&O chosen because §14 of the file gives the richest, most quotable cruise-specific evidence, so the woven output looks strikingly specific rather than generic.
 - **Why deterministic gate for a live demo:** the gate is keyword-based specifically so the demo has zero API dependency in the selection step — the salesperson controls the brief, and a travel keyword reliably fires the card every run.
-- **Why the panel is the hero:** invisible weaving alone can't be *seen* to work. The labelled card — with verbatim source metadata proving provenance and tailored bullets proving reasoning — is the visual that makes the pull-through concept legible to a non-technical room.
+- **Why the panel is the hero:** invisible weaving alone can't be _seen_ to work. The labelled card — with verbatim source metadata proving provenance and tailored bullets proving reasoning — is the visual that makes the pull-through concept legible to a non-technical room.
 - **Scaling story to tell stakeholders:** the catalogue, glob loader, and frontmatter gate are built to accept file #2 with zero code; the Phase 2 upgrades (LLM relevance, ranking, chunking, vector search) are the path from "one file, keyword gate" to "large research library, semantic retrieval."
 - Related in-flight work: this follows the same "real proprietary data into the brief" thread as `PRD-audience-segments.md` and `PRD-direct-campaign-history.md`, and reuses their citation-discipline and conditional-render patterns.
 
