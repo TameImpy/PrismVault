@@ -748,3 +748,36 @@ six-line pydantic model fixes it. And the footer binds to a `##` heading the
 _model_ writes, so a prompt edit could silently detach every footer in the
 brief; the headings are now pinned against `SYSTEM_PROMPT` by a test. Both are
 the same class of bug: a failure that produces nothing rather than an error.
+
+## 2026-08-05 — CI's first run found two things nobody had run into (#156 follow-on)
+
+Adding a pipeline to a project with 650 passing tests found two real defects on
+its first two runs. Neither was a bug in any change — both were claims about
+the environment that had only ever been true on one laptop.
+
+**`openpyxl` was never in `requirements.txt`.** `scripts/build_segments.py`
+imports it, and `tests/test_build_segments.py` imports the build script, so a
+clean install could not even _collect_ the suite. It has been broken since
+slice #97; it never surfaced because the package has been installed on the dev
+machine that whole time. This is the canonical case for CI: not "did the code
+break" but "does the code work anywhere else".
+
+**`load_dotenv()` does not resolve from the working directory.** Before writing
+the workflow I tried to establish which env vars the suite really needs by
+running pytest from outside the repo, reasoning that `.env` would not be found.
+It passed with only `JWT_SECRET`, so that is what I put in the workflow — and
+CI failed 12 tests, all 500s from endpoints that guard on
+`config.OPENAI_API_KEY`.
+
+The reason: `load_dotenv()` with no argument calls `find_dotenv()`, which walks
+up from **the calling file's directory**, not the process's cwd. `config.py`
+sits at the repo root, so it finds the repo's `.env` no matter where pytest was
+invoked. Changing directory proves nothing.
+
+The correct way to test a clean environment locally is a **`git worktree`** —
+`.env` is gitignored, so a fresh worktree genuinely lacks it. That reproduced
+CI's 12 failures exactly, and confirmed in one run that the real requirement is
+`JWT_SECRET` plus a dummy `OPENAI_API_KEY`. The general lesson: when verifying
+"works without X", make X actually absent rather than arranging to look
+elsewhere for it — and prefer a reproduction that can fail over an argument
+that it should pass.
