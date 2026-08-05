@@ -13,9 +13,11 @@ import AudienceSegmentsPanel from "@/components/AudienceSegmentsPanel";
 import HistoricalResearchCard, {
   HistoricalResearch,
 } from "@/components/HistoricalResearchCard";
+import ProvenanceFooter from "@/components/ProvenanceFooter";
 import { useAnalytics } from "@/components/AnalyticsProvider";
 import { useAuth } from "@/contexts/AuthContext";
 import { AudienceSegmentsPayload } from "@/lib/audienceSegments";
+import { PROVENANCE_SECTIONS, ProvenanceEntry } from "@/lib/provenance";
 
 interface Source {
   editor: string;
@@ -68,6 +70,9 @@ interface InsightsResult {
   campaign_history: string;
   client_brief_summary: string;
   historical_research?: HistoricalResearch;
+  /** Source, as-at date, coverage and period per data section (#156).
+   *  Optional so a brief saved before provenance existed still renders. */
+  provenance?: ProvenanceEntry[];
 }
 
 function SkeletonCard() {
@@ -811,6 +816,7 @@ export default function InsightsTool() {
                     <HistoricalResearchCard
                       data={savedResult.historical_research}
                       content={historicalSection?.content}
+                      provenance={savedResult.provenance}
                     />
 
                     {detailSections.map((section, i) => (
@@ -831,6 +837,10 @@ export default function InsightsTool() {
                             {section.content}
                           </ReactMarkdown>
                         </div>
+                        <ProvenanceFooter
+                          entries={savedResult.provenance}
+                          section={section.title}
+                        />
                       </div>
                     ))}
 
@@ -896,6 +906,7 @@ export default function InsightsTool() {
 
                     <AudienceSegmentsPanel
                       data={savedResult.audience_segments}
+                      provenance={savedResult.provenance}
                     />
 
                     {savedResult.google_trends && (
@@ -906,6 +917,10 @@ export default function InsightsTool() {
                         <p className="text-on-surface-variant text-sm leading-relaxed whitespace-pre-wrap">
                           {savedResult.google_trends}
                         </p>
+                        <ProvenanceFooter
+                          entries={savedResult.provenance}
+                          section={PROVENANCE_SECTIONS.googleTrends}
+                        />
                       </CollapsiblePanel>
                     )}
                   </div>
@@ -1095,6 +1110,7 @@ export default function InsightsTool() {
                       <HistoricalResearchCard
                         data={result.historical_research}
                         content={historicalSection?.content}
+                        provenance={result.provenance}
                       />
 
                       {/* Detail section cards */}
@@ -1116,6 +1132,12 @@ export default function InsightsTool() {
                               {section.content}
                             </ReactMarkdown>
                           </div>
+                          {/* Source, date, coverage and period for this
+                              section's figures — once per section (#156). */}
+                          <ProvenanceFooter
+                            entries={result.provenance}
+                            section={section.title}
+                          />
                         </div>
                       ))}
 
@@ -1194,11 +1216,21 @@ export default function InsightsTool() {
                             <p className="text-on-surface-variant text-sm leading-relaxed whitespace-pre-wrap">
                               {result.campaign_history}
                             </p>
+                            {/* The CTR figures are here, so the line naming
+                                the delivery export — and saying it is not the
+                                ad server — belongs here too (#156). */}
+                            <ProvenanceFooter
+                              entries={result.provenance}
+                              section={PROVENANCE_SECTIONS.clientRelationship}
+                            />
                           </CollapsiblePanel>
                         )}
 
                       {/* Audience Segments & Reach panel */}
-                      <AudienceSegmentsPanel data={result.audience_segments} />
+                      <AudienceSegmentsPanel
+                        data={result.audience_segments}
+                        provenance={result.provenance}
+                      />
 
                       {/* Google Trends panel */}
                       {result.google_trends && (
@@ -1209,6 +1241,12 @@ export default function InsightsTool() {
                           <p className="text-on-surface-variant text-sm leading-relaxed whitespace-pre-wrap">
                             {result.google_trends}
                           </p>
+                          {/* Google Trends has no markdown heading of its own,
+                              so its source line lives on the panel. */}
+                          <ProvenanceFooter
+                            entries={result.provenance}
+                            section={PROVENANCE_SECTIONS.googleTrends}
+                          />
                         </CollapsiblePanel>
                       )}
 
@@ -1270,6 +1308,10 @@ export default function InsightsTool() {
                             format_recommendations:
                               result.format_recommendations,
                             historical_research: result.historical_research,
+                            // Source, date, coverage and period per section —
+                            // the deck's appendix carries the same account of
+                            // the figures it shows (#156).
+                            provenance: result.provenance,
                           }),
                         });
                         if (!res.ok) {
@@ -1330,6 +1372,7 @@ export default function InsightsTool() {
                 open={draftModalOpen}
                 onClose={() => setDraftModalOpen(false)}
                 briefContent={result?.content || ""}
+                provenance={result?.provenance}
                 topic={topic}
                 advertiser={advertiser}
                 kpi={kpi}

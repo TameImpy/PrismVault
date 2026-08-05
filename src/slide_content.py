@@ -24,6 +24,8 @@ DECK_CONTENT_MODEL = getattr(config, "DECK_CONTENT_MODEL", "gpt-4o-mini")
 SEGMENT_TILES = 4
 PRODUCT_TILES = 3
 INSIGHT_TILES = 3
+# Appendix source lines — one per data section a brief can carry (#156).
+PROVENANCE_TILES = 6
 
 # Content caps that keep text inside its tile. Sizes and fonts are the
 # template's business — these are purely about length.

@@ -8,7 +8,7 @@ import asyncio
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from functools import partial
-from typing import Optional
+from typing import List, Optional
 
 import json
 import re
@@ -67,6 +67,22 @@ app.add_middleware(
 )
 
 
+class ProvenanceEntry(BaseModel):
+    """One data section's provenance, posted back from a brief run (#156).
+
+    Typed rather than a bare `list` because these entries are read with
+    `.get()` downstream: an untyped list of strings from any client would be an
+    AttributeError and a 500 rather than a 422. Every field defaults to "" so a
+    brief saved before a field existed still posts.
+    """
+    section: str = ""
+    source: str = ""
+    as_at: str = ""
+    coverage: str = ""
+    period: str = ""
+    cadence: str = ""
+
+
 class InsightsRequest(BaseModel):
     topic: str
     advertiser: str
@@ -113,6 +129,10 @@ class DraftEmailRequest(BaseModel):
     topic: str
     advertiser: str
     kpi: str
+    # Where the brief's figures came from (#156), posted back verbatim so the
+    # email carries the same account as the brief. Optional so an older client
+    # — or a brief saved before provenance existed — still drafts.
+    provenance: Optional[List[ProvenanceEntry]] = None
 
 
 @app.post("/api/draft-email")
@@ -128,6 +148,7 @@ async def create_draft_email(req: DraftEmailRequest, user: dict = Depends(get_cu
             advertiser=req.advertiser,
             kpi=req.kpi,
             writing_samples=writing_samples,
+            provenance=_provenance_dicts(req.provenance),
         )
         return result
     except Exception as e:
@@ -145,6 +166,12 @@ class DownloadDeckRequest(BaseModel):
     audience_segments: Optional[dict] = None
     format_recommendations: Optional[list] = None
     historical_research: Optional[dict] = None
+    provenance: Optional[List[ProvenanceEntry]] = None
+
+
+def _provenance_dicts(entries):
+    """Validated provenance back to the plain dicts src/provenance.py reads."""
+    return [e.model_dump() for e in entries] if entries else None
 
 
 def _sanitize_filename(text):
@@ -171,6 +198,8 @@ async def download_deck(req: DownloadDeckRequest, user: dict = Depends(get_curre
         slide_content["audience_segments"] = req.audience_segments
         slide_content["format_recommendations"] = req.format_recommendations
         slide_content["historical_research"] = req.historical_research
+        # The deck's appendix names the source behind every figure it shows.
+        slide_content["provenance"] = _provenance_dicts(req.provenance)
         buf = build_deck(slide_content, req.advertiser)
 
         filename = "Prism_Plan_%s_%s.pptx" % (

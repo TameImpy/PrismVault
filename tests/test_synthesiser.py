@@ -514,8 +514,69 @@ def test_generate_insights_payload_is_json_serialisable():
     result, _ = _run_generate_insights()
     revived = json.loads(json.dumps(result))
 
-    for key in ("audience_segments", "format_recommendations", "historical_research"):
+    for key in ("audience_segments", "format_recommendations", "historical_research",
+                "provenance"):
         assert revived[key] == result[key]
+
+
+# ---------------------------------------------------------------------------
+# Provenance (#156)
+#
+# Every figure a brief carries has to name the source, date, coverage and
+# period behind it. The pipeline's job is to attach the right set of sections
+# for the run — the registry itself is tested in tests/test_provenance.py.
+# ---------------------------------------------------------------------------
+
+
+def test_generate_insights_attaches_provenance_for_every_section_it_rendered():
+    result, _ = _run_generate_insights()
+
+    sections = [e["section"] for e in result["provenance"]]
+    for expected in ("Advertiser Overview", "Client Relationship",
+                     "Audience Segments & Reach", "Recommended Products"):
+        assert expected in sections
+    for entry in result["provenance"]:
+        assert entry["source"]
+        assert entry["coverage"]
+        assert entry["period"]
+
+
+def test_generate_insights_omits_provenance_for_sections_it_did_not_render():
+    """No trends requested and no research matched — no source lines for either."""
+    result, _ = _run_generate_insights()
+
+    sections = [e["section"] for e in result["provenance"]]
+    assert "Google Trends" not in sections
+    assert "Historical Research" not in sections
+
+
+def test_generate_insights_dates_research_provenance_from_the_matched_study():
+    historical = {
+        "relevant": True,
+        "prompt_text": RESEARCH_BODY,
+        "file": "travel_audience_research_2024_25.md",
+        "title": "Travel Audience Research",
+        "organisation": "Prism",
+        "fieldwork": "2024-11-26 to 2024-12-02",
+        "total_respondents": 2000,
+        "matched_on": ["city breaks"],
+    }
+    result, _ = _run_generate_insights(historical=historical)
+
+    entry = [e for e in result["provenance"] if e["section"] == "Historical Research"][0]
+    assert entry["as_at"] == "2024-12-02"
+    assert "Travel Audience Research" in entry["source"]
+
+
+def test_generate_insights_never_asks_the_model_for_a_source():
+    """Provenance is placed deterministically, so it cannot be hallucinated —
+    the prompt carries no source registry for the model to paraphrase."""
+    from src.provenance import load_provenance
+
+    _, user_prompt = _run_generate_insights()
+
+    for entry in load_provenance():
+        assert entry["source"] not in user_prompt
 
 
 def test_advertiser_research_receives_the_topic_and_brief():

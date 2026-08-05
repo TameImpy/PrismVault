@@ -130,6 +130,70 @@ def test_parse_email_handles_no_subject():
 
 
 # ---------------------------------------------------------------------------
+# Provenance (#156) — the email quotes the brief's figures, so it has to carry
+# the same account of where they came from.
+# ---------------------------------------------------------------------------
+
+PROVENANCE = [
+    {"section": "Audience Segments & Reach", "source": "data/segments.csv",
+     "as_at": "2026-07-21", "coverage": "Whole network",
+     "period": "Rolling 90 days", "cadence": "On request"},
+    {"section": "Recommended Products", "source": "The central benchmarking sheet",
+     "as_at": "2026-07-20", "coverage": "Whole network",
+     "period": "Rolling 12 months", "cadence": "Monthly"},
+]
+
+
+def _draft_with(mock_openai_cls, provenance):
+    mock_client = MagicMock()
+    mock_openai_cls.return_value = mock_client
+    mock_client.chat.completions.create.return_value = _mock_openai_response(
+        "Subject: Baking season\n\nHi [Name],\n\n2.3m readers browse baking weekly.\n\nBest"
+    )
+    return draft_email(
+        brief_content="## Key Recommendations\n1. Lead with baking.",
+        topic="baking", advertiser="Homepride", kpi="Awareness",
+        provenance=provenance,
+    ), mock_client
+
+
+@patch("src.email_drafter.OpenAI")
+def test_draft_email_footers_the_body_with_its_sources(mock_openai_cls):
+    result, _ = _draft_with(mock_openai_cls, PROVENANCE)
+
+    for entry in PROVENANCE:
+        assert entry["section"] in result["body"]
+        assert entry["source"] in result["body"]
+        assert entry["as_at"] in result["body"]
+        assert entry["coverage"] in result["body"]
+        assert entry["period"] in result["body"]
+    # The pitch itself is untouched — the sources sit beneath it.
+    assert result["body"].startswith("Hi [Name],")
+    assert result["subject"] == "Baking season"
+
+
+@patch("src.email_drafter.OpenAI")
+def test_the_source_footer_never_passes_through_the_model(mock_openai_cls):
+    """A provenance line that a copywriting prompt could reword is worth
+    nothing — it is appended verbatim, and the model is never shown it."""
+    _, mock_client = _draft_with(mock_openai_cls, PROVENANCE)
+
+    sent = "".join(
+        m["content"] for m in
+        mock_client.chat.completions.create.call_args[1]["messages"]
+    )
+    assert "data/segments.csv" not in sent
+
+
+@patch("src.email_drafter.OpenAI")
+def test_draft_email_without_provenance_is_unchanged(mock_openai_cls):
+    """An older client posting no provenance gets the plain draft, no footer."""
+    result, _ = _draft_with(mock_openai_cls, None)
+
+    assert result["body"] == "Hi [Name],\n\n2.3m readers browse baking weekly.\n\nBest"
+
+
+# ---------------------------------------------------------------------------
 # API endpoint tests
 # ---------------------------------------------------------------------------
 
@@ -150,6 +214,43 @@ def test_api_draft_email_returns_401_without_auth(api_client):
         json={"content": "brief", "topic": "t", "advertiser": "a", "kpi": "k"},
     )
     assert resp.status_code == 401
+
+
+@patch("api.main.draft_email")
+def test_api_draft_email_rejects_a_malformed_provenance_shape(mock_draft, api_client):
+    """Provenance entries are read with `.get()` downstream, so a list of
+    strings has to be refused at the edge as a 422 rather than becoming an
+    AttributeError and a 500 (the shape LESSONS_LEARNED flags for #164)."""
+    mock_draft.return_value = {"subject": "s", "body": "b"}
+    api_client.post(
+        "/api/auth/signup",
+        json={"email": "shape@immediate.co.uk", "name": "Test", "password": "password123"},
+    )
+    resp = api_client.post(
+        "/api/draft-email",
+        json={"content": "b", "topic": "t", "advertiser": "a", "kpi": "k",
+              "provenance": ["not an entry"]},
+    )
+    assert resp.status_code == 422
+    mock_draft.assert_not_called()
+
+
+@patch("api.main.draft_email")
+def test_api_draft_email_passes_provenance_through_as_plain_dicts(mock_draft, api_client):
+    """The drafter reads dicts, not pydantic models."""
+    mock_draft.return_value = {"subject": "s", "body": "b"}
+    api_client.post(
+        "/api/auth/signup",
+        json={"email": "pass@immediate.co.uk", "name": "Test", "password": "password123"},
+    )
+    resp = api_client.post(
+        "/api/draft-email",
+        json={"content": "b", "topic": "t", "advertiser": "a", "kpi": "k",
+              "provenance": [PROVENANCE[0]]},
+    )
+    assert resp.status_code == 200
+    passed = mock_draft.call_args[1]["provenance"]
+    assert passed == [PROVENANCE[0]]
 
 
 @patch("api.main.draft_email")

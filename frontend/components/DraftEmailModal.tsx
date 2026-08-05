@@ -2,10 +2,15 @@
 
 import { useState, useEffect } from "react";
 
+import { ProvenanceEntry } from "@/lib/provenance";
+
 interface DraftEmailModalProps {
   open: boolean;
   onClose: () => void;
   briefContent: string;
+  /** Where the brief's figures came from (#156). The draft quotes those
+   *  figures, so it is footed with the same sources. */
+  provenance?: ProvenanceEntry[];
   topic: string;
   advertiser: string;
   kpi: string;
@@ -18,6 +23,7 @@ export default function DraftEmailModal({
   open,
   onClose,
   briefContent,
+  provenance,
   topic,
   advertiser,
   kpi,
@@ -45,7 +51,13 @@ export default function DraftEmailModal({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ content: briefContent, topic, advertiser, kpi }),
+        body: JSON.stringify({
+          content: briefContent,
+          topic,
+          advertiser,
+          kpi,
+          provenance,
+        }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
@@ -54,7 +66,9 @@ export default function DraftEmailModal({
       const data = await res.json();
       setSubject(data.subject);
       setBody(data.body);
-      const eventName = isRegenerate ? "Draft Email Regenerated" : "Draft Email Generated";
+      const eventName = isRegenerate
+        ? "Draft Email Regenerated"
+        : "Draft Email Generated";
       track?.(eventName, {
         topic,
         advertiser,
@@ -132,7 +146,10 @@ export default function DraftEmailModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleClose} />
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={handleClose}
+      />
       <div className="relative w-full max-w-2xl mx-4 glass-card rounded-2xl border border-white/10 shadow-2xl p-6 max-h-[80vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="font-headline text-xl font-bold text-white">
@@ -142,8 +159,18 @@ export default function DraftEmailModal({
             onClick={handleClose}
             className="text-on-surface-variant hover:text-white transition-colors"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -158,8 +185,9 @@ export default function DraftEmailModal({
         {showOnboarding && (
           <div>
             <p className="text-on-surface-variant text-sm mb-4">
-              To draft emails in your voice, paste a sample email you&apos;ve sent to a client.
-              This helps the AI match your writing style. You can add more samples later.
+              To draft emails in your voice, paste a sample email you&apos;ve
+              sent to a client. This helps the AI match your writing style. You
+              can add more samples later.
             </p>
             <textarea
               value={onboardingText}
@@ -184,7 +212,9 @@ export default function DraftEmailModal({
         {loading && (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="w-8 h-8 border-2 border-accent-cyan/30 border-t-accent-cyan rounded-full animate-spin mb-4" />
-            <p className="text-on-surface-variant text-sm">Drafting your email...</p>
+            <p className="text-on-surface-variant text-sm">
+              Drafting your email...
+            </p>
           </div>
         )}
 

@@ -2,6 +2,9 @@
 
 import ReactMarkdown from "react-markdown";
 
+import ProvenanceFooter from "@/components/ProvenanceFooter";
+import { PROVENANCE_SECTIONS, ProvenanceEntry } from "@/lib/provenance";
+
 /**
  * Historical Research hero card (PRD #125 / slice #127).
  *
@@ -72,9 +75,15 @@ const bulletMarkdownComponents = {
 export default function HistoricalResearchCard({
   data,
   content,
+  provenance,
 }: {
   data?: HistoricalResearch;
   content?: string;
+  /** The brief's provenance entries (#156). The card cites the study for the
+   *  client; the footer records the same section's coverage and refresh
+   *  cadence in the shape every other section uses, so a reviewer finds the
+   *  four traceability fields in the same place throughout the brief. */
+  provenance?: ProvenanceEntry[];
 }) {
   // Conditional render: only ever appears on a relevant (matched) brief.
   if (!data || !data.relevant) return null;
@@ -156,6 +165,11 @@ export default function HistoricalResearchCard({
           </ReactMarkdown>
         </div>
       )}
+
+      <ProvenanceFooter
+        entries={provenance}
+        section={PROVENANCE_SECTIONS.historicalResearch}
+      />
     </div>
   );
 }

@@ -18,6 +18,7 @@ from src.formats import (
 )
 from src.campaign_history import get_campaign_summary, load_campaign_rows
 from src.historical_research import get_relevant_research
+from src.provenance import build_provenance
 from src.alias_table import DEFAULT_UNMATCHED_LOG_PATH
 from src.comparables import (
     get_comparables,
@@ -129,7 +130,8 @@ def generate_insights(
     """Main pipeline: gather data from all sources, synthesise with GPT-4o.
 
     Returns dict with keys: content, sources, research_skills,
-    audience_segments, google_trends.
+    audience_segments, google_trends, format_recommendations,
+    campaign_history, client_brief_summary, historical_research, provenance.
     """
     # 1. Editorial vector search disabled for now (Phase 2). `sources` stays an
     #    empty list so the return contract is unchanged for the API/frontend.
@@ -238,6 +240,15 @@ def generate_insights(
         row for row in format_catalogue if row["format"] in recommended
     ]
 
+    # 12. Attach where every figure came from (#156). Deterministic and derived
+    #     from the registry, not the model — the model is never asked to state a
+    #     source, so a provenance line cannot drift from what produced the
+    #     number. Sections this run did not render carry no line.
+    provenance = build_provenance(
+        historical_research=historical_research,
+        include_google_trends=include_google_trends,
+    )
+
     return {
         "content": content,
         "sources": sources,
@@ -248,4 +259,5 @@ def generate_insights(
         "campaign_history": campaign_history,
         "client_brief_summary": client_brief_summary,
         "historical_research": historical_research,
+        "provenance": provenance,
     }
