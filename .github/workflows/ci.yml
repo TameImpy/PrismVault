@@ -39,12 +39,21 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run tests
-        # config.py raises on a missing JWT_SECRET, so the suite cannot even
-        # import without one. This is the only variable the tests need — every
-        # OpenAI call is mocked, and DATABASE_URL falls back to SQLite.
-        # Obviously fake, and never a real secret.
+        # Both values are obviously fake and neither is ever called:
+        #   JWT_SECRET — config.py raises without one, so the suite cannot even
+        #     import.
+        #   OPENAI_API_KEY — the endpoints refuse with a 500 when it is empty,
+        #     which is a guard against a misconfigured server rather than a
+        #     real call. Every OpenAI call in the suite is mocked.
+        # DATABASE_URL is not needed: it falls back to SQLite.
+        #
+        # To check this list, run the suite in a clean `git worktree` — NOT
+        # from another directory. `load_dotenv()` resolves relative to
+        # config.py's own location, not the working directory, so it finds a
+        # developer's real .env wherever pytest is invoked from.
         env:
           JWT_SECRET: dummy-secret-for-ci
+          OPENAI_API_KEY: dummy-key-for-ci
         run: python -m pytest tests/ -v
 
   frontend:
