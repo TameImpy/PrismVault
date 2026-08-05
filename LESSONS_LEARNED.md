@@ -503,3 +503,102 @@ fixture, don't weaken the floor.
 **Transferable lesson:** a filter's position in a pipeline is part of its
 specification. "Exclude X" and "exclude X _before_ the fallback and the cap"
 produce different outputs on exactly the inputs the bug report is about.
+
+## 2026-08-05 — Restraint that isn't a rule isn't a behaviour (#164)
+
+**What went wrong.** QA reported that the Assistant handled requests for
+sensitive audiences — hearing loss, ethnicity — "sensibly": it invented nothing
+and pointed the user at the audience team. The behaviour was correct and
+entirely accidental. The Assistant had no notion of GDPR Article 9 special
+categories; what fired was the generic "if you don't know, email
+dl-audience-ads@immediate.co.uk" rule in its system prompt. It searched, found
+nothing, and fell through.
+
+**Why that mattered more than the report suggested.** Nothing in the system
+distinguished "I have no segments for this" from "this is special category
+data". The gate was the absence of matching rows in a CSV, so a differently
+worded request that _did_ hit rows would have returned segments. The right
+outcome was being produced by the wrong mechanism, which meant it was not
+reproducible.
+
+**The test that would have passed against the bug.** Asserting the user was
+referred to the audience team proves nothing here — the broken version does
+that too. The acceptance criterion had to be that the special-category path
+_fired_, so `chat()` now returns a `special_category` field naming the Article 9
+category (None on ordinary answers) and `chat_stream()` emits a matching event.
+The signal exists so the distinction can be asserted; without it the fix is
+untestable in principle, not just in practice.
+
+**A prompt rule alone could not have been the fix.** The debrief decision (D10)
+described it as a rule in the Assistant prompt. A prompt rule is not
+deterministic and cannot be tested without a live model, so it went in as the
+_second_ layer: `detect_special_category()` gates the request in code before any
+API call, and the prompt rule catches wordings the term list misses. Both land
+on the same message.
+
+**Gate the tool call, not just the user's words.** The model rewrites what the
+user asked into a `search_segments` query — "who struggles to follow the telly?"
+becomes a search for "hearing loss". Checking only the user's text would have
+let the model launder a sensitive request into segments. Both `chat()` and
+`chat_stream()` check the tool arguments as well and short-circuit there, which
+is also what covers a sensitive ask carried over from an earlier turn. Only the
+_latest_ user turn is scanned, deliberately: scanning the whole history would
+leave a conversation permanently gated after one sensitive word.
+
+**Over-blocking was the real design risk.** The catalogue sells "Health
+Conscious Foodies", "Gym Membership Considerers", "Gluten Free Fans", "Political
+Podcast Listeners" and "Peaky Blinders Fans". A naive keyword list on "health",
+"political" or a bare `\brace\b` withdraws live products. Two rules kept it
+honest: match _conditions and identities_ ("hearing loss", "diabetes",
+"political affiliation") rather than interests, and prefer multi-word phrases
+wherever the bare word has an innocent reading. The guard is
+`test_no_segment_in_the_catalogue_is_flagged`, which sweeps all 1,385 segments
+through the gate. It caught a real over-block on the first run: `alcoholi\w+`
+fires on "Non-alcoholic Drink Fans".
+
+**One boundary left open on purpose.** Pregnancy is health data under Article 9,
+and the catalogue sells Pregnancy Fans and Conception/Early Pregnancy today.
+Adding it to the term list would withdraw a live product on an engineering
+decision, so it is deliberately excluded and documented in
+`src/special_categories.py`. That is a commercial and legal call to make
+explicitly, not a line to slip into a regex.
+
+**Transferable lesson:** when a system does the right thing for the wrong
+reason, the work is not "keep the behaviour" — it is to build the reason, then
+make the reason observable. And any deny-list needs an automated sweep over the
+things it must _not_ match, or it will quietly grow into an outage.
+
+**Postscript — a gate that crashes is a gate that isn't applied.** The test agent
+found that `detect_special_category` assumed a string. OpenAI allows message
+`content` to be a _list of parts_, and a list is truthy, so it sailed past the
+falsy guard and hit `re.search`, which raises `TypeError`. Not reachable from
+today's frontend (`content: string`), but `AssistantChatRequest.messages` is an
+untyped `list`, so nothing at the API layer stops that shape arriving. It was
+tempting to leave it — the endpoint's blanket `except Exception` turns it into a
+500, so no segments leak. That reasoning is wrong for a restriction: failing
+loudly is not the same as restricting, the user gets an error instead of the
+explanation the whole ticket was about, and a direct caller of `chat()` gets an
+unhandled exception. `_as_text` now flattens any content shape so an unfamiliar
+input is still _scanned_ rather than skipped.
+
+**Postscript 2 — a catalogue sweep is not a phrasing sweep.** The spec review
+caught the gap in my own over-blocking guard: sweeping all 1,385 segment _names_
+through the gate proves no segment trips it, and proves nothing about what a
+salesperson types. Every real false positive lived in phrasings, not names —
+"Christian Dior shoppers" (blocked as religion), "Brexit anniversary content"
+(political), "over the counter medication buyers" (health), "South Asian cooking
+recipes readers" (ethnicity). The reverse held too: "who has trouble hearing"
+and "people with hearing difficulties" — Abel's own defect, reworded — sailed
+straight through. A deny-list needs its guard pointed at the _input distribution_
+it will actually see, and both directions have to be pinned by tests.
+
+**The advertiser is not the audience.** The sharpest of those false positives was
+structural rather than a bad regex: charities are named after the thing they
+fight, and advertiser is a first-class field in this product, so "segments for
+Cancer Research UK" is a brief about a client. Stripping organisation names
+(`_ORGANISATION_NAMES`, matched on suffixes like "Research UK", "Society",
+"Foundation") before scanning fixes the whole class, and because only the name is
+removed, "cancer patients for Cancer Research UK" still blocks. The line is the
+_targeting basis_, not the advertiser's industry — which is why "audiences for a
+hearing aid brand" stays blocked: that is #164's own example wearing a client's
+hat.

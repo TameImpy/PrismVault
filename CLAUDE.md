@@ -65,6 +65,8 @@ Prism Data Vault is a RAG-based advertising strategy insights tool. The frontend
 - `POST /api/auth/logout` — clear cookie
 - `GET /api/me` — current user (requires auth)
 - `POST /api/insights` — generate brief (requires auth). Accepts `{topic, advertiser, kpi, include_google_trends, client_brief}`
+- `POST /api/assistant/chat` — Prism Assistant reply (requires auth) → `{role, content, special_category}`
+- `POST /api/assistant/chat/stream` — the same, as SSE (`content` / `status` / `special_category` / `done` / `error` events)
 - `GET /api/leaderboard` — top 10 Tetris scores (optional `?player_name=X` for rank)
 - `POST /api/leaderboard` — submit Tetris score
 
@@ -91,6 +93,12 @@ Prism Data Vault is a RAG-based advertising strategy insights tool. The frontend
 
 **Pipeline flow**:
 `api/main.py` → `synthesiser.generate_insights()` → gathers all sources → assembles prompt from `src/prompts.py` → calls GPT-4o → returns dict with synthesis + raw data for UI.
+
+**Prism Assistant** (`src/assistant.py`, `POST /api/assistant/chat` and `/api/assistant/chat/stream`):
+
+A separate chat surface over the same `data/segments.csv`, with its own knowledge base in `data/assistant/*.md` and a `search_segments` function-calling tool. It answers "what segments exist?" rather than "what should I buy?", so `MIN_SEGMENT_REACH` does not apply to it.
+
+Requests concerning GDPR Article 9 special category data — health conditions, ethnicity, beliefs, political opinions, trade union membership, sex life or orientation, genetic or biometric data — are gated by `src/special_categories.py` before any model call, and again on the tool arguments the model derives, so no segments are returned however the request is worded. The gate is deterministic code, not only a prompt rule, so the special-category path can be asserted in tests and told apart from the generic "I don't know" fallback: `chat()` returns a `special_category` field and `chat_stream()` emits a `special_category` event. The rule is also in the system prompt for wordings the term list misses. Match conditions and identities, never interests — the catalogue sells health-conscious, fitness and gluten-free segments, and `test_no_segment_in_the_catalogue_is_flagged` fails if a term ever starts over-blocking them.
 
 ### Frontend (Next.js 16)
 

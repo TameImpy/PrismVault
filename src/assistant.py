@@ -6,6 +6,11 @@ from collections import Counter
 from openai import OpenAI
 
 import config
+from src.special_categories import (
+    SPECIAL_CATEGORY_MESSAGE,
+    SPECIAL_CATEGORY_PROMPT_RULE,
+    detect_special_category,
+)
 
 ASSISTANT_DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "assistant")
 
@@ -107,6 +112,9 @@ Rules:
 4. When discussing segments, include sizes where available.
 5. You can use the search_segments tool to look up specific segments from the segment library.
 6. Format responses for readability: use blank lines between paragraphs, bullet points for lists, and bold headers (e.g. **Section Name:**) to break up distinct topics. Never write long blocks of unbroken text.
+7. Special category requests are handled by the rule below, which overrides rule 2 — they are a restriction, not a gap in your knowledge.
+
+{special_category_rule}
 
 ## Knowledge Base
 
@@ -150,6 +158,44 @@ def _build_system_prompt():
     return SYSTEM_PROMPT_TEMPLATE.format(
         knowledge_base=knowledge,
         category_summary=categories,
+        special_category_rule=SPECIAL_CATEGORY_PROMPT_RULE,
+    )
+
+
+def _latest_user_text(messages):
+    """The text of the most recent user turn, or "" if there is none.
+
+    Only the latest turn is scanned. Scanning the whole history would leave a
+    conversation permanently gated once a sensitive word appeared in it, which is
+    the over-blocking #164 warns against; the tool-call gate below is what catches
+    a sensitive request the user carried over from an earlier turn, because the
+    model has to name it in a segment query before segments can come back.
+    """
+    for message in reversed(messages or []):
+        if isinstance(message, dict) and message.get("role") == "user":
+            return message.get("content") or ""
+    return ""
+
+
+def _special_category_reply(category):
+    return {
+        "role": "assistant",
+        "content": SPECIAL_CATEGORY_MESSAGE,
+        "special_category": category,
+    }
+
+
+def _special_category_events(category):
+    """The streaming form of `_special_category_reply`."""
+    yield {"type": "special_category", "category": category}
+    yield {"type": "content", "text": SPECIAL_CATEGORY_MESSAGE}
+    yield {"type": "done"}
+
+
+def _special_category_in_tool_args(args):
+    """The Article 9 category a search_segments call concerns, or None."""
+    return detect_special_category(
+        " ".join(str(args.get(key) or "") for key in ("query", "category"))
     )
 
 
@@ -157,8 +203,14 @@ def chat(messages):
     """Send a chat request and return the assistant's response.
 
     Handles a single round of function calling if the model requests it.
-    Returns a dict with keys: role, content.
+    Returns a dict with keys: role, content, special_category. `special_category`
+    names the Article 9 category when the request was restricted (issue #164) and
+    is None otherwise, so callers can tell a restriction from an ordinary answer.
     """
+    category = detect_special_category(_latest_user_text(messages))
+    if category:
+        return _special_category_reply(category)
+
     system_prompt = _build_system_prompt()
     full_messages = [{"role": "system", "content": system_prompt}] + messages
 
@@ -177,6 +229,13 @@ def chat(messages):
     if choice.message.tool_calls:
         tool_call = choice.message.tool_calls[0]
         args = json.loads(tool_call.function.arguments)
+
+        # The model can reach a special category by a wording the user never used.
+        # Gate the lookup itself so no segments come back either way.
+        tool_category = _special_category_in_tool_args(args)
+        if tool_category:
+            return _special_category_reply(tool_category)
+
         results = search_segments(
             query=args.get("query", ""),
             category=args.get("category"),
@@ -203,6 +262,7 @@ def chat(messages):
     return {
         "role": "assistant",
         "content": choice.message.content,
+        "special_category": None,
     }
 
 
@@ -212,10 +272,18 @@ def chat_stream(messages):
     Event types:
       {"type": "content", "text": "..."}  — a text token
       {"type": "status", "message": "..."} — status update (e.g. during tool call)
+      {"type": "special_category", "category": "..."} — the request concerned
+          GDPR Article 9 data and was answered with the restricted message
+          instead of segments (issue #164)
       {"type": "done"} — stream complete
 
     Handles a single round of function calling if the model requests it.
     """
+    category = detect_special_category(_latest_user_text(messages))
+    if category:
+        yield from _special_category_events(category)
+        return
+
     system_prompt = _build_system_prompt()
     full_messages = [{"role": "system", "content": system_prompt}] + messages
 
@@ -256,9 +324,21 @@ def chat_stream(messages):
 
     # If there was a tool call, execute it and stream the follow-up
     if tool_call_id and tool_call_name == "search_segments":
+        args = json.loads(tool_call_args)
+
+        # Same gate as chat(): a query the model derived can be special category
+        # even when the user's own wording was not. Any content streamed before the
+        # tool call has already reached the user, so a preamble can precede the
+        # restricted message; in practice the model emits a tool call or prose, not
+        # both, and buffering every token on the chance of a gate would cost the
+        # streaming this endpoint exists for.
+        tool_category = _special_category_in_tool_args(args)
+        if tool_category:
+            yield from _special_category_events(tool_category)
+            return
+
         yield {"type": "status", "message": "Searching segments..."}
 
-        args = json.loads(tool_call_args)
         results = search_segments(
             query=args.get("query", ""),
             category=args.get("category"),
