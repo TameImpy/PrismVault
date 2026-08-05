@@ -29,6 +29,9 @@ interface RawResult {
   href?: string;
   title?: string;
   body: string;
+  /** True when this hit came from a topic-anchored search rather than a
+   *  brand-only one. Optional so an older cached brief still parses. */
+  topic_anchored?: boolean;
 }
 
 interface SkillResult {

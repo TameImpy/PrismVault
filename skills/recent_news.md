@@ -5,11 +5,15 @@ queries:
   - '"{brand}" news announcements latest'
   - '"{brand}" campaign launch partnership'
   - '"{brand}" advertising sponsorship {year}'
+topic_queries:
+  - '"{brand}" {topic} news {year}'
+  - '"{brand}" {topic} campaign launch'
 max_results_per_query: 3
 timelimit: "y"
 ---
 
 Summarise the following search results about {brand} into a detailed digest of recent activity:
+
 - New campaigns or marketing initiatives (include campaign names and themes)
 - Product launches or updates
 - Partnerships, sponsorships, or collaborations

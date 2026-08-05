@@ -135,8 +135,18 @@ def generate_insights(
     #    empty list so the return contract is unchanged for the API/frontend.
     sources = []
 
-    # 2. Skill-based advertiser research
-    skill_results = research_advertiser(advertiser)
+    # 2. Summarise the client brief. This runs up front rather than at step 7
+    #    because the advertiser research reads it as context, so it has to
+    #    exist before step 2b. Still one call — the summary is reused below.
+    client_brief_summary = summarise_brief(client_brief)
+    # summarise_brief() returns a "no brief" sentinel for empty input; research
+    # wants an empty string in that case, not a sentence about the absence.
+    brief_context = client_brief_summary if (client_brief or "").strip() else ""
+
+    # 2b. Skill-based advertiser research, anchored to the brief's topic. Without
+    #     the topic the searches run on the advertiser name alone and come back
+    #     describing whatever the brand is best known for (#155).
+    skill_results = research_advertiser(advertiser, topic=topic, client_brief=brief_context)
     advertiser_research = _format_advertiser_research(skill_results)
 
     # 3. Recommend audience segments (LLM term-expansion + deterministic filter).
@@ -171,8 +181,7 @@ def generate_insights(
         if comparables_block:
             campaign_history = campaign_history + "\n\n" + comparables_block
 
-    # 7. Summarise client brief if provided
-    client_brief_summary = summarise_brief(client_brief)
+    # 7. (Client brief summarised at step 2 — the research step needs it first.)
 
     # 7b. Deterministic keyword gate over the proprietary research catalogue.
     #     On a match the whole file body is woven into the prompt; on a no-match
