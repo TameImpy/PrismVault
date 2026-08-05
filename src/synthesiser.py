@@ -235,9 +235,15 @@ def generate_insights(
     #     Selection is deterministic string matching and every metric comes
     #     straight from the CSV, so the deck never has to work out which format
     #     is which by re-reading the generated brief.
-    recommended = set(guardrail["recommended"])
+    #
+    #     Order follows the brief, not the catalogue. Both consumers sit beside
+    #     the brief's own list — the reason strip under it (#163) and the deck's
+    #     product tiles, which take the first three — so "first" has to mean the
+    #     format the brief led with, or the reasons read in one order and the
+    #     recommendations they explain in another.
+    by_name = {row["format"]: row for row in format_catalogue}
     format_recommendations = [
-        row for row in format_catalogue if row["format"] in recommended
+        by_name[name] for name in guardrail["recommended"] if name in by_name
     ]
 
     # 12. Attach where every figure came from (#156). Deterministic and derived

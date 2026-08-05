@@ -644,3 +644,50 @@ def test_advertiser_research_gets_no_brief_context_when_none_supplied():
         )
 
     assert mock_research.call_args.kwargs["client_brief"] == ""
+
+
+def test_recommended_formats_come_back_in_the_order_the_brief_listed_them():
+    """The rows the brief returns are what the format reason strip renders (#163)
+    and what the deck's product tiles take its first three from. Both sit next
+    to the brief's own list, so "first" has to mean the brief's first, not the
+    catalogue's — otherwise the reasons read in one order and the products they
+    explain in another.
+    """
+    from unittest.mock import patch, MagicMock
+
+    # The brief recommends two formats, deliberately in the reverse of the
+    # order the catalogue holds them in.
+    content = (
+        "## Recommended Products\n"
+        "- **Host Read** — first\n"
+        "- **Standard display - MPU** — second\n"
+    )
+    catalogue = [
+        {"format": "Standard display - MPU", "best_for_brief": "Efficient reach"},
+        {"format": "Host Read", "best_for_brief": "Trusted endorsement"},
+        {"format": "Never Recommended", "best_for_brief": "Not in this brief"},
+    ]
+
+    mock_response = MagicMock()
+    mock_response.choices = [MagicMock()]
+    mock_response.choices[0].message.content = content
+
+    with patch("src.synthesiser.research_advertiser", return_value=[]), \
+         patch("src.synthesiser.expand_query", return_value={"keywords": [], "categories": []}), \
+         patch("src.synthesiser.recommend_segments", return_value={"matched": False, "note": "", "query_terms": [], "platforms": []}), \
+         patch("src.synthesiser.get_campaign_summary", return_value={"summary": "none", "campaigns": []}), \
+         patch("src.synthesiser.load_format_rows", return_value=catalogue), \
+         patch("src.synthesiser.load_format_names", return_value=[r["format"] for r in catalogue]), \
+         patch("src.synthesiser.OpenAI") as mock_openai_cls:
+
+        mock_client = MagicMock()
+        mock_client.chat.completions.create.return_value = mock_response
+        mock_openai_cls.return_value = mock_client
+
+        from src.synthesiser import generate_insights
+        result = generate_insights(topic="t", advertiser="A", kpi="Awareness",
+                                   include_google_trends=False)
+
+    assert [row["format"] for row in result["format_recommendations"]] == [
+        "Host Read", "Standard display - MPU",
+    ]

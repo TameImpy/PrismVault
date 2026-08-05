@@ -46,6 +46,8 @@ When research is present, produce 2–3 findings bullets, each tailored specific
 ## Audience Segments & Reach
 Recommend the most relevant targetable audience segments for this brief, based on the Audience Segments & Reach data provided. The data is split by platform (AP = modelled first-party audience, broad reach; Permutive = behavioural, recently engaged browsers) — present them as two separate lists, each in its own scale, and state the one-line framing for each so a broad modelled audience is never oversold as precise intent.
 
+Each segment carries a "Matched on:" note naming the terms that selected it. Treat this as context for your own reasoning — it tells you how strong and how on-topic a match is — but do **not** reproduce it in the prose. The user is already shown that line beside the reach figures.
+
 For each segment, lead with the plain-English "why" and quote its reach (user count) **verbatim** exactly as given in the data. Never invent, estimate, round, or alter a reach figure. **Never sum, total, or combine reach across segments** — segments overlap and are not de-duplicated, so no combined figure is valid; include a brief note to that effect. If the data states no strongly-matched segments were found, say so honestly rather than inventing any.
 
 ## Recommended Products

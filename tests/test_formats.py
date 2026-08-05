@@ -1,4 +1,5 @@
 import os
+import re
 import tempfile
 import csv
 
@@ -610,3 +611,48 @@ def test_recommended_is_empty_when_the_brief_names_no_confirmed_format():
 
     assert result["recommended"] == []
     assert result["unrecognised"] == ["Totally Fake Format 9000"]
+
+
+# --- Selection rationale (#163) -------------------------------------------
+#
+# The reason a format was recommended already existed in the catalogue as
+# `best_for_brief`; #163 is about it reaching the screen. Nothing here derives
+# a reason — these guard the two ways the surfacing can silently break.
+
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def test_every_catalogue_format_can_say_what_it_suits():
+    """A recommendation with no reason is the state #163 was raised about, so
+    the catalogue is checked for gaps here rather than discovered as a blank
+    line under a format name in a client-facing brief."""
+    rows = load_format_rows()
+    assert rows, "the real format catalogue is empty — has the CSV moved?"
+
+    missing = [row["format"] for row in rows if not row["best_for_brief"].strip()]
+    assert not missing, (
+        "these catalogue formats have no best_for_brief, so they would be "
+        "recommended with no reason shown: %s" % ", ".join(missing)
+    )
+
+
+def test_the_brief_still_writes_the_heading_the_format_reasons_bind_to():
+    """The UI attaches the format reasons to the brief's "Recommended Products"
+    section by matching a literal in `lib/formatRecommendations.ts` against a
+    `## ` heading the model writes. Rename either half and the reasons vanish
+    with no error, so the two are pinned together across the language boundary.
+    """
+    from src.prompts import SYSTEM_PROMPT
+
+    path = os.path.join(PROJECT_ROOT, "frontend", "lib", "formatRecommendations.ts")
+    with open(path, encoding="utf-8") as f:
+        source = f.read()
+
+    match = re.search(r'RECOMMENDED_PRODUCTS_SECTION = "([^"]+)"', source)
+    assert match, "RECOMMENDED_PRODUCTS_SECTION is gone — has it been renamed?"
+
+    heading = match.group(1)
+    assert "## %s" % heading in SYSTEM_PROMPT, (
+        "the brief no longer has a '%s' heading for the format reasons to "
+        "attach to" % heading
+    )

@@ -408,6 +408,196 @@ def test_floor_is_applied_at_recommendation_time_not_at_load(tmp_path):
     assert loaded[0]["reach"] == "13"
 
 
+# --- Selection rationale (#163) -------------------------------------------
+#
+# Every recommended segment says, in one line and in the planner's own words,
+# which terms put it there. The wording is placed deterministically from the
+# same weights that ranked the segment, so a reason can never drift from what
+# actually selected it.
+
+
+def _reasons(payload):
+    """{segment_name: match_reason} across every platform in the payload."""
+    return {
+        s["segment_name"]: s["match_reason"]
+        for p in payload["platforms"] for s in p["segments"]
+    }
+
+
+def test_each_segment_names_the_terms_that_drove_its_match():
+    payload = recommend_segments(
+        advertiser="Homepride", topic="baking", segments=_fixtures(),
+        expansion={"keywords": ["baking", "wine"], "categories": []},
+    )
+    reasons = _reasons(payload)
+    assert reasons["Home Baking Intenders"] == "Matched on: baking"
+    assert reasons["Baking Fans"] == "Matched on: baking"
+    # A segment that came in on a different term names that term, not "baking".
+    assert reasons["White Wine fans"] == "Matched on: wine"
+
+
+def test_the_reason_names_the_most_telling_terms_first():
+    # "gut" hits one segment, "food" hits all eleven — the rare term is what
+    # actually selected the niche segment, so it is what the line leads with.
+    segs = [
+        {"segment_name": "Gut-Friendly Fans", "platform": "Permutive", "reach": "40000",
+         "category": "Food & Drink", "description": "browsed for gut friendly food content",
+         "plain_english": "Browses gut-friendly content", "code": "1",
+         "frequency": "R", "window": "All Time", "icon_key": "food-drink"},
+    ]
+    segs += [
+        {"segment_name": "Food Fans %d" % i, "platform": "Permutive",
+         "reach": str(1000000 + i), "category": "Food & Drink",
+         "description": "browsed for food content", "plain_english": "Browses food",
+         "code": str(100 + i), "frequency": "R", "window": "All Time",
+         "icon_key": "food-drink"}
+        for i in range(10)
+    ]
+    payload = recommend_segments(
+        advertiser="Yakult", topic="gut health", segments=segs,
+        expansion={"keywords": ["food", "gut"], "categories": []},
+    )
+    # Both terms hit this segment; the discriminating one is named first,
+    # regardless of the order the expansion happened to return them in.
+    assert _reasons(payload)["Gut-Friendly Fans"] == "Matched on: gut, food"
+
+
+def test_the_reason_stays_one_line():
+    segs = [
+        {"segment_name": "Baking Fans", "platform": "Permutive", "reach": "120000",
+         "category": "Food & Drink",
+         "description": "browsed baking bread cake pastry dough content",
+         "plain_english": "Browses baking content", "code": "1",
+         "frequency": "R", "window": "All Time", "icon_key": "food-drink"},
+    ]
+    payload = recommend_segments(
+        advertiser="X", topic="baking", segments=segs,
+        # Expansion returns short phrases, not single words — the length guard
+        # below is only worth anything against realistic terms.
+        expansion={"keywords": ["home baking", "artisan bread", "celebration cake",
+                                "puff pastry", "sourdough dough starter"],
+                   "categories": []},
+    )
+    reason = _reasons(payload)["Baking Fans"]
+    # Five matched terms would be a paragraph; the line names the top few.
+    assert reason.count(",") <= 2
+    assert len(reason) < 80
+
+
+def test_a_category_only_match_says_so_rather_than_naming_no_terms():
+    # "Rose Enthusiasts" arrives on the category rung of the ladder — no term
+    # touches it (the category name is part of the searchable text, so the
+    # keyword here deliberately shares no stem with "Gardening"). Saying
+    # "Matched on category: Gardening" is what lets a reader see it is a
+    # broader, weaker match than a term hit.
+    segs = [
+        {"segment_name": "Allotment Growers", "platform": "Permutive", "reach": "50000",
+         "category": "Gardening", "description": "browsed for allotment content",
+         "plain_english": "Browses allotment content", "code": "1",
+         "frequency": "R", "window": "All Time", "icon_key": "gardening"},
+        {"segment_name": "Rose Enthusiasts", "platform": "Permutive", "reach": "40000",
+         "category": "Gardening", "description": "browsed for rose growing content",
+         "plain_english": "Browses rose content", "code": "2",
+         "frequency": "R", "window": "All Time", "icon_key": "gardening"},
+    ]
+    payload = recommend_segments(
+        advertiser="GardenCo", topic="allotments", segments=segs,
+        expansion={"keywords": ["allotment"], "categories": ["Gardening"]},
+    )
+    reasons = _reasons(payload)
+    assert reasons["Allotment Growers"] == "Matched on: allotment"
+    assert reasons["Rose Enthusiasts"] == "Matched on category: Gardening"
+
+
+def test_a_term_that_only_hit_the_category_label_says_so():
+    """The segment's category is part of its searchable text, so a term can be
+    a genuine keyword hit while touching nothing but the label. Left unmarked,
+    "Cruise goers — Matched on: cruise, holiday" reads as though the segment is
+    about holidays when only its shelf is. Marking it keeps the line agreeing
+    with the score (the hit is real and did rank it) while still letting a
+    reader see how thin it is."""
+    segs = [
+        {"segment_name": "Cruise goers", "platform": "Permutive", "reach": "80000",
+         "category": "Holidays", "description": "browsed cruise content",
+         "plain_english": "Browses cruise content", "code": "1",
+         "frequency": "R", "window": "All Time", "icon_key": "travel"},
+    ]
+    payload = recommend_segments(
+        advertiser="Saga", topic="cruises", segments=segs,
+        expansion={"keywords": ["cruise", "holiday"], "categories": []},
+    )
+    reason = _reasons(payload)["Cruise goers"]
+    # "cruise" is in the name and description; "holiday" is only the shelf.
+    assert reason == "Matched on: cruise, holiday (category)"
+
+
+def test_a_term_in_the_name_or_description_is_not_marked_as_a_category_hit():
+    segs = [
+        {"segment_name": "Holiday Gifting Fans", "platform": "Permutive",
+         "reach": "80000", "category": "Holidays",
+         "description": "browsed holiday gifting content",
+         "plain_english": "Browses holiday gifting", "code": "1",
+         "frequency": "R", "window": "All Time", "icon_key": "travel"},
+    ]
+    payload = recommend_segments(
+        advertiser="X", topic="holidays", segments=segs,
+        expansion={"keywords": ["holiday"], "categories": []},
+    )
+    assert _reasons(payload)["Holiday Gifting Fans"] == "Matched on: holiday"
+
+
+def test_the_reason_names_terms_not_scoring_mechanics():
+    payload = recommend_segments(
+        advertiser="Homepride", topic="baking", segments=_fixtures(),
+        expansion={"keywords": ["baking"], "categories": []},
+    )
+    for reason in _reasons(payload).values():
+        assert reason
+        lowered = reason.lower()
+        for mechanic in ("score", "weight", "idf", "relevance", "rank", "stem"):
+            assert mechanic not in lowered
+
+
+def test_a_reason_only_names_terms_the_segment_actually_contains():
+    # The guard that makes the line diagnosable: if a reason could name a term
+    # absent from the segment, a reader could not use it to spot a bad match.
+    payload = recommend_segments(
+        advertiser="Yakult", topic="gut health", segments=_fixtures(),
+        expansion={"keywords": ["baking", "wine", "crypto"], "categories": []},
+    )
+    for plat in payload["platforms"]:
+        for seg in plat["segments"]:
+            haystack = " ".join([
+                seg["segment_name"], seg["description"], seg["category"],
+            ]).lower()
+            terms = seg["match_reason"].replace("Matched on:", "").split(",")
+            for term in terms:
+                assert term.strip().lower()[:4] in haystack
+
+
+def test_the_prompt_sees_the_same_reason_the_user_does():
+    # The model writes the Audience Timing prose. Showing it the match terms
+    # tells it how on-topic each segment is, so its prose cannot offer a
+    # different account of why a segment is there. The prompt tells it not to
+    # reproduce the line — the user is shown it beside the figures already.
+    payload = recommend_segments(
+        advertiser="Homepride", topic="baking", segments=_fixtures(),
+        expansion={"keywords": ["baking"], "categories": []},
+    )
+    text = format_audience_segments(payload)
+    assert "Matched on: baking" in text
+
+
+def test_the_prompt_is_told_not_to_reprint_the_match_line():
+    """The rendered data and the instruction governing it are two halves of one
+    pair — drop the instruction and the model starts writing internal matching
+    vocabulary into a brief a client may read."""
+    from src.prompts import SYSTEM_PROMPT
+
+    assert "Matched on:" in SYSTEM_PROMPT
+    assert "not** reproduce it" in SYSTEM_PROMPT
+
+
 def _fake_client(content):
     """A stand-in OpenAI client whose completion returns `content`."""
     client = MagicMock()

@@ -14,9 +14,11 @@ import HistoricalResearchCard, {
   HistoricalResearch,
 } from "@/components/HistoricalResearchCard";
 import ProvenanceFooter from "@/components/ProvenanceFooter";
+import FormatRationale from "@/components/FormatRationale";
 import { useAnalytics } from "@/components/AnalyticsProvider";
 import { useAuth } from "@/contexts/AuthContext";
 import { AudienceSegmentsPayload } from "@/lib/audienceSegments";
+import { FormatRecommendation } from "@/lib/formatRecommendations";
 import { PROVENANCE_SECTIONS, ProvenanceEntry } from "@/lib/provenance";
 
 interface Source {
@@ -41,23 +43,6 @@ interface SkillResult {
   raw_results: RawResult[];
   processed_summary: string;
   error?: string;
-}
-
-/**
- * One row of the ad-format catalogue, verbatim from the backend. Carried
- * through the deck download so CTR and viewability are placed on the slide as
- * sourced, never re-read out of the generated brief.
- */
-interface FormatRecommendation {
-  format: string;
-  format_family: string;
-  ctr: string;
-  viewability: string;
-  indicative_cost: string;
-  primary_objective: string;
-  secondary_objective: string;
-  best_for_brief: string;
-  best_for_advertiser_type: string;
 }
 
 interface InsightsResult {
@@ -837,6 +822,12 @@ export default function InsightsTool() {
                             {section.content}
                           </ReactMarkdown>
                         </div>
+                        {/* Why each recommended format was chosen — the
+                            catalogue's own words (#163). */}
+                        <FormatRationale
+                          rows={savedResult.format_recommendations}
+                          section={section.title}
+                        />
                         <ProvenanceFooter
                           entries={savedResult.provenance}
                           section={section.title}
@@ -1132,6 +1123,14 @@ export default function InsightsTool() {
                               {section.content}
                             </ReactMarkdown>
                           </div>
+                          {/* Why each recommended format was chosen — the
+                              catalogue's own words (#163). Reason first, then
+                              source: a reader asks "why this?" before "where
+                              did the number come from?". */}
+                          <FormatRationale
+                            rows={result.format_recommendations}
+                            section={section.title}
+                          />
                           {/* Source, date, coverage and period for this
                               section's figures — once per section (#156). */}
                           <ProvenanceFooter

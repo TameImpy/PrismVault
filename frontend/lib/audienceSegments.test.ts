@@ -5,6 +5,7 @@ import {
   visiblePlatforms,
   isEmptyState,
   segmentEvidence,
+  segmentMatchReason,
   AudienceSegmentsPayload,
   AudienceSegment,
 } from "./audienceSegments";
@@ -20,6 +21,7 @@ function segment(overrides: Partial<AudienceSegment> = {}): AudienceSegment {
     code: "101",
     frequency: "R",
     window: "90 Days",
+    match_reason: "Matched on: baking, cake",
     ...overrides,
   };
 }
@@ -101,5 +103,22 @@ describe("segmentEvidence", () => {
 
   it("is empty when there is no description", () => {
     expect(segmentEvidence(segment({ description: "" }))).toBe("");
+  });
+});
+
+describe("segmentMatchReason", () => {
+  it("carries the backend's line through verbatim", () => {
+    expect(segmentMatchReason(segment())).toBe("Matched on: baking, cake");
+  });
+
+  it("is empty for a brief saved before match reasons existed", () => {
+    // The field is optional on the wire — an older saved brief has no reason
+    // and must render the segment without one, not the string "undefined".
+    const { match_reason, ...older } = segment();
+    expect(segmentMatchReason(older as AudienceSegment)).toBe("");
+  });
+
+  it("is empty when the backend had nothing to say", () => {
+    expect(segmentMatchReason(segment({ match_reason: "   " }))).toBe("");
   });
 });

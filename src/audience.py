@@ -156,16 +156,72 @@ def _keyword_weights(segments, keywords):
     return weights
 
 
-def _relevance_score(segment, keyword_weights):
-    """Sum of matched keyword weights; matches in the name count for more."""
-    haystack = _segment_haystack(segment)
+def _keyword_contributions(segment, keyword_weights):
+    """What each matching keyword contributed to this segment's rank.
+
+    One list of `(contribution, keyword, in_body)`, highest contribution first,
+    ties broken by the term itself so the order is stable rather than however
+    the expansion happened to list them. `in_body` records whether the term
+    touched the segment's name or description as opposed to only its category
+    label — the score does not care, but the reason line does.
+
+    This is the single statement of the scoring rule: `_relevance_score` sums
+    it and `_match_reason` names its top few, so what a user is told selected a
+    segment cannot fall out of step with what did.
+    """
     name_stems = set(_tokenise(segment.get("segment_name", "")))
-    score = 0.0
+    body_stems = name_stems | set(_tokenise(segment.get("description", "")))
+    haystack = _segment_haystack(segment)
+
+    hits = []
     for kw, weight in keyword_weights.items():
         kw_stems = set(_tokenise(kw))
         if kw_stems & haystack:
-            score += weight * (1.5 if (kw_stems & name_stems) else 1.0)
-    return score
+            # A hit in the name counts for more than one in the description.
+            contribution = weight * (1.5 if (kw_stems & name_stems) else 1.0)
+            hits.append((contribution, kw, bool(kw_stems & body_stems)))
+    hits.sort(key=lambda hit: (-hit[0], hit[1]))
+    return hits
+
+
+def _relevance_score(segment, keyword_weights):
+    """Sum of matched keyword weights; matches in the name count for more."""
+    return sum(hit[0] for hit in _keyword_contributions(segment, keyword_weights))
+
+
+# How many terms a match reason names. Three shows the shape of a match and
+# still reads as one line beside the segment.
+_MAX_REASON_TERMS = 3
+
+
+def _match_reason(segment, keyword_weights):
+    """One line saying why this segment was recommended, in the user's words (#163).
+
+    It names terms, never mechanics: a planner reading "Matched on: hearing,
+    over 65s" on a hearing-aids brief can see for themselves that the match is
+    demographic rather than subject-led, which is the diagnosis the ticket was
+    raised to make possible.
+
+    Two kinds of thin match are marked rather than hidden, because hiding them
+    would make the line disagree with the ranking that produced it:
+
+    - A term that touched only the segment's *category* is a real hit and did
+      score — the category is part of the searchable text — but "Cruise goers —
+      Matched on: cruise, holiday" reads as though the segment were about
+      holidays when only its shelf is. It is marked "(category)".
+    - A segment that no term touched at all arrived on the category rung of the
+      match ladder, and says so: a broader, weaker claim than a term hit, and
+      reading as much is the point.
+    """
+    hits = _keyword_contributions(segment, keyword_weights)[:_MAX_REASON_TERMS]
+    if hits:
+        return "Matched on: %s" % ", ".join(
+            kw if in_body else "%s (category)" % kw for _, kw, in_body in hits
+        )
+    category = (segment.get("category", "") or "").strip()
+    if category:
+        return "Matched on category: %s" % category
+    return ""
 
 
 def _reach_of(segment):
@@ -192,8 +248,12 @@ def _drop_below_reach_floor(segments, min_reach):
     return [s for s in segments if _reach_of(s) >= min_reach]
 
 
-def _to_item(segment):
-    """Project a raw segment row into a clean payload item (reach as int)."""
+def _to_item(segment, keyword_weights):
+    """Project a raw segment row into a clean payload item (reach as int).
+
+    `keyword_weights` are the weights that ranked this run, so the match reason
+    is derived from the selection itself rather than reconstructed afterwards.
+    """
     return {
         "segment_name": segment.get("segment_name", ""),
         "reach": _reach_of(segment),
@@ -204,6 +264,7 @@ def _to_item(segment):
         "code": segment.get("code", ""),
         "frequency": segment.get("frequency", ""),
         "window": segment.get("window", ""),
+        "match_reason": _match_reason(segment, keyword_weights),
     }
 
 
@@ -275,7 +336,7 @@ def recommend_segments(advertiser, topic, client_brief="", segments=None,
         platforms.append({
             "platform": platform,
             "framing": _PLATFORM_FRAMING[platform],
-            "segments": [_to_item(s) for s in rows[:per_platform_limit]],
+            "segments": [_to_item(s, weights) for s in rows[:per_platform_limit]],
         })
 
     has_any = any(p["segments"] for p in platforms)
@@ -311,9 +372,14 @@ def format_audience_segments(payload):
         lines.append("")
         lines.append("%s (%s):" % (plat["platform"], plat["framing"]))
         for seg in plat["segments"]:
+            # The match reason is rendered beside the figures in the UI (#163);
+            # showing the model the same line keeps its prose from offering a
+            # different account of why a segment is there.
+            reason = seg.get("match_reason", "")
             lines.append(
-                "- %s — reach %s. %s" % (
-                    seg["segment_name"], "{:,}".format(seg["reach"]), seg["plain_english"],
+                "- %s — reach %s. %s%s" % (
+                    seg["segment_name"], "{:,}".format(seg["reach"]),
+                    seg["plain_english"], " (%s)" % reason if reason else "",
                 )
             )
     return "\n".join(lines)
