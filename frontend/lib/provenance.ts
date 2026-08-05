@@ -1,0 +1,58 @@
+/**
+ * Pure view-model helpers for the data-provenance strip shown under each data
+ * section of a brief (#156).
+ *
+ * The backend decides *what* a section's provenance is (src/provenance.py) —
+ * these helpers only decide how it reads. The rule the JSX must not be allowed
+ * to break: a field with nothing behind it is left out entirely, never rendered
+ * as a label with a blank after it. "As at:" followed by nothing states less
+ * than saying nothing at all, and this whole feature exists so a reviewer can
+ * tell an out-of-date figure from a differently-defined one.
+ */
+
+/** One data section's provenance, verbatim from the brief payload. */
+export interface ProvenanceEntry {
+  section: string;
+  source: string;
+  as_at: string;
+  coverage: string;
+  period: string;
+  cadence: string;
+}
+
+export interface ProvenanceField {
+  label: string;
+  value: string;
+}
+
+/** Field render order — source first, because it is the question people ask. */
+const FIELD_LABELS: [keyof ProvenanceEntry, string][] = [
+  ["source", "Source"],
+  ["as_at", "As at"],
+  ["coverage", "Coverage"],
+  ["period", "Period"],
+  ["cadence", "Refreshed"],
+];
+
+/**
+ * The provenance for one section, or null when there is none. Briefs saved
+ * before provenance existed carry no entries at all, which is why the list is
+ * optional rather than assumed.
+ */
+export function provenanceFor(
+  entries: ProvenanceEntry[] | undefined | null,
+  section: string,
+): ProvenanceEntry | null {
+  if (!entries) return null;
+  return entries.find((entry) => entry.section === section) ?? null;
+}
+
+/** The populated fields of an entry, labelled, in render order. */
+export function provenanceFields(
+  entry: ProvenanceEntry | null | undefined,
+): ProvenanceField[] {
+  if (!entry) return [];
+  return FIELD_LABELS.filter(([key]) => (entry[key] ?? "").trim() !== "").map(
+    ([key, label]) => ({ label, value: entry[key].trim() }),
+  );
+}

@@ -4,6 +4,7 @@ using GPT-4o-mini, optionally matching the user's writing style.
 """
 from openai import OpenAI
 import config
+from src.provenance import format_provenance_block
 
 EMAIL_DRAFT_MODEL = getattr(config, "EMAIL_DRAFT_MODEL", "gpt-4o-mini")
 
@@ -36,7 +37,8 @@ Here is the full strategic insights brief to draw from (pick the most compelling
 {brief_content}"""
 
 
-def draft_email(brief_content, topic, advertiser, kpi, writing_samples=None):
+def draft_email(brief_content, topic, advertiser, kpi, writing_samples=None,
+                provenance=None):
     """Generate a short sales pitch email from an insights brief.
 
     Args:
@@ -45,6 +47,11 @@ def draft_email(brief_content, topic, advertiser, kpi, writing_samples=None):
         advertiser: The advertiser name.
         kpi: The campaign KPI.
         writing_samples: Optional list of sample email strings for style matching.
+        provenance: Optional provenance entries from the brief run (#156).
+            Appended verbatim beneath the drafted body, never handed to the
+            model — the email quotes the brief's figures, so it has to carry
+            the same account of where they came from, and a source line that
+            passed through a copywriting prompt would be worth nothing.
 
     Returns:
         dict with 'subject' and 'body' keys.
@@ -75,7 +82,22 @@ def draft_email(brief_content, topic, advertiser, kpi, writing_samples=None):
     )
 
     raw = response.choices[0].message.content
-    return _parse_email(raw)
+    return _append_provenance(_parse_email(raw), provenance)
+
+
+def _append_provenance(email, provenance):
+    """Add the brief's source footer beneath the drafted body.
+
+    Separated by a rule so it reads as a footnote to the pitch rather than part
+    of it — the recipient of the pitch is not the reader this is for; the
+    colleague checking a figure before it goes out is.
+    """
+    block = format_provenance_block(provenance)
+    if not block:
+        return email
+
+    body = email["body"].rstrip()
+    return {"subject": email["subject"], "body": "%s\n\n---\n%s" % (body, block)}
 
 
 def _parse_email(raw):

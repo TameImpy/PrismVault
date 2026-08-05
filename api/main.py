@@ -113,6 +113,10 @@ class DraftEmailRequest(BaseModel):
     topic: str
     advertiser: str
     kpi: str
+    # Where the brief's figures came from (#156), posted back verbatim so the
+    # email carries the same account as the brief. Optional so an older client
+    # — or a brief saved before provenance existed — still drafts.
+    provenance: Optional[list] = None
 
 
 @app.post("/api/draft-email")
@@ -128,6 +132,7 @@ async def create_draft_email(req: DraftEmailRequest, user: dict = Depends(get_cu
             advertiser=req.advertiser,
             kpi=req.kpi,
             writing_samples=writing_samples,
+            provenance=req.provenance,
         )
         return result
     except Exception as e:
@@ -145,6 +150,7 @@ class DownloadDeckRequest(BaseModel):
     audience_segments: Optional[dict] = None
     format_recommendations: Optional[list] = None
     historical_research: Optional[dict] = None
+    provenance: Optional[list] = None
 
 
 def _sanitize_filename(text):
@@ -171,6 +177,8 @@ async def download_deck(req: DownloadDeckRequest, user: dict = Depends(get_curre
         slide_content["audience_segments"] = req.audience_segments
         slide_content["format_recommendations"] = req.format_recommendations
         slide_content["historical_research"] = req.historical_research
+        # The deck's appendix names the source behind every figure it shows.
+        slide_content["provenance"] = req.provenance
         buf = build_deck(slide_content, req.advertiser)
 
         filename = "Prism_Plan_%s_%s.pptx" % (

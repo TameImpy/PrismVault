@@ -670,3 +670,61 @@ come from the file's own "best fit" passages. In a product whose whole selling
 point is defensible sourcing, a comment that turns a positioning statement into
 a sample definition is the same over-claim the prompt's citation rules exist to
 prevent. Reworded to "who this research speaks to", with the real base named.
+
+## 2026-08-05 — A figure without a source is not a figure yet (#156)
+
+**What went wrong.** No figure in a brief said where it came from. During the
+August 2026 QA round that produced two false bug reports: a reviewer checked
+campaign click-through against Google Ad Manager, when the product reads a
+manual delivery export that counts differently, and checked audience reach
+against Permutive and AudienceProject extracts he had never been given. Both
+were reasonable things to do in the absence of any stated source, and both cost
+real time to run down. Until a figure can be traced, nobody can tell whether it
+is wrong or merely defined differently — which is the difference between a bug
+and a misunderstanding.
+
+**The fix.** A registry (`data/provenance.csv`, read by `src/provenance.py`)
+holding four fields per data section — source, as-at date, coverage, period —
+plus a refresh cadence for benchmarks. It is attached to the brief payload and
+rendered once per section in the UI, appended verbatim beneath the drafted
+email, and filled into the deck's Appendix slide.
+
+**The decisions worth keeping.**
+
+- **Provenance is placed, never generated.** The registry is not put in the
+  prompt at all, and the email footer is appended after the model has finished.
+  A source line that a copywriting prompt could reword is worth nothing: the
+  whole point is that it cannot drift from what actually produced the number.
+  `tests/test_synthesiser.py` asserts no registry string reaches the prompt.
+- **The record lives next to the data, not in code.** Refreshing
+  `segments.csv` and restating its as-at date are one commit. Putting the
+  dates in a Python constant would have split them.
+- **Name the system, not the file path.** The first draft had sources reading
+  `data/segments.csv`. That leaks a repo path into a client-facing deck, and it
+  is also the wrong answer for the internal reviewer — you reconcile against
+  the Permutive export, not against a file in git. A test now fails on any
+  source containing `.csv`.
+- **A field with nothing behind it is omitted, not blanked.** "As at:"
+  followed by nothing states less than saying nothing, and this feature exists
+  to distinguish a stale figure from a differently-defined one. Enforced in
+  both `format_provenance_line()` and `lib/provenance.ts`.
+
+**Two things the implementation forced.**
+
+The deck template is the single source of truth for styling (PRD #131), so a
+new marker has to be _authored into the template_ rather than drawn at build
+time. `scripts/add_provenance_markers.py` does that once and is kept in the
+repo: it clones an existing text box, so Barlow, the colour and the bullet
+styling come across verbatim rather than being invented in Python, and it is
+idempotent so it survives a template revision. A `.pptx` is a binary — the diff
+says nothing, so the script _is_ the record of the edit.
+
+The other is a test that measures rather than eyeballs. With no LibreOffice to
+render with, `test_the_real_registry_fits_on_the_appendix_slide` estimates the
+wrapped height of the six source lines against the slide height, using half the
+point size as the average glyph width (conservative for Barlow). The failure
+mode it guards is not this change but the next one: a wholly reasonable edit
+making the registry prose more explanatory, which would silently overflow the
+slide — the very defect #162 raised in this same QA round. The first draft of
+the registry needed 4.4 inches of a 5.6-inch slide; trimming it to name systems
+instead of paths brought that down with it.

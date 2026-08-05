@@ -15,9 +15,11 @@ from pptx import Presentation
 from pptx.oxml.ns import qn
 
 from src.font_embed import embed_fonts
+from src.provenance import format_provenance_line
 from src.slide_content import (
     INSIGHT_TILES,
     PRODUCT_TILES,
+    PROVENANCE_TILES,
     SEGMENT_TILES,
     build_product_rows,
     build_segment_rows,
@@ -92,7 +94,22 @@ def _build_fields(slide_content, advertiser):
         fields["[INSIGHT_%d]" % (i + 1)] = row.get("stat")
         fields["[INSIGHT_%d_STAT]" % (i + 1)] = row.get("text")
 
+    # The appendix names the source, date, coverage and period behind each data
+    # section the brief drew on (#156), one line per section. The lines are the
+    # brief's own — placed verbatim, never regenerated for the deck.
+    provenance = slide_content.get("provenance") or []
+    for i in range(PROVENANCE_TILES):
+        entry = provenance[i] if i < len(provenance) else None
+        fields["[PROVENANCE_%d]" % (i + 1)] = _provenance_line(entry)
+
     return {marker: _one_line(value) for marker, value in fields.items()}
+
+
+def _provenance_line(entry):
+    """One appendix line: the section, then where its figures came from."""
+    if not entry:
+        return ""
+    return "%s — %s" % (entry.get("section", ""), format_provenance_line(entry))
 
 
 def _one_line(value):

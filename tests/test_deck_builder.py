@@ -11,6 +11,7 @@ boilerplate slides came through untouched.
 import sys
 import os
 import io
+import math
 import re
 import zipfile
 
@@ -29,7 +30,8 @@ _A_NS = "http://schemas.openxmlformats.org/drawingml/2006/main"
 _MARKER_RE = re.compile(r"\[[A-Z0-9_]+\]")
 
 # Static boilerplate slides — never populated, must survive byte-identical.
-STATIC_SLIDES = (1, 6, 7)
+# The Appendix (6) left this list when it gained the provenance markers (#156).
+STATIC_SLIDES = (1, 7)
 
 # Structured rows exactly as src.formats.load_format_rows() emits them.
 FORMAT_ROWS = [
@@ -80,6 +82,29 @@ ADVERTISER_OVERVIEW = (
     "currently leaning into everyday family cooking occasions."
 )
 
+# Provenance entries exactly as src.provenance.build_provenance() emits them —
+# a full brief, so every appendix line has a section behind it.
+PROVENANCE = [
+    {"section": "Advertiser Overview", "source": "Live public web search",
+     "as_at": "2026-08-05", "coverage": "External to the network",
+     "period": "As published", "cadence": "Live on every run"},
+    {"section": "Client Relationship", "source": "The manual campaign delivery export",
+     "as_at": "2026-04-09", "coverage": "Whole network, direct-sold only",
+     "period": "2024-01-01 to 2026-01-01", "cadence": "By hand"},
+    {"section": "Audience Segments & Reach", "source": "data/segments.csv",
+     "as_at": "2026-07-21", "coverage": "Whole network",
+     "period": "Rolling 90 days", "cadence": "On request"},
+    {"section": "Recommended Products", "source": "The central benchmarking sheet",
+     "as_at": "2026-07-20", "coverage": "Whole network",
+     "period": "Rolling 12 months", "cadence": "Monthly"},
+    {"section": "Historical Research", "source": "Immediate Media — Travel Audience Research",
+     "as_at": "2024-12-02", "coverage": "Survey of Immediate audiences (n=1,589)",
+     "period": "Fieldwork 2024-11-26 to 2024-12-02", "cadence": "On publication"},
+    {"section": "Google Trends", "source": "Google Trends via pytrends",
+     "as_at": "2026-08-05", "coverage": "Worldwide search interest",
+     "period": "Rolling 12 months", "cadence": "Live on every run"},
+]
+
 
 def _content(**overrides):
     content = {
@@ -87,6 +112,7 @@ def _content(**overrides):
         "insights": list(INSIGHTS),
         "audience_segments": AUDIENCE_PAYLOAD,
         "format_recommendations": list(FORMAT_ROWS),
+        "provenance": list(PROVENANCE),
     }
     content.update(overrides)
     return content
@@ -203,6 +229,96 @@ def test_historical_insights_slide_is_omitted_without_research():
     assert "Historical Insights" not in _deck_text(prs)
     # Everything else still lands.
     assert "Confident bakers" in _deck_text(prs)
+
+
+# ---------------------------------------------------------------------------
+# Provenance — the deck shares the brief's figures, so it shares their sources
+# ---------------------------------------------------------------------------
+
+
+def test_appendix_names_the_source_of_every_section(deck):
+    text = _slide_text(_find_slide(deck, "Appendix"))
+    for entry in PROVENANCE:
+        assert entry["section"] in text
+        assert entry["source"] in text
+
+
+def test_appendix_carries_all_four_traceability_fields(deck):
+    """Source, as-at, coverage and period — the four fields #156 asks for."""
+    text = _slide_text(_find_slide(deck, "Appendix"))
+    segments = next(e for e in PROVENANCE if e["section"] == "Audience Segments & Reach")
+    for value in (segments["source"], segments["as_at"], segments["coverage"],
+                  segments["period"]):
+        assert value in text
+
+
+def test_appendix_states_the_benchmark_refresh_cadence(deck):
+    """Benchmarks name their origin and how often they are refreshed."""
+    text = _slide_text(_find_slide(deck, "Appendix"))
+    assert "The central benchmarking sheet" in text
+    assert "Monthly" in text
+
+
+def test_appendix_lines_are_one_per_section_not_one_per_figure(deck):
+    """Four product tiles and four segment tiles, one source line each."""
+    text = _slide_text(_find_slide(deck, "Appendix"))
+    assert text.count("Audience Segments & Reach —") == 1
+    assert text.count("Recommended Products —") == 1
+
+
+def test_appendix_blanks_the_lines_a_brief_did_not_use():
+    """A brief with no trends and no matched research leaves no empty labels."""
+    prs = Presentation(build_deck(_content(provenance=PROVENANCE[:2]), "Homepride"))
+    text = _slide_text(_find_slide(prs, "Appendix"))
+    assert "Client Relationship" in text
+    assert "Google Trends" not in text
+    assert _MARKER_RE.findall(text) == []
+
+
+def test_the_real_registry_fits_on_the_appendix_slide():
+    """The appendix has to hold every source line without running off the slide.
+
+    Measured rather than eyeballed, because the failure mode is a later, wholly
+    reasonable edit to `data/provenance.csv` prose — and overflowing deck text
+    is a defect this same QA round already raised (#162). The estimate is
+    deliberately conservative: average glyph width is taken as half the point
+    size, which over-counts for Barlow.
+    """
+    from src.provenance import build_provenance
+
+    prs = Presentation(build_deck(
+        _content(provenance=build_provenance(historical_research={
+            "relevant": True, "title": "Immediate Media Travel Audience Research",
+            "organisation": "Immediate Media", "fieldwork": "2024-11-26 to 2024-12-02",
+            "total_respondents": 1589,
+        })), "Homepride"))
+
+    slide = _find_slide(prs, "Appendix")
+    box = next(s for s in slide.shapes
+               if s.has_text_frame and "[PROVENANCE" not in s.text_frame.text
+               and "sources" in s.text_frame.text)
+
+    point_size = box.text_frame.paragraphs[1].runs[0].font.size.pt
+    chars_per_line = (box.width / 914400.0) / (point_size / 2.0 / 72.0)
+    line_height = point_size * 1.2 / 72.0  # inches
+
+    lines = sum(max(1, math.ceil(len(p.text) / chars_per_line))
+                for p in box.text_frame.paragraphs)
+    bottom = (box.top / 914400.0) + lines * line_height
+    slide_height = prs.slide_height / 914400.0
+
+    assert bottom <= slide_height, (
+        "the appendix source lines need %.2f\" and the slide is %.2f\" — trim "
+        "data/provenance.csv" % (bottom, slide_height)
+    )
+
+
+def test_appendix_survives_a_deck_built_without_provenance():
+    """An older client posts no provenance: the appendix is bare, not broken."""
+    prs = Presentation(build_deck(_content(provenance=None), "Homepride"))
+    text = _slide_text(_find_slide(prs, "Appendix"))
+    assert "Appendix" in text
+    assert _MARKER_RE.findall(text) == []
 
 
 # ---------------------------------------------------------------------------
