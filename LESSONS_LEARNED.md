@@ -808,9 +808,20 @@ several fields at once, a test isolating one path has to check the value it
 picked isn't reachable through the others. Print the intermediate — here, the
 haystack — rather than reasoning about which field "should" have matched.
 
+The same fact — that the category is searchable text — turned out to matter in
+production, not only in the fixture. On a Saga brief, "Cruise goers" reported
+`Matched on: cruise, holiday` where "holiday" had touched nothing but the shelf
+label `Holidays`. The tempting fix was to drop category-only terms from the
+line, but that would make the reason disagree with the ranking: the hit is real
+and it _did_ score. So they are marked instead — `holiday (category)` — which
+keeps the line faithful to the scoring while still showing how thin the hit is.
+The general principle: when a displayed explanation and the mechanism it
+explains disagree, weaken the _claim_, never the record.
+
 A second thing this made visible: multi-word expansion terms match on _any_
 token, so `gut health` matches anything mentioning "health". That behaviour
-predates #163, but the new reason line surfaces it — "January Health Kickers —
-Matched on: gut health" now reads as the loose match it always was. Making the
-mechanism visible turns a silent looseness into a reviewable one, which was the
-whole point of the ticket.
+predates #163, but the new reason line surfaces it — a hearing-aids brief whose
+every segment reads `Matched on: health` shows at a glance that nothing matched
+"hearing", which is exactly the report the tester could only describe as a
+mystery. Making the mechanism visible turns a silent looseness into a
+reviewable one, which was the whole point of the ticket.

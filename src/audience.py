@@ -156,42 +156,42 @@ def _keyword_weights(segments, keywords):
     return weights
 
 
-def _relevance_score(segment, keyword_weights):
-    """Sum of matched keyword weights; matches in the name count for more."""
-    haystack = _segment_haystack(segment)
+def _keyword_contributions(segment, keyword_weights):
+    """What each matching keyword contributed to this segment's rank.
+
+    One list of `(contribution, keyword, in_body)`, highest contribution first,
+    ties broken by the term itself so the order is stable rather than however
+    the expansion happened to list them. `in_body` records whether the term
+    touched the segment's name or description as opposed to only its category
+    label — the score does not care, but the reason line does.
+
+    This is the single statement of the scoring rule: `_relevance_score` sums
+    it and `_match_reason` names its top few, so what a user is told selected a
+    segment cannot fall out of step with what did.
+    """
     name_stems = set(_tokenise(segment.get("segment_name", "")))
-    score = 0.0
+    body_stems = name_stems | set(_tokenise(segment.get("description", "")))
+    haystack = _segment_haystack(segment)
+
+    hits = []
     for kw, weight in keyword_weights.items():
         kw_stems = set(_tokenise(kw))
         if kw_stems & haystack:
-            score += weight * (1.5 if (kw_stems & name_stems) else 1.0)
-    return score
+            # A hit in the name counts for more than one in the description.
+            contribution = weight * (1.5 if (kw_stems & name_stems) else 1.0)
+            hits.append((contribution, kw, bool(kw_stems & body_stems)))
+    hits.sort(key=lambda hit: (-hit[0], hit[1]))
+    return hits
+
+
+def _relevance_score(segment, keyword_weights):
+    """Sum of matched keyword weights; matches in the name count for more."""
+    return sum(hit[0] for hit in _keyword_contributions(segment, keyword_weights))
 
 
 # How many terms a match reason names. Three shows the shape of a match and
 # still reads as one line beside the segment.
 _MAX_REASON_TERMS = 3
-
-
-def _matched_terms(segment, keyword_weights):
-    """The expansion terms present in this segment's text, most telling first.
-
-    Ordered by the same contribution that ranked the segment — a rare term that
-    hit the segment's name outranks a common one buried in the description — so
-    the terms a user reads are the ones that actually did the selecting.
-    """
-    haystack = _segment_haystack(segment)
-    name_stems = set(_tokenise(segment.get("segment_name", "")))
-    hits = []
-    for kw, weight in keyword_weights.items():
-        kw_stems = set(_tokenise(kw))
-        if kw_stems & haystack:
-            hits.append((weight * (1.5 if (kw_stems & name_stems) else 1.0), kw))
-    # Weight descending, then the term itself, so equally-weighted terms come
-    # out in a stable order rather than however the expansion happened to list
-    # them.
-    hits.sort(key=lambda pair: (-pair[0], pair[1]))
-    return [kw for _, kw in hits[:_MAX_REASON_TERMS]]
 
 
 def _match_reason(segment, keyword_weights):
@@ -200,13 +200,24 @@ def _match_reason(segment, keyword_weights):
     It names terms, never mechanics: a planner reading "Matched on: hearing,
     over 65s" on a hearing-aids brief can see for themselves that the match is
     demographic rather than subject-led, which is the diagnosis the ticket was
-    raised to make possible. Segments that arrived on the category rung of the
-    ladder say so — a category match is a broader, weaker claim than a term
-    hit, and reading as much is the point.
+    raised to make possible.
+
+    Two kinds of thin match are marked rather than hidden, because hiding them
+    would make the line disagree with the ranking that produced it:
+
+    - A term that touched only the segment's *category* is a real hit and did
+      score — the category is part of the searchable text — but "Cruise goers —
+      Matched on: cruise, holiday" reads as though the segment were about
+      holidays when only its shelf is. It is marked "(category)".
+    - A segment that no term touched at all arrived on the category rung of the
+      match ladder, and says so: a broader, weaker claim than a term hit, and
+      reading as much is the point.
     """
-    terms = _matched_terms(segment, keyword_weights)
-    if terms:
-        return "Matched on: %s" % ", ".join(terms)
+    hits = _keyword_contributions(segment, keyword_weights)[:_MAX_REASON_TERMS]
+    if hits:
+        return "Matched on: %s" % ", ".join(
+            kw if in_body else "%s (category)" % kw for _, kw, in_body in hits
+        )
     category = (segment.get("category", "") or "").strip()
     if category:
         return "Matched on category: %s" % category
@@ -237,7 +248,7 @@ def _drop_below_reach_floor(segments, min_reach):
     return [s for s in segments if _reach_of(s) >= min_reach]
 
 
-def _to_item(segment, keyword_weights=None):
+def _to_item(segment, keyword_weights):
     """Project a raw segment row into a clean payload item (reach as int).
 
     `keyword_weights` are the weights that ranked this run, so the match reason
@@ -253,7 +264,7 @@ def _to_item(segment, keyword_weights=None):
         "code": segment.get("code", ""),
         "frequency": segment.get("frequency", ""),
         "window": segment.get("window", ""),
-        "match_reason": _match_reason(segment, keyword_weights or {}),
+        "match_reason": _match_reason(segment, keyword_weights),
     }
 
 

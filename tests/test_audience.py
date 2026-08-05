@@ -472,11 +472,14 @@ def test_the_reason_stays_one_line():
     ]
     payload = recommend_segments(
         advertiser="X", topic="baking", segments=segs,
-        expansion={"keywords": ["baking", "bread", "cake", "pastry", "dough"],
+        # Expansion returns short phrases, not single words — the length guard
+        # below is only worth anything against realistic terms.
+        expansion={"keywords": ["home baking", "artisan bread", "celebration cake",
+                                "puff pastry", "sourdough dough starter"],
                    "categories": []},
     )
     reason = _reasons(payload)["Baking Fans"]
-    # Six matched terms would be a paragraph; the line names the top few.
+    # Five matched terms would be a paragraph; the line names the top few.
     assert reason.count(",") <= 2
     assert len(reason) < 80
 
@@ -504,6 +507,43 @@ def test_a_category_only_match_says_so_rather_than_naming_no_terms():
     reasons = _reasons(payload)
     assert reasons["Allotment Growers"] == "Matched on: allotment"
     assert reasons["Rose Enthusiasts"] == "Matched on category: Gardening"
+
+
+def test_a_term_that_only_hit_the_category_label_says_so():
+    """The segment's category is part of its searchable text, so a term can be
+    a genuine keyword hit while touching nothing but the label. Left unmarked,
+    "Cruise goers — Matched on: cruise, holiday" reads as though the segment is
+    about holidays when only its shelf is. Marking it keeps the line agreeing
+    with the score (the hit is real and did rank it) while still letting a
+    reader see how thin it is."""
+    segs = [
+        {"segment_name": "Cruise goers", "platform": "Permutive", "reach": "80000",
+         "category": "Holidays", "description": "browsed cruise content",
+         "plain_english": "Browses cruise content", "code": "1",
+         "frequency": "R", "window": "All Time", "icon_key": "travel"},
+    ]
+    payload = recommend_segments(
+        advertiser="Saga", topic="cruises", segments=segs,
+        expansion={"keywords": ["cruise", "holiday"], "categories": []},
+    )
+    reason = _reasons(payload)["Cruise goers"]
+    # "cruise" is in the name and description; "holiday" is only the shelf.
+    assert reason == "Matched on: cruise, holiday (category)"
+
+
+def test_a_term_in_the_name_or_description_is_not_marked_as_a_category_hit():
+    segs = [
+        {"segment_name": "Holiday Gifting Fans", "platform": "Permutive",
+         "reach": "80000", "category": "Holidays",
+         "description": "browsed holiday gifting content",
+         "plain_english": "Browses holiday gifting", "code": "1",
+         "frequency": "R", "window": "All Time", "icon_key": "travel"},
+    ]
+    payload = recommend_segments(
+        advertiser="X", topic="holidays", segments=segs,
+        expansion={"keywords": ["holiday"], "categories": []},
+    )
+    assert _reasons(payload)["Holiday Gifting Fans"] == "Matched on: holiday"
 
 
 def test_the_reason_names_terms_not_scoring_mechanics():
