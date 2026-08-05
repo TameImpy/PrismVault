@@ -15,6 +15,54 @@ CATALOGUE_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "historica
 FALLBACK_TEXT = "No historical research matched this brief."
 
 
+def _normalise(term):
+    # type: (str) -> str
+    """Lowercase and trim a catalogue term so the two roles compare like for like."""
+    return (term or "").strip().lower()
+
+
+def _subject_terms(terms, audience_terms):
+    # type: (list, list) -> list
+    """Drop from ``terms`` anything the file also names as an audience term.
+
+    Naming a term under ``audience_terms`` demotes it wherever else it appears,
+    so a hand-authored file that leaves a demographic in ``topics`` as well
+    cannot quietly re-open the hole #157 closed.
+    """
+    demoted = set(_normalise(t) for t in audience_terms)
+    demoted.discard("")
+    return [t for t in terms if _normalise(t) not in demoted]
+
+
+def _find_matches(brief_text, needles, exclude=()):
+    # type: (str, list, tuple) -> list
+    """Return the needles that appear in ``brief_text`` as whole words.
+
+    Whole-word matching (not bare substring) keeps the gate honest: the keyword
+    "rail" matches "rail" but not "email", and the phrase "city breaks" matches
+    only when both words appear together. Deterministic — no LLM.
+
+    The guard is a pair of lookarounds rather than ``\\b`` because a catalogue
+    term may legitimately end in punctuation: ``\\b55\\+\\b`` can never match
+    "55+", since ``\\b`` after the "+" demands an adjacent word character. A
+    term that silently never matches is the worst failure mode for a hand-
+    authored list, so the boundary is defined by what sits *outside* the needle.
+
+    ``exclude`` names hits already reported by an earlier call, so a term
+    carrying two roles is not listed twice.
+    """
+    hits = []
+    for needle in needles:
+        needle = _normalise(needle)
+        # De-dupe: a term can sit in both topics and match_keywords.
+        if not needle or needle in hits or needle in exclude:
+            continue
+        pattern = r"(?<!\w)" + re.escape(needle) + r"(?!\w)"
+        if re.search(pattern, brief_text):
+            hits.append(needle)
+    return hits
+
+
 def load_catalogue(catalogue_dir=None):
     # type: (str) -> list
     """Glob-load every research file in the catalogue.
@@ -27,7 +75,7 @@ def load_catalogue(catalogue_dir=None):
     Each returned dict carries the parsed ``meta`` frontmatter, the verbatim
     ``body``, and the file's vocabulary split by role: ``topics`` +
     ``match_keywords`` say what the research is about, ``audience_terms`` say
-    who was surveyed. Only the first kind can admit a file (see
+    who it speaks to. Only the first kind can admit a file (see
     ``get_relevant_research``), so a term named as an audience term is stripped
     out of ``topics``/``match_keywords`` wherever it also appears there — a
     mis-authored file cannot smuggle a demographic back in as a subject.
@@ -53,47 +101,16 @@ def load_catalogue(catalogue_dir=None):
         match_keywords = meta.get("match_keywords") or []
         audience_terms = meta.get("audience_terms") or []
 
-        demographic = set(_normalise(t) for t in audience_terms)
-        demographic.discard("")
-
-        def subject_only(terms):
-            return [t for t in terms if _normalise(t) not in demographic]
-
         files.append({
             "meta": meta,
             "body": body,
-            "topics": subject_only(topics),
-            "match_keywords": subject_only(match_keywords),
+            "topics": _subject_terms(topics, audience_terms),
+            "match_keywords": _subject_terms(match_keywords, audience_terms),
             "audience_terms": list(audience_terms),
             "file": os.path.basename(path),
         })
 
     return files
-
-
-def _normalise(term):
-    # type: (str) -> str
-    """Lowercase and trim a catalogue term so the two roles compare like for like."""
-    return (term or "").strip().lower()
-
-
-def _find_matches(brief_text, needles):
-    # type: (str, list) -> list
-    """Return the needles that appear in ``brief_text`` on a word boundary.
-
-    Word-boundary matching (not bare substring) keeps the gate honest: the
-    keyword "rail" matches "rail" but not "email", and the phrase "city breaks"
-    matches only when both words appear together. Deterministic — no LLM.
-    """
-    hits = []
-    for needle in needles:
-        needle = _normalise(needle)
-        if not needle or needle in hits:
-            continue  # de-dupe: a term can sit in both topics and match_keywords
-        pattern = r"\b" + re.escape(needle) + r"\b"
-        if re.search(pattern, brief_text):
-            hits.append(needle)
-    return hits
 
 
 def get_relevant_research(topic, advertiser, client_brief, catalogue_dir=None):
@@ -105,12 +122,15 @@ def get_relevant_research(topic, advertiser, client_brief, catalogue_dir=None):
 
     Admission turns on subject relevance alone: a file is included only when the
     brief overlaps its ``topics``/``match_keywords``, which describe what the
-    research is *about*. Its ``audience_terms`` — who was surveyed — can never
+    research is *about*. Its ``audience_terms`` — who it speaks to — can never
     admit a file on their own, because sharing a demographic is not a reason to
     include research on an unrelated subject (a hearing-aids brief aimed at
     over-55s was pulling in travel research; #157). Where the brief shares the
-    demographic *as well*, those terms still ride along in ``matched_on``, so
-    the hero card can show the full overlap without it having been the reason.
+    demographic *as well*, those terms still ride along in ``matched_on``,
+    ordered after the subject hits, so the hero card can show the full overlap
+    without the demographic having been the reason. The two roles flatten into
+    one list because that is the shape the card already renders; ordering is the
+    contract, and callers needing the split should read the file's frontmatter.
 
     Always returns a dict with ``relevant`` and ``prompt_text``. On a match it
     also carries verbatim frontmatter metadata (``title``, ``organisation``,
@@ -123,10 +143,7 @@ def get_relevant_research(topic, advertiser, client_brief, catalogue_dir=None):
         if not subject_hits:
             continue  # no subject overlap — a shared demographic cannot stand in
 
-        audience_hits = [
-            hit for hit in _find_matches(brief_text, f["audience_terms"])
-            if hit not in subject_hits
-        ]
+        audience_hits = _find_matches(brief_text, f["audience_terms"], exclude=subject_hits)
         matched_on = subject_hits + audience_hits
 
         meta = f["meta"]

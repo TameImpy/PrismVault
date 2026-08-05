@@ -648,3 +648,25 @@ gives up automatic coverage of unwritten files in exchange for never guessing
 wrong about the file in front of it. For a catalogue of one, curated by hand,
 that is the right trade — and it is the same reason the segment gate in #164
 needed its guard pointed at real inputs rather than a plausible-looking list.
+
+**Postscript — `\b` is the wrong boundary for a hand-authored term list.** The
+spec review found a trap I had walked closer to rather than away from. The gate
+guarded whole words with `r"\b" + re.escape(needle) + r"\b"`, which cannot ever
+match a term ending in punctuation: `\b55\+\b` demands a word character
+immediately after the `+`, so the term `55+` is silently dead. Nothing errors,
+no test fails — the term just never fires. That is the worst failure mode for a
+list a human curates by hand, and #157's own ticket wording is "a 55+ audience",
+so the very next author would have hit it. Fixed by defining the boundary by
+what sits _outside_ the needle — `(?<!\w)needle(?!\w)` — which matches `55+` and
+still refuses `rail` inside `email` (both directions are pinned by tests). The
+general lesson: `\b` is a boundary _between_ word and non-word characters, so it
+is only equivalent to "whole token" when the token starts and ends with word
+characters. Domain vocabularies rarely promise that.
+
+**And a claim-discipline catch.** The first version of the frontmatter comment
+called `audience_terms` "who this research surveyed". It isn't — the survey base
+is a general UK panel of 1,589 with no age or affluence screen, and the terms
+come from the file's own "best fit" passages. In a product whose whole selling
+point is defensible sourcing, a comment that turns a positioning statement into
+a sample definition is the same over-claim the prompt's citation rules exist to
+prevent. Reworded to "who this research speaks to", with the real base named.

@@ -52,7 +52,10 @@ match_keywords:
   - tours
   - destination
   - destinations
-# Who this research surveyed, as distinct from what it is about. These terms
+# Who this research speaks to, as distinct from what it is about. The survey
+# base is a general UK panel (n=1,589) with no age or affluence screen — these
+# are the audiences the file itself names as its best fit, not a sample
+# definition, so do not quote them as one. These terms
 # never admit the file on their own — a brief that shares only the demographic
 # gets no research (#157) — but they are reported alongside a subject match so
 # the overlap is visible for what it is.

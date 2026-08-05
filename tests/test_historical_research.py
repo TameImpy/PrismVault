@@ -419,6 +419,48 @@ def test_loader_defaults_audience_terms_to_empty(catalogue_dir_no_match_keywords
     assert files[0]["audience_terms"] == []
 
 
+def test_demographic_only_brief_omits_the_section_end_to_end(catalogue_dir):
+    """The no-match path feeds the omission machinery, not just a False flag.
+
+    An empty body is what makes the deck drop its Historical Insights slide, so
+    a brief that now stops matching has to reach that state, not merely report
+    ``relevant: False``.
+    """
+    result = get_relevant_research(
+        "hearing aids", "Boots Hearingcare", "Reach affluent empty-nesters",
+        catalogue_dir=catalogue_dir,
+    )
+    assert load_research_body(result, catalogue_dir=catalogue_dir) == ""
+
+
+def test_a_term_ending_in_punctuation_is_not_a_dead_term(tmp_path):
+    """`\\b55\\+\\b` can never match "55+" — a silently dead hand-authored term.
+
+    #157's own wording is a 55+ audience, so the trap is one an author of this
+    frontmatter would walk straight into. The boundary is defined by what sits
+    outside the needle instead.
+    """
+    d = tmp_path / "historical_research"
+    d.mkdir()
+    (d / "ages.md").write_text(
+        '---\ntitle: "Age Bands Study"\ntopics:\n  - retirement planning\n'
+        'audience_terms:\n  - 55+\n---\n\n# Age Bands Study\n\nBody.\n'
+    )
+    result = get_relevant_research(
+        "retirement planning", "Acme", "Audience is 55+", catalogue_dir=str(d),
+    )
+    assert result["relevant"] is True
+    assert "55+" in result["matched_on"]
+
+
+def test_whole_word_guard_still_rejects_a_substring_hit(catalogue_dir):
+    """The lookaround boundary must not loosen the rail/email guarantee."""
+    result = get_relevant_research(
+        "email marketing", "Acme", "", catalogue_dir=catalogue_dir,
+    )
+    assert result["relevant"] is False
+
+
 def test_real_catalogue_hearing_aids_brief_gets_no_travel_research():
     """The shipped catalogue, against the brief Abel actually reported."""
     result = get_relevant_research(
