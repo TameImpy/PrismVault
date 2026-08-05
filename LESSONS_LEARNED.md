@@ -365,7 +365,7 @@ usage-analytics wayfinder map, each told to commit findings to its own throwaway
 branch (`research/databricks-batch-write`, `research/openai-cost-accounting`).
 They ran in the **same working directory**. The second agent created and checked
 out its branch while the first was mid-task, so the first agent's commit landed on
-the *wrong* branch. It "fixed" this by force-moving the other agent's branch
+the _wrong_ branch. It "fixed" this by force-moving the other agent's branch
 (`git branch -f research/openai-cost-accounting 30f49e2`) — destructive, unprompted,
 and on a branch it did not own.
 
@@ -386,6 +386,7 @@ The second agent had not yet committed. Recovery was luck, not design — the sa
 sequence a few minutes later would have discarded real work.
 
 **Checks worth running after any concurrent-agent git incident:**
+
 - `git reflog show <branch>` — the authoritative history of where a ref pointed.
   Survives force-moves and is the fastest way to prove whether work was lost.
 - `git merge-base --is-ancestor <commit> main` — confirms stray commits did not
@@ -400,3 +401,55 @@ concurrent `checkout`/`commit`.
 **Also:** subagents will take destructive git actions to recover from a confusing
 state. Prompts for agents with write access should say explicitly: never
 force-move, reset, or delete a branch you did not create.
+
+---
+
+## 2026-08-05 — A prompt cannot stay on a topic it was never given (#155)
+
+**What went wrong:** QA reported the advertiser research "drifting" off topic — a
+Morrisons Christmas brief returned pages about their kidswear brand, a Patagonia
+gut-health brief returned outdoor and sustainability. The natural reading is
+model drift, and the natural fix is a sterner prompt.
+
+**Why:** neither. `research_advertiser()` took only `brand_name`. The topic and
+client brief never reached the search step, so every query was brand-only and
+the model was faithfully summarising what it had been handed: general brand
+material. No prompt wording could have rescued it — the topic-specific pages
+were never fetched.
+
+**How it was fixed:** three seams, not one.
+
+1. `topic_queries` in skill frontmatter — searches that actually mention the
+   topic. Any template containing `{topic}` is _dropped_ when there is no topic,
+   never substituted blank; a blank substitution silently collapses the query
+   back to brand-only, which is the original bug wearing a disguise.
+2. Results carry `topic_anchored` provenance and render into two labelled
+   sections. An empty topic section prints "(none — …)" rather than vanishing,
+   so absence is visible to the model instead of being inferred from silence.
+3. The topic directive is appended by `web_search.py`, not written into each
+   `skills/*.md`. Skills stay drop-in extensible _and_ no skill — including one
+   added later by someone who never read this — can opt out of the instruction
+   that stops general brand material being passed off as topic material.
+4. `topic_focus` per skill. The first version applied one directive to every
+   skill: "use general brand material only where it bears on the topic." That
+   would have thinned the brief's Advertiser Overview section, which needs
+   scale, positioning and group structure _whatever_ the brief asks about —
+   fixing the reported bug by causing a quieter one. Company Overview is now
+   `supplement` (keep the general picture, add a topic passage); the rest are
+   `lead`.
+
+**The test that proved nothing.** `test_run_skill_without_topic_is_unchanged`
+was written as the evidence for "thick-roster briefs are no worse than today".
+It isn't: `topic` is a required field on `InsightsRequest`, so the no-topic path
+is unreachable in production and every real brief takes the topic path. A test
+covering a path users cannot reach is not regression cover, however green it is.
+Check reachability before citing a test as evidence for an acceptance criterion.
+
+**Transferable lesson:** when output is off-topic, check what reached the prompt
+before rewriting the prompt. "The model ignored the topic" and "the model was
+never told the topic" produce identical symptoms and have completely different
+fixes. Trace the parameter, then judge the wording.
+
+**Cost, recorded honestly:** searches per brief go from 9 to 15 when a topic is
+present, roughly +9s of rate-limit delay. That was accepted as the price of the
+fix, not overlooked.

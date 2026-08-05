@@ -5,11 +5,19 @@ queries:
   - '"{brand}" about company overview'
   - '"{brand}" who are what do they do'
   - '"{brand}" products services customers market'
+topic_queries:
+  - '"{brand}" {topic}'
+  - '"{brand}" {topic} range offering'
+# This skill feeds the brief's Advertiser Overview section, which needs the
+# general picture whatever the topic is. The topic adds a passage here; it
+# does not displace the overview.
+topic_focus: supplement
 max_results_per_query: 3
 timelimit: null
 ---
 
 Analyse the following search results about {brand} and produce a detailed factual overview:
+
 - What the company does and their core products/services
 - Market position, scale, and key metrics (revenue, store count, market share, etc.)
 - Target customers and demographics

@@ -5,11 +5,15 @@ queries:
   - '"{brand}" strategy goals priorities {year}'
   - '"{brand}" challenges opportunities'
   - '"{brand}" marketing strategy advertising focus'
+topic_queries:
+  - '"{brand}" {topic} strategy plans'
+  - '"{brand}" {topic} growth opportunity'
 max_results_per_query: 3
 timelimit: "y"
 ---
 
 Analyse the following search results about {brand} and identify:
+
 - Stated strategic goals or priorities (with timeframes if available)
 - Key challenges or headwinds the company faces
 - Growth areas or opportunities being pursued

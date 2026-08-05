@@ -516,3 +516,70 @@ def test_generate_insights_payload_is_json_serialisable():
 
     for key in ("audience_segments", "format_recommendations", "historical_research"):
         assert revived[key] == result[key]
+
+
+def test_advertiser_research_receives_the_topic_and_brief():
+    """#155: the topic and client brief must reach the advertiser research step."""
+    from unittest.mock import patch, MagicMock
+
+    mock_response = MagicMock()
+    mock_response.choices = [MagicMock()]
+    mock_response.choices[0].message.content = "Test brief content"
+
+    empty_segments = {"matched": False, "note": "", "query_terms": [], "platforms": []}
+
+    with patch("src.synthesiser.research_advertiser", return_value=[]) as mock_research, \
+         patch("src.synthesiser.expand_query", return_value={"keywords": [], "categories": []}), \
+         patch("src.synthesiser.recommend_segments", return_value=empty_segments), \
+         patch("src.synthesiser.get_campaign_summary", return_value={"summary": "", "campaigns": []}), \
+         patch("src.synthesiser.summarise_brief", return_value="Festive food push in November.") as mock_summarise, \
+         patch("src.synthesiser.OpenAI") as mock_openai_cls:
+
+        mock_client = MagicMock()
+        mock_client.chat.completions.create.return_value = mock_response
+        mock_openai_cls.return_value = mock_client
+
+        from src.synthesiser import generate_insights
+        generate_insights(
+            topic="Christmas",
+            advertiser="Morrisons",
+            kpi="Reach",
+            include_google_trends=False,
+            client_brief="We want to drive festive food sales in November.",
+        )
+
+    assert mock_research.call_args.kwargs["topic"] == "Christmas"
+    assert mock_research.call_args.kwargs["client_brief"] == "Festive food push in November."
+    # The brief is summarised once and reused, not summarised twice.
+    assert mock_summarise.call_count == 1
+
+
+def test_advertiser_research_gets_no_brief_context_when_none_supplied():
+    """An absent brief must not reach research as the 'No client brief' sentinel."""
+    from unittest.mock import patch, MagicMock
+
+    mock_response = MagicMock()
+    mock_response.choices = [MagicMock()]
+    mock_response.choices[0].message.content = "Test brief content"
+
+    empty_segments = {"matched": False, "note": "", "query_terms": [], "platforms": []}
+
+    with patch("src.synthesiser.research_advertiser", return_value=[]) as mock_research, \
+         patch("src.synthesiser.expand_query", return_value={"keywords": [], "categories": []}), \
+         patch("src.synthesiser.recommend_segments", return_value=empty_segments), \
+         patch("src.synthesiser.get_campaign_summary", return_value={"summary": "", "campaigns": []}), \
+         patch("src.synthesiser.OpenAI") as mock_openai_cls:
+
+        mock_client = MagicMock()
+        mock_client.chat.completions.create.return_value = mock_response
+        mock_openai_cls.return_value = mock_client
+
+        from src.synthesiser import generate_insights
+        generate_insights(
+            topic="Christmas",
+            advertiser="Morrisons",
+            kpi="Reach",
+            include_google_trends=False,
+        )
+
+    assert mock_research.call_args.kwargs["client_brief"] == ""
