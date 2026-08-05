@@ -1,0 +1,86 @@
+name: CI
+
+# Runs on every PR into main, and on direct pushes to main so a local merge
+# cannot bypass the checks.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  backend:
+    name: Backend tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      # Run both versions to completion — knowing 3.9 fails is more useful when
+      # you can also see whether 3.11 passed.
+      fail-fast: false
+      matrix:
+        # 3.11 is production (runtime.txt). 3.9 is the macOS system Python this
+        # project still supports, which is why CLAUDE.md forbids `dict | None`
+        # and other 3.10+ syntax. Testing both turns that prose rule into a
+        # check — drop 3.9 here if the rule is ever retired.
+        python-version: ["3.9", "3.11"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tests
+        # config.py raises on a missing JWT_SECRET, so the suite cannot even
+        # import without one. This is the only variable the tests need — every
+        # OpenAI call is mocked, and DATABASE_URL falls back to SQLite.
+        # Obviously fake, and never a real secret.
+        env:
+          JWT_SECRET: dummy-secret-for-ci
+        run: python -m pytest tests/ -v
+
+  frontend:
+    name: Frontend type check, tests & build
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          # Next 16 requires >=20.9; 22 is current LTS and matches local dev.
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        # `ci` not `install`: installs exactly the lockfile, and fails rather
+        # than silently updating it.
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build
+        # A build-time value only — it is inlined into the bundle, so it has to
+        # be present for compilation but does not have to work.
+        env:
+          NEXT_PUBLIC_MIXPANEL_TOKEN: dummy-token-for-build
+        run: npm run build
