@@ -1,8 +1,16 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  ReactNode,
+} from "react";
 import { useRouter } from "next/navigation";
 import mixpanel from "mixpanel-browser";
+import { clearDraft, draftStorage } from "@/lib/briefDraft";
 
 interface User {
   id: number;
@@ -40,7 +48,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (res.ok) return res.json();
         return null;
       })
-      .then((data) => { setUser(data); if (data) identifyUser(data); })
+      .then((data) => {
+        setUser(data);
+        if (data) identifyUser(data);
+      })
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
   }, []);
@@ -61,21 +72,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     identifyUser(data);
   }, []);
 
-  const signup = useCallback(async (email: string, name: string, password: string) => {
-    const res = await fetch(`/api/auth/signup`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ email, name, password }),
-    });
-    if (!res.ok) {
+  const signup = useCallback(
+    async (email: string, name: string, password: string) => {
+      const res = await fetch(`/api/auth/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, name, password }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.detail || "Signup failed");
+      }
       const data = await res.json();
-      throw new Error(data.detail || "Signup failed");
-    }
-    const data = await res.json();
-    setUser(data);
-    identifyUser(data);
-  }, []);
+      setUser(data);
+      identifyUser(data);
+    },
+    [],
+  );
 
   const logout = useCallback(async () => {
     await fetch(`/api/auth/logout`, {
@@ -83,6 +97,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       credentials: "include",
     });
     setUser(null);
+    // The saved brief form (#160) belongs to the person who typed it, not to
+    // the tab — whoever signs in next must not find it waiting for them.
+    clearDraft(draftStorage());
     router.push("/");
   }, [router]);
 

@@ -141,12 +141,23 @@ Requests concerning GDPR Article 9 special category data — health conditions, 
 1. **Server-side**: `proxy.ts` checks for `access_token` cookie on `/app/*` routes, redirects to `/login?redirect=...` if missing
 2. **Client-side**: `useAuth()` guard in `/app/page.tsx` handles client-side navigation that bypasses the proxy
 
+**Brief form draft** (`lib/briefDraft.ts`):
+
+The New Brief form is mirrored into **sessionStorage** on every change, so a reload hands the input back instead of an empty form (#160). Generation is the longest wait in the product, which is exactly when a user reloads — so the persisted draft also carries a `generating` flag, and a reload that lands mid-run restores the input _and_ says the run was interrupted, rather than presenting a full form with nothing happening.
+
+sessionStorage rather than localStorage is the deliberate choice: a client brief is free text a planner may have pasted from an email, and a draft should outlive a reload, not the tab. `logout()` clears it as well, so the next person to sign in on a shared tab does not inherit it.
+
+Two things are stored as _absence_, because both are decisions rather than accidents: an emptied form (`isEmptyDraft` → `removeItem`, so clearing the fields and reloading cannot resurrect them) and a form whose brief has been generated — that one lives in My Briefs now, and the page tracks the submitted input so an edit afterwards starts saving again.
+
+`briefDraft.ts` takes the storage as an argument and never touches `window`, which is what makes it testable and makes a server render a `null` argument rather than a special case. Every failure path — corrupt value, storage that refuses to answer under Safari private browsing, quota — returns null or does nothing. A convenience must never be able to stop the page rendering.
+
 **Auth context** (`contexts/AuthContext.tsx`):
 
 - `AuthProvider` wraps entire app (via `providers.tsx` → `layout.tsx`)
 - `useAuth()` hook: `{ user, loading, login, signup, logout }`
 - Login/signup pages must use `useAuth()` methods (not raw fetch) so state updates before navigation
 - Calls `mixpanel.identify()` on successful auth
+- `logout()` also clears the saved brief draft (see above)
 
 **Analytics** (`components/AnalyticsProvider.tsx`):
 

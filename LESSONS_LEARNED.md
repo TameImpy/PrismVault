@@ -825,3 +825,47 @@ every segment reads `Matched on: health` shows at a glance that nothing matched
 "hearing", which is exactly the report the tester could only describe as a
 mystery. Making the mechanism visible turns a silent looseness into a
 reviewable one, which was the whole point of the ticket.
+
+---
+
+## 5 Aug 2026 — Restoring a form is easy; deciding when _not_ to is the design (#160)
+
+Persisting the brief form across a reload took one small pure module. What took
+the thinking was the ticket's fourth acceptance criterion — "nothing is retained
+beyond what the user would expect" — because it is the one that decides whether
+the feature feels like a safety net or like a form that won't let go.
+
+Two states look identical in storage and mean opposite things. An **empty form**
+is not "nothing to save"; it is a decision to clear, and if it is stored as a
+value the next reload hands back the very input the user just deleted. It is
+stored as _absence_ instead: `isEmptyDraft` makes `writeDraft` call
+`removeItem`. A **submitted form** is the same shape as an unsubmitted one, but
+its content now exists as a saved brief, so keeping the draft would resurrect
+work that was already finished. The page snapshots the input it submitted and
+clears the draft while the form still matches it — an edit afterwards differs
+from the snapshot, so saving resumes on its own with no flag to reset.
+
+The other judgement call was the store. localStorage would have satisfied "form
+input survives a page refresh" more thoroughly and been wrong: a client brief is
+free text a planner may have pasted out of an email, and leaving it on disk for
+whoever opens the browser next is not what "my form came back" means. A draft
+should outlive a reload, not the tab — that is sessionStorage. The same reasoning
+demanded that `logout()` clear it, because a tab outlives a session even when
+storage is scoped to it.
+
+Two mechanical notes worth keeping. Firstly, the module takes the storage as an
+argument and never touches `window`; that is what made 22 tests possible with a
+hand-rolled fake and no jsdom, and it turns a server render into a `null`
+argument rather than a special case. Secondly, the restore-on-mount effect must
+set a `draftRestored` flag before the persist-on-change effect is allowed to
+write — otherwise the persist effect fires first with the initial empty state and
+overwrites the very draft it was about to restore. The safety net erasing the
+thing it was there to catch is the failure mode to watch for whenever "load from
+storage" and "save to storage" are two effects over the same state.
+
+Finally, a test can be wrong about what it expects rather than about what it
+checks. `readDraft` on a stored value whose every field was the wrong type was
+asserted to return an empty draft; it returns null, because a draft with nothing
+restorable in it _is_ nothing, and reporting it as a value would leave the caller
+two cases that look identical on screen. The implementation was right and the
+expectation was lazy — worth checking which one is wrong before "fixing" either.

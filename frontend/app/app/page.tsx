@@ -20,6 +20,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { AudienceSegmentsPayload } from "@/lib/audienceSegments";
 import { FormatRecommendation } from "@/lib/formatRecommendations";
 import { PROVENANCE_SECTIONS, ProvenanceEntry } from "@/lib/provenance";
+import {
+  BriefDraft,
+  clearDraft,
+  draftStorage,
+  readDraft,
+  sameInput,
+  writeDraft,
+} from "@/lib/briefDraft";
 
 interface Source {
   editor: string;
@@ -452,6 +460,61 @@ export default function InsightsTool() {
     setSampleCount(count);
   }, []);
 
+  // --- Draft persistence (#160) -------------------------------------------
+  // The form lives in sessionStorage as well as in state, so a reload — most
+  // likely during generation, the longest wait in the product — hands the
+  // input back instead of an empty form. See lib/briefDraft.ts.
+
+  /** Set once the restore attempt has run; nothing is written before then. */
+  const [draftRestored, setDraftRestored] = useState(false);
+  /** True when the draft we restored was saved with a run still in flight. */
+  const [interruptedRun, setInterruptedRun] = useState(false);
+  /**
+   * The input of the last brief generated in this session. While the form
+   * still matches it there is nothing unsaved to keep, so the draft is cleared
+   * — a submitted brief lives in My Briefs and should not resurrect as a draft.
+   */
+  const [submittedInput, setSubmittedInput] = useState<BriefDraft | null>(null);
+
+  useEffect(() => {
+    const draft = readDraft(draftStorage());
+    if (draft) {
+      setTopic(draft.topic);
+      setAdvertiser(draft.advertiser);
+      setKpi(draft.kpi);
+      setClientBrief(draft.clientBrief);
+      setIncludeTrends(draft.includeTrends);
+      setInterruptedRun(draft.generating);
+    }
+    setDraftRestored(true);
+  }, []);
+
+  useEffect(() => {
+    if (!draftRestored) return;
+    const draft: BriefDraft = {
+      topic,
+      advertiser,
+      kpi,
+      clientBrief,
+      includeTrends,
+      generating: loading,
+    };
+    if (submittedInput && sameInput(draft, submittedInput)) {
+      clearDraft(draftStorage());
+    } else {
+      writeDraft(draftStorage(), draft);
+    }
+  }, [
+    draftRestored,
+    topic,
+    advertiser,
+    kpi,
+    clientBrief,
+    includeTrends,
+    loading,
+    submittedInput,
+  ]);
+
   // Fetch sample count on mount
   useEffect(() => {
     fetch("/api/email-samples", { credentials: "include" })
@@ -471,6 +534,18 @@ export default function InsightsTool() {
     setLoading(true);
     setError(null);
     setResult(null);
+    setInterruptedRun(false);
+
+    // The form exactly as submitted, so the draft can be dropped once the
+    // brief exists — and kept if the user edits the form afterwards.
+    const submitted: BriefDraft = {
+      topic,
+      advertiser,
+      kpi,
+      clientBrief,
+      includeTrends,
+      generating: false,
+    };
 
     const eventProps = {
       topic: topic.trim(),
@@ -508,6 +583,7 @@ export default function InsightsTool() {
 
       const data: InsightsResult = await res.json();
       setResult(data);
+      setSubmittedInput(submitted);
       track("Insights Generated", {
         ...eventProps,
         duration_ms: Date.now() - startTime,
@@ -922,6 +998,29 @@ export default function InsightsTool() {
           {/* Input panel — only show on New Brief tab */}
           {activeTab === "new" && (
             <>
+              {/* A reload landed mid-generation (#160). The input below is the
+                  restored draft, so say so rather than leaving the user to
+                  wonder whether the run they started is still going. */}
+              {interruptedRun && !loading && (
+                <div className="bg-surface-container border border-accent-cyan/30 rounded-xl p-4 mb-6 flex items-start justify-between gap-4">
+                  <p className="text-sm text-on-surface-variant">
+                    <span className="font-bold text-on-surface">
+                      Your last run was interrupted by a page reload.
+                    </span>{" "}
+                    Your input has been restored below — press Generate Insights
+                    to run it again. If the run did finish, the brief is waiting
+                    in My Briefs.
+                  </p>
+                  <button
+                    onClick={() => setInterruptedRun(false)}
+                    className="text-xs font-bold tracking-widest uppercase text-on-surface-variant hover:text-on-surface transition-colors shrink-0"
+                    aria-label="Dismiss"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              )}
+
               <GlassCard className="mb-8">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                   <div>
