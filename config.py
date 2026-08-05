@@ -22,6 +22,10 @@ EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
 CHAT_MODEL = os.getenv("CHAT_MODEL", "gpt-4o")
 CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "500"))
 CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "50"))
+# Audience segments below this reach are too small to plan against and are never
+# recommended. Set to 0 to disable the floor. See src/audience.py for why it is
+# applied at recommendation time rather than at ingest.
+MIN_SEGMENT_REACH = int(os.getenv("MIN_SEGMENT_REACH", "5000"))
 # Signup is restricted to these email domains. Comma-separated, case-insensitive.
 # Set ALLOWED_EMAIL_DOMAINS="" to allow any domain (local dev / open demo only).
 ALLOWED_EMAIL_DOMAINS = [

@@ -93,6 +93,18 @@ def test_chroma_cloud_vars_default_to_empty():
     assert cfg.CHROMA_CLOUD_DATABASE == ""
 
 
+def test_min_segment_reach_defaults_to_5000():
+    """The recommendation-time reach floor defaults to 5,000 (#159)."""
+    cfg = _reload_config({"MIN_SEGMENT_REACH": None})
+    assert cfg.MIN_SEGMENT_REACH == 5000
+
+
+def test_min_segment_reach_from_env():
+    """The floor can be moved without rebuilding the segment dataset."""
+    cfg = _reload_config({"MIN_SEGMENT_REACH": "10000"})
+    assert cfg.MIN_SEGMENT_REACH == 10000
+
+
 def test_chroma_cloud_vars_from_env():
     """Chroma Cloud vars should be read from environment when set."""
     cfg = _reload_config({

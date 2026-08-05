@@ -453,3 +453,53 @@ fixes. Trace the parameter, then judge the wording.
 **Cost, recorded honestly:** searches per brief go from 9 to 15 when a topic is
 present, roughly +9s of rate-limit delay. That was accepted as the price of the
 fix, not overlooked.
+
+## 2026-08-05 — Where a filter sits decides what it filters (#159)
+
+**What went wrong.** Recommended audiences included segments of 30, 13 and 5
+people. Ranking was relevance-first, reach-second with no floor, so a perfectly
+on-topic segment of five people outranked a broad one. 116 of 1,385 segments sit
+below a reach of 5,000; 38 are below 100, with the smallest at 1, 2 and 3 —
+noise, not small audiences.
+
+**The fix.** A `MIN_SEGMENT_REACH` floor (default 5,000, env-overridable),
+applied inside `recommend_segments` rather than in the CSV or at load.
+
+**The decision that mattered: _where_ in the function.** The floor is applied to
+the candidate pool as the first statement, before matching, weighting and
+capping — not to the final list on the way out. Filtering on the way out looks
+equivalent and isn't:
+
+1. The match ladder broadens to category-only matches when fewer than three
+   keyword hits are found. Filtering afterwards lets three sub-floor hits
+   suppress the broadening and _then_ get dropped, returning nothing when the
+   ladder would have found usable segments.
+2. The per-platform cap of 8 is applied before an outbound filter would run, so
+   sub-floor segments would eat slots and hand back a short list rather than the
+   next most relevant segment above the floor — which is precisely what the
+   acceptance criteria asked for.
+
+**Recommendation time, not ingest.** `data/segments.csv` stays the faithful
+record of what Permutive and AudienceProject returned. Stripping rows at ingest
+would have been fewer lines and would have made the threshold un-moveable
+without a data rebuild, and lost the ability to answer "what did the platform
+actually return?".
+
+**Two consequences worth naming rather than discovering later.** Filtering at
+the top also moves the IDF base — keyword weights are now computed over 1,269
+segments, not 1,385 — so the comment claiming weights come from "the whole
+catalogue" had to be corrected rather than left to mislead the next reader. And
+the floor is scoped to the recommender: the Assistant's `search_segments`
+answers "what segments exist?", not "what should I buy?", so it still sees
+everything. That is a decision, and it is written down in `_drop_below_reach_floor`
+where someone looking for it will find it.
+
+**Watch the fixtures when you add a floor.** `test_capped_at_eight_per_platform`
+built its ten segments with reaches of 1,000–10,000; four fell below the new
+floor and the cap test broke for a reason unrelated to capping. Test data
+chosen when a constraint didn't exist will quietly violate it later — scale the
+fixture, don't weaken the floor.
+
+**Transferable lesson:** a filter's position in a pipeline is part of its
+specification. "Exclude X" and "exclude X _before_ the fallback and the cap"
+produce different outputs on exactly the inputs the bug report is about.
