@@ -15,6 +15,9 @@ export interface AudienceSegment {
   code: string;
   frequency: string;
   window: string;
+  /** One line naming the terms that put this segment in the brief (#163).
+   *  Optional so a brief saved before match reasons existed still renders. */
+  match_reason?: string;
 }
 
 export interface AudiencePlatform {
@@ -68,4 +71,17 @@ export function segmentEvidence(segment: AudienceSegment): string {
     return "";
   }
   return description;
+}
+
+/**
+ * Why this segment is in the brief, in one line (#163).
+ *
+ * The wording is the backend's — it is derived there from the same weights
+ * that ranked the segment, so what a user reads cannot drift from what
+ * actually selected it. This helper only guards the empty cases: a brief saved
+ * before match reasons existed carries none, and rendering "undefined" beside
+ * a reach figure would be worse than rendering nothing.
+ */
+export function segmentMatchReason(segment: AudienceSegment): string {
+  return (segment.match_reason || "").trim();
 }

@@ -168,6 +168,51 @@ def _relevance_score(segment, keyword_weights):
     return score
 
 
+# How many terms a match reason names. Three shows the shape of a match and
+# still reads as one line beside the segment.
+_MAX_REASON_TERMS = 3
+
+
+def _matched_terms(segment, keyword_weights):
+    """The expansion terms present in this segment's text, most telling first.
+
+    Ordered by the same contribution that ranked the segment — a rare term that
+    hit the segment's name outranks a common one buried in the description — so
+    the terms a user reads are the ones that actually did the selecting.
+    """
+    haystack = _segment_haystack(segment)
+    name_stems = set(_tokenise(segment.get("segment_name", "")))
+    hits = []
+    for kw, weight in keyword_weights.items():
+        kw_stems = set(_tokenise(kw))
+        if kw_stems & haystack:
+            hits.append((weight * (1.5 if (kw_stems & name_stems) else 1.0), kw))
+    # Weight descending, then the term itself, so equally-weighted terms come
+    # out in a stable order rather than however the expansion happened to list
+    # them.
+    hits.sort(key=lambda pair: (-pair[0], pair[1]))
+    return [kw for _, kw in hits[:_MAX_REASON_TERMS]]
+
+
+def _match_reason(segment, keyword_weights):
+    """One line saying why this segment was recommended, in the user's words (#163).
+
+    It names terms, never mechanics: a planner reading "Matched on: hearing,
+    over 65s" on a hearing-aids brief can see for themselves that the match is
+    demographic rather than subject-led, which is the diagnosis the ticket was
+    raised to make possible. Segments that arrived on the category rung of the
+    ladder say so — a category match is a broader, weaker claim than a term
+    hit, and reading as much is the point.
+    """
+    terms = _matched_terms(segment, keyword_weights)
+    if terms:
+        return "Matched on: %s" % ", ".join(terms)
+    category = (segment.get("category", "") or "").strip()
+    if category:
+        return "Matched on category: %s" % category
+    return ""
+
+
 def _reach_of(segment):
     """Reach as an int; 0 when the source value is missing or unreadable."""
     try:
@@ -192,8 +237,12 @@ def _drop_below_reach_floor(segments, min_reach):
     return [s for s in segments if _reach_of(s) >= min_reach]
 
 
-def _to_item(segment):
-    """Project a raw segment row into a clean payload item (reach as int)."""
+def _to_item(segment, keyword_weights=None):
+    """Project a raw segment row into a clean payload item (reach as int).
+
+    `keyword_weights` are the weights that ranked this run, so the match reason
+    is derived from the selection itself rather than reconstructed afterwards.
+    """
     return {
         "segment_name": segment.get("segment_name", ""),
         "reach": _reach_of(segment),
@@ -204,6 +253,7 @@ def _to_item(segment):
         "code": segment.get("code", ""),
         "frequency": segment.get("frequency", ""),
         "window": segment.get("window", ""),
+        "match_reason": _match_reason(segment, keyword_weights or {}),
     }
 
 
@@ -275,7 +325,7 @@ def recommend_segments(advertiser, topic, client_brief="", segments=None,
         platforms.append({
             "platform": platform,
             "framing": _PLATFORM_FRAMING[platform],
-            "segments": [_to_item(s) for s in rows[:per_platform_limit]],
+            "segments": [_to_item(s, weights) for s in rows[:per_platform_limit]],
         })
 
     has_any = any(p["segments"] for p in platforms)
@@ -311,9 +361,14 @@ def format_audience_segments(payload):
         lines.append("")
         lines.append("%s (%s):" % (plat["platform"], plat["framing"]))
         for seg in plat["segments"]:
+            # The match reason is rendered beside the figures in the UI (#163);
+            # showing the model the same line keeps its prose from offering a
+            # different account of why a segment is there.
+            reason = seg.get("match_reason", "")
             lines.append(
-                "- %s — reach %s. %s" % (
-                    seg["segment_name"], "{:,}".format(seg["reach"]), seg["plain_english"],
+                "- %s — reach %s. %s%s" % (
+                    seg["segment_name"], "{:,}".format(seg["reach"]),
+                    seg["plain_english"], " (%s)" % reason if reason else "",
                 )
             )
     return "\n".join(lines)

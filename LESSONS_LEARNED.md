@@ -781,3 +781,36 @@ CI's 12 failures exactly, and confirmed in one run that the real requirement is
 "works without X", make X actually absent rather than arranging to look
 elsewhere for it — and prefer a reproduction that can fail over an argument
 that it should pass.
+
+---
+
+## 5 Aug 2026 — A test fixture that "isolated" the category fallback wasn't isolating anything (#163)
+
+Adding a match reason per recommended segment needed a test proving that a
+segment arriving on the _category_ rung of the match ladder says
+"Matched on category: Gardening" rather than naming terms. The obvious fixture
+— keyword `garden`, category `Gardening`, one segment mentioning "garden" and
+one not — failed, insisting the second segment had matched on `garden` too.
+
+It had. `_segment_haystack()` builds its token set from the segment's name,
+description **and category**, and `_stem()` strips `ing`, so the _category_
+`Gardening` stems to `garden` and is itself a keyword hit. Every row in that
+category was a term match; the category fallback rung was never exercised.
+
+The pre-existing test directly above it carried a comment claiming "only ONE
+keyword hit" for the same fixture. Its assertions passed, so the wrong claim
+had sat there unchallenged — a fixture can be wrong about _why_ it passes and
+still pass, which is precisely what a new assertion on the mechanism exposes.
+
+The fix was to choose a keyword sharing no stem with the category name
+(`allotment` / `Gardening`). The general lesson: when a matcher searches
+several fields at once, a test isolating one path has to check the value it
+picked isn't reachable through the others. Print the intermediate — here, the
+haystack — rather than reasoning about which field "should" have matched.
+
+A second thing this made visible: multi-word expansion terms match on _any_
+token, so `gut health` matches anything mentioning "health". That behaviour
+predates #163, but the new reason line surfaces it — "January Health Kickers —
+Matched on: gut health" now reads as the loose match it always was. Making the
+mechanism visible turns a silent looseness into a reviewable one, which was the
+whole point of the ticket.

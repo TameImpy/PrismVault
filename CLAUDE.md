@@ -101,6 +101,18 @@ Two sections are per-brief rather than per-registry: Historical Research takes i
 
 The footer attaches to a section by matching the registry's `section` against the brief's `##` heading, which the model writes — `tests/test_provenance.py` pins those headings against `SYSTEM_PROMPT` so a prompt edit cannot silently detach them. Surfaces with no heading of their own (the Google Trends, Client Relationship and Audience Segments panels) name their section from `PROVENANCE_SECTIONS` in `frontend/lib/provenance.ts`, and a test checks those literals against the registry across the language boundary. The Audience Segments and Client Relationship sections state their provenance twice — once on the prose card, once on the panel holding the actual figures — deliberately: a reviewer reconciling a reach number is reading the table, and sending them to another card is the gap #156 was raised about.
 
+**Selection rationale** (`src/audience.py`, `frontend/components/FormatRationale.tsx`):
+
+Every recommendation says in one line why it is there, in the planner's language and never the scoring mechanics. Like provenance, both lines are placed deterministically rather than written by the model, so a reason cannot drift from what actually selected the thing.
+
+Segments carry a `match_reason` built from the same keyword weights that ranked them — the terms are ordered by their real contribution (a rare term hitting the segment's name outranks a common one in the description) and capped at three so the line stays one line. A segment that arrived on the category rung of the match ladder says `"Matched on category: Gardening"` instead, because a category match is a broader, weaker claim and reading as much is the point. The value of naming terms is diagnostic: a planner seeing `"Matched on: hearing, over 65s"` on a hearing-aids brief can tell for themselves that the match is demographic rather than subject-led — the report that prompted #163.
+
+The rendered prompt shows the model the same `Matched on:` line so its Audience Timing prose can't offer a different account, and `SYSTEM_PROMPT` tells it not to reproduce the line — the user already has it beside the figures. The instruction and the rendering are two halves of one pair, pinned by `tests/test_audience.py`.
+
+Formats need no new logic: the reason is the catalogue's existing `best_for_brief`, and the rows the synthesiser hands over are already narrowed to the formats the brief actually recommended (step 11), so a format merely named in prose never gets a reason. It renders as a strip below the Recommended Products list rather than inside it, because `SYSTEM_PROMPT` deliberately holds each entry to four fields and bans a per-format rationale line — #163 is answered without the list growing a fifth field the model would have to be trusted to fill. The strip binds to the section by matching `RECOMMENDED_PRODUCTS_SECTION` in `frontend/lib/formatRecommendations.ts` against the model-written `##` heading, pinned against `SYSTEM_PROMPT` by `tests/test_formats.py` exactly as the provenance headings are. `indicative_cost` stays off this surface as it does off every other.
+
+Both lines are internal planning vocabulary and deliberately do not reach the client-facing surfaces (drafted email, deck) — unlike provenance, which does.
+
 **Pipeline flow**:
 `api/main.py` → `synthesiser.generate_insights()` → gathers all sources → assembles prompt from `src/prompts.py` → calls GPT-4o → returns dict with synthesis + raw data for UI.
 
@@ -165,6 +177,7 @@ DuckDuckGo searches use the `ddgs` package (not the deprecated `duckduckgo_searc
 ### Key data contracts
 
 - `generate_insights()` returns: `{content, sources, research_skills, audience_segments, google_trends, format_recommendations, campaign_history, client_brief_summary, historical_research, provenance}`
+- Each `audience_segments` segment: `{segment_name, reach, platform, category, plain_english, description, code, frequency, window, match_reason}`, where `match_reason` names the terms that selected it (#163). Optional on the client — a brief saved before it existed renders the segment without one
 - Each `provenance` entry: `{section, source, as_at, coverage, period, cadence}`, where `section` matches the brief's `##` heading (or `"Google Trends"`, which has no heading of its own). Optional on the client — a brief saved before provenance existed simply renders none
 - Each skill result: `{skill_name, raw_results, processed_summary, error}`; each entry in `raw_results` is `{title, body, href, topic_anchored}`, where `topic_anchored` records whether that hit came from a topic query or a brand-only one
 - `USER_PROMPT_TEMPLATE` placeholders: `{topic}`, `{advertiser}`, `{advertiser_kpi}`, `{editorial_insights}`, `{advertiser_research}`, `{audience_timing}`, `{google_trends}`, `{format_recommendations}`, `{client_brief}`

@@ -7,6 +7,7 @@ import {
   formatReach,
   isEmptyState,
   segmentEvidence,
+  segmentMatchReason,
   visiblePlatforms,
 } from "@/lib/audienceSegments";
 import { PROVENANCE_SECTIONS, ProvenanceEntry } from "@/lib/provenance";
@@ -20,6 +21,12 @@ import { PROVENANCE_SECTIONS, ProvenanceEntry } from "@/lib/provenance";
  * plain-English "why" is the headline with the raw methodology as secondary
  * evidence; reach is quoted verbatim; and there is NEVER a summed total — a
  * visible note says so because segments overlap and are not de-duplicated.
+ *
+ * Each row also names the terms that put the segment here (#163). That line
+ * describes the *selection*, not the audience, which is why it is set apart
+ * from the evidence line: a reader who thinks a segment looks wrong for the
+ * brief checks it to find out whether the match was on the subject or merely
+ * on the demographic.
  *
  * The reach figures live here, so the source line does too (#156). The brief's
  * "Audience Segments & Reach" prose card carries the same footer: this is the
@@ -83,6 +90,7 @@ export default function AudienceSegmentsPanel({
               <ul className="divide-y divide-white/5">
                 {platform.segments.map((segment) => {
                   const evidence = segmentEvidence(segment);
+                  const matchReason = segmentMatchReason(segment);
                   return (
                     <li
                       key={`${segment.platform}-${segment.code}-${segment.segment_name}`}
@@ -104,6 +112,15 @@ export default function AudienceSegmentsPanel({
                             }
                           >
                             {segment.segment_name} &middot; {evidence}
+                          </p>
+                        )}
+                        {/* Why this segment is here (#163). Set apart from the
+                            evidence line because it describes the selection,
+                            not the audience — it is what a reader checks when a
+                            segment looks wrong for the brief. */}
+                        {matchReason && (
+                          <p className="text-accent text-xs mt-1.5 leading-relaxed">
+                            {matchReason}
                           </p>
                         )}
                       </div>
