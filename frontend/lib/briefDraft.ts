@@ -12,9 +12,11 @@
  * clears it too (`contexts/AuthContext.tsx`), so the next person to sign in on
  * the same tab does not inherit it.
  *
- * Nothing here touches `window`; the caller passes the storage in. That keeps
- * the module testable, and keeps a server render — where there is no storage at
- * all — a `null` argument rather than a special case.
+ * Reading and writing take the storage as an argument rather than reaching for
+ * it, which keeps them testable without a browser and turns a server render —
+ * where there is no storage at all — into a `null` argument rather than a
+ * special case. `draftStorage()` at the foot of the file is the single place
+ * that touches `window`, kept apart from the logic for exactly that reason.
  */
 
 /** What the New Brief form holds, plus whether a run was in flight. */
@@ -66,6 +68,19 @@ export function isEmptyDraft(draft: BriefDraft): boolean {
   );
 }
 
+/**
+ * Whether a draft is not worth keeping at all. An empty form usually is not —
+ * but an empty form with a run in flight still has something to say, because
+ * the interrupted-run notice is the one thing a reload mid-generation needs.
+ *
+ * Read and write both ask this question, and they must not answer it
+ * differently: a `readDraft` stricter than `writeDraft` would drop drafts that
+ * were deliberately saved, and the reverse would keep keys nothing can restore.
+ */
+function isDiscardable(draft: BriefDraft): boolean {
+  return isEmptyDraft(draft) && !draft.generating;
+}
+
 /** Whether two drafts hold the same input, disregarding the run flag. */
 export function sameInput(a: BriefDraft, b: BriefDraft): boolean {
   return (
@@ -77,11 +92,13 @@ export function sameInput(a: BriefDraft, b: BriefDraft): boolean {
   );
 }
 
-function str(value: unknown, fallback: string): string {
+/** The stored value if it really is a string, else the form's default. */
+function stringOr(value: unknown, fallback: string): string {
   return typeof value === "string" ? value : fallback;
 }
 
-function bool(value: unknown, fallback: boolean): boolean {
+/** The stored value if it really is a boolean, else the form's default. */
+function booleanOr(value: unknown, fallback: boolean): boolean {
   return typeof value === "boolean" ? value : fallback;
 }
 
@@ -118,17 +135,17 @@ export function readDraft(
 
   const raw = parsed as Record<string, unknown>;
   const draft: BriefDraft = {
-    topic: str(raw.topic, EMPTY_DRAFT.topic),
-    advertiser: str(raw.advertiser, EMPTY_DRAFT.advertiser),
-    kpi: str(raw.kpi, EMPTY_DRAFT.kpi),
-    clientBrief: str(raw.clientBrief, EMPTY_DRAFT.clientBrief),
-    includeTrends: bool(raw.includeTrends, EMPTY_DRAFT.includeTrends),
-    generating: bool(raw.generating, EMPTY_DRAFT.generating),
+    topic: stringOr(raw.topic, EMPTY_DRAFT.topic),
+    advertiser: stringOr(raw.advertiser, EMPTY_DRAFT.advertiser),
+    kpi: stringOr(raw.kpi, EMPTY_DRAFT.kpi),
+    clientBrief: stringOr(raw.clientBrief, EMPTY_DRAFT.clientBrief),
+    includeTrends: booleanOr(raw.includeTrends, EMPTY_DRAFT.includeTrends),
+    generating: booleanOr(raw.generating, EMPTY_DRAFT.generating),
   };
 
-  // An empty draft restores nothing, so report it as nothing — the caller then
-  // has one case to handle, not two that look the same on screen.
-  return isEmptyDraft(draft) && !draft.generating ? null : draft;
+  // A discardable draft restores nothing, so report it as nothing — the caller
+  // then has one case to handle, not two that look the same on screen.
+  return isDiscardable(draft) ? null : draft;
 }
 
 /** Save a draft, or clear the key when there is nothing left in the form. */
@@ -137,7 +154,7 @@ export function writeDraft(
   draft: BriefDraft,
 ): void {
   if (!storage) return;
-  if (isEmptyDraft(draft) && !draft.generating) {
+  if (isDiscardable(draft)) {
     clearDraft(storage);
     return;
   }

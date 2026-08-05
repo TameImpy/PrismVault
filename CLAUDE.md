@@ -149,7 +149,9 @@ sessionStorage rather than localStorage is the deliberate choice: a client brief
 
 Two things are stored as _absence_, because both are decisions rather than accidents: an emptied form (`isEmptyDraft` → `removeItem`, so clearing the fields and reloading cannot resurrect them) and a form whose brief has been generated — that one lives in My Briefs now, and the page tracks the submitted input so an edit afterwards starts saving again.
 
-`briefDraft.ts` takes the storage as an argument and never touches `window`, which is what makes it testable and makes a server render a `null` argument rather than a special case. Every failure path — corrupt value, storage that refuses to answer under Safari private browsing, quota — returns null or does nothing. A convenience must never be able to stop the page rendering.
+Reading and writing take the storage as an argument rather than reaching for it, which is what makes them testable without a browser and makes a server render a `null` argument rather than a special case; `draftStorage()` is the single place that touches `window`, kept apart from the logic for that reason. Every failure path — corrupt value, storage that refuses to answer under Safari private browsing, quota — returns null or does nothing. A convenience must never be able to stop the page rendering.
+
+The interrupted-run notice sends the user to **My Briefs first and the Generate button second**, deliberately. A reload closes the connection but does not stop the server, which saves the brief when generation finishes (`api/main.py`) — so an interrupted run has most likely completed, and leading with "run it again" would talk the user into paying for a second GPT-4o generation of a brief they already have.
 
 **Auth context** (`contexts/AuthContext.tsx`):
 

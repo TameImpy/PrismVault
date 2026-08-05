@@ -853,10 +853,15 @@ should outlive a reload, not the tab — that is sessionStorage. The same reason
 demanded that `logout()` clear it, because a tab outlives a session even when
 storage is scoped to it.
 
-Two mechanical notes worth keeping. Firstly, the module takes the storage as an
-argument and never touches `window`; that is what made 22 tests possible with a
-hand-rolled fake and no jsdom, and it turns a server render into a `null`
-argument rather than a special case. Secondly, the restore-on-mount effect must
+Two mechanical notes worth keeping. Firstly, reading and writing take the
+storage as an argument rather than reaching for it, and the one function that
+does touch `window` sits alone at the foot of the file; that is what made the
+tests possible with a hand-rolled fake and no jsdom, and it turns a server
+render into a `null` argument rather than a special case. (The first draft of
+this entry, and of the module header, claimed the file "never touches
+`window`" — while the file ended in `window.sessionStorage`. A review caught
+it. Prose about purity is worth exactly as much as the line of code it is
+sitting next to.) Secondly, the restore-on-mount effect must
 set a `draftRestored` flag before the persist-on-change effect is allowed to
 write — otherwise the persist effect fires first with the initial empty state and
 overwrites the very draft it was about to restore. The safety net erasing the
@@ -869,3 +874,14 @@ asserted to return an empty draft; it returns null, because a draft with nothing
 restorable in it _is_ nothing, and reporting it as a value would leave the caller
 two cases that look identical on screen. The implementation was right and the
 expectation was lazy — worth checking which one is wrong before "fixing" either.
+
+A last one, found in review rather than in testing: the notice shown after an
+interrupted run originally led with "press Generate Insights to run it again".
+But a browser reload closes the connection without stopping the server, and
+`/api/insights` saves the brief when generation finishes — so the run had most
+likely _completed_, and the friendliest-sounding instruction was an invitation
+to pay for a second GPT-4o generation of a brief the user already owned. The
+notice now sends them to My Briefs first. When a feature is built entirely on
+the client, it is easy to write recovery copy that describes the client's view
+of events — the connection died, so the work died — and quietly contradicts
+what the server actually did.

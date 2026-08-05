@@ -452,6 +452,10 @@ export default function InsightsTool() {
     setAdvertiser(brief.advertiser);
     setKpi(brief.kpi);
     setClientBrief(brief.client_brief || "");
+    // Saved briefs do not record the Google Trends choice, so it resets to the
+    // form's default rather than keeping whatever the last draft happened to
+    // hold — every field of the form should come from the brief being re-run.
+    setIncludeTrends(true);
     setViewingBrief(null);
     setActiveTab("new");
   }
@@ -489,16 +493,20 @@ export default function InsightsTool() {
     setDraftRestored(true);
   }, []);
 
+  /**
+   * The form as it stands. One builder, so a field added to the form cannot be
+   * persisted by the save effect and forgotten by the submitted-input snapshot.
+   */
+  function currentDraft(generating: boolean): BriefDraft {
+    return { topic, advertiser, kpi, clientBrief, includeTrends, generating };
+  }
+
   useEffect(() => {
     if (!draftRestored) return;
-    const draft: BriefDraft = {
-      topic,
-      advertiser,
-      kpi,
-      clientBrief,
-      includeTrends,
-      generating: loading,
-    };
+    // The run flag outlives the reload that reported it: it is cleared when the
+    // user dismisses the notice or starts a new run, not by the restore itself.
+    // Otherwise a second reload would keep the input and lose the explanation.
+    const draft = currentDraft(loading || interruptedRun);
     if (submittedInput && sameInput(draft, submittedInput)) {
       clearDraft(draftStorage());
     } else {
@@ -512,6 +520,7 @@ export default function InsightsTool() {
     clientBrief,
     includeTrends,
     loading,
+    interruptedRun,
     submittedInput,
   ]);
 
@@ -538,14 +547,7 @@ export default function InsightsTool() {
 
     // The form exactly as submitted, so the draft can be dropped once the
     // brief exists — and kept if the user edits the form afterwards.
-    const submitted: BriefDraft = {
-      topic,
-      advertiser,
-      kpi,
-      clientBrief,
-      includeTrends,
-      generating: false,
-    };
+    const submitted = currentDraft(false);
 
     const eventProps = {
       topic: topic.trim(),
@@ -1000,24 +1002,43 @@ export default function InsightsTool() {
             <>
               {/* A reload landed mid-generation (#160). The input below is the
                   restored draft, so say so rather than leaving the user to
-                  wonder whether the run they started is still going. */}
+                  wonder whether the run they started is still going.
+
+                  My Briefs comes first, and generating again second, on
+                  purpose: the reload closed the connection but did not stop the
+                  server, which saves the brief when it finishes (api/main.py).
+                  The run has most likely completed, so the cheap action is to
+                  go and look — leading with "run it again" would talk the user
+                  into paying for a second GPT-4o generation of a brief they
+                  already have. */}
               {interruptedRun && !loading && (
                 <div className="bg-surface-container border border-accent-cyan/30 rounded-xl p-4 mb-6 flex items-start justify-between gap-4">
                   <p className="text-sm text-on-surface-variant">
                     <span className="font-bold text-on-surface">
                       Your last run was interrupted by a page reload.
                     </span>{" "}
-                    Your input has been restored below — press Generate Insights
-                    to run it again. If the run did finish, the brief is waiting
-                    in My Briefs.
+                    It most likely finished anyway — check My Briefs before
+                    generating again. Your input has been restored below either
+                    way.
                   </p>
-                  <button
-                    onClick={() => setInterruptedRun(false)}
-                    className="text-xs font-bold tracking-widest uppercase text-on-surface-variant hover:text-on-surface transition-colors shrink-0"
-                    aria-label="Dismiss"
-                  >
-                    Dismiss
-                  </button>
+                  <div className="flex items-center gap-4 shrink-0">
+                    <button
+                      onClick={() => {
+                        setInterruptedRun(false);
+                        setActiveTab("mine");
+                      }}
+                      className="text-xs font-bold tracking-widest uppercase text-accent-cyan hover:text-on-surface transition-colors"
+                    >
+                      My Briefs
+                    </button>
+                    <button
+                      onClick={() => setInterruptedRun(false)}
+                      className="text-xs font-bold tracking-widest uppercase text-on-surface-variant hover:text-on-surface transition-colors"
+                      aria-label="Dismiss"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
                 </div>
               )}
 
