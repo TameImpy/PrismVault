@@ -327,7 +327,11 @@ def chat_stream(messages):
         args = json.loads(tool_call_args)
 
         # Same gate as chat(): a query the model derived can be special category
-        # even when the user's own wording was not.
+        # even when the user's own wording was not. Any content streamed before the
+        # tool call has already reached the user, so a preamble can precede the
+        # restricted message; in practice the model emits a tool call or prose, not
+        # both, and buffering every token on the chance of a gate would cost the
+        # streaming this endpoint exists for.
         tool_category = _special_category_in_tool_args(args)
         if tool_category:
             yield from _special_category_events(tool_category)

@@ -105,7 +105,83 @@ def test_detects_through_unfamiliar_content_shapes():
     )
 
 
+def test_detects_conditions_described_in_everyday_words():
+    """Sales users don't say "hearing loss" — the reworded defect must still fire."""
+    for query in [
+        "who has trouble hearing",
+        "people with hearing difficulties",
+        "audiences with sight problems",
+        "people with dyslexia",
+        "IVF audiences",
+        "audiences who have had a stroke",
+        "people on antidepressants",
+    ]:
+        assert detect_special_category(query) == "health", query
+
+
+def test_detects_ethnicity_however_it_is_phrased():
+    for query in [
+        "audiences by race",
+        "multicultural audiences",
+        "Black British readers",
+        "audiences of Indian heritage",
+    ]:
+        assert detect_special_category(query) == "racial or ethnic origin", query
+
+
+def test_detects_belief_orientation_and_politics_in_everyday_words():
+    assert detect_special_category("queer audiences") == "sex life or sexual orientation"
+    assert (
+        detect_special_category("audiences by sexual preference")
+        == "sex life or sexual orientation"
+    )
+    assert (
+        detect_special_category("people who go to church")
+        == "religious or philosophical beliefs"
+    )
+    assert detect_special_category("people who vote Green") == "political opinions"
+
+
 # --- No over-blocking: ordinary requests are unaffected ---
+
+
+def test_advertisers_named_after_a_condition_are_not_blocked():
+    """The advertiser is a first-class field in this product.
+
+    Naming a charity or a brand is not a request to target people by their
+    health — "Cancer Research UK" is an advertiser, not an audience.
+    """
+    for query in [
+        "segments for Cancer Research UK",
+        "Alzheimer's Society donors",
+        "audiences for the British Heart Foundation",
+        "Christian Dior shoppers",
+        "over the counter medication buyers",
+        "audiences for a hay fever medication brand",
+        "Brexit anniversary content",
+        "South Asian cooking recipes readers",
+        "halal food shoppers",
+        "kosher food buyers",
+    ]:
+        assert detect_special_category(query) is None, query
+
+
+def test_the_advertiser_exception_does_not_swallow_a_real_request():
+    """Stripping the organisation name must not strip the targeting basis with it."""
+    assert detect_special_category("cancer patients for Cancer Research UK") == "health"
+    assert (
+        detect_special_category("people with dementia for Alzheimer's Society")
+        == "health"
+    )
+
+
+def test_a_condition_proxy_is_still_blocked_even_when_it_is_the_advertiser():
+    """Deliberate: hearing aids are a direct proxy for the condition in #164.
+
+    A hearing aid brand wanting people with hearing loss *is* the special
+    category case, however commercially ordinary the advertiser looks.
+    """
+    assert detect_special_category("audiences for a hearing aid brand") == "health"
 
 
 def test_ordinary_audience_queries_are_not_flagged():

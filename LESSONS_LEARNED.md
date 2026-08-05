@@ -580,3 +580,25 @@ loudly is not the same as restricting, the user gets an error instead of the
 explanation the whole ticket was about, and a direct caller of `chat()` gets an
 unhandled exception. `_as_text` now flattens any content shape so an unfamiliar
 input is still _scanned_ rather than skipped.
+
+**Postscript 2 — a catalogue sweep is not a phrasing sweep.** The spec review
+caught the gap in my own over-blocking guard: sweeping all 1,385 segment _names_
+through the gate proves no segment trips it, and proves nothing about what a
+salesperson types. Every real false positive lived in phrasings, not names —
+"Christian Dior shoppers" (blocked as religion), "Brexit anniversary content"
+(political), "over the counter medication buyers" (health), "South Asian cooking
+recipes readers" (ethnicity). The reverse held too: "who has trouble hearing"
+and "people with hearing difficulties" — Abel's own defect, reworded — sailed
+straight through. A deny-list needs its guard pointed at the _input distribution_
+it will actually see, and both directions have to be pinned by tests.
+
+**The advertiser is not the audience.** The sharpest of those false positives was
+structural rather than a bad regex: charities are named after the thing they
+fight, and advertiser is a first-class field in this product, so "segments for
+Cancer Research UK" is a brief about a client. Stripping organisation names
+(`_ORGANISATION_NAMES`, matched on suffixes like "Research UK", "Society",
+"Foundation") before scanning fixes the whole class, and because only the name is
+removed, "cancer patients for Cancer Research UK" still blocks. The line is the
+_targeting basis_, not the advertiser's industry — which is why "audiences for a
+hearing aid brand" stays blocked: that is #164's own example wearing a client's
+hat.
