@@ -3,7 +3,7 @@
 import ReactMarkdown from "react-markdown";
 
 import ProvenanceFooter from "@/components/ProvenanceFooter";
-import { ProvenanceEntry } from "@/lib/provenance";
+import { PROVENANCE_SECTIONS, ProvenanceEntry } from "@/lib/provenance";
 
 /**
  * Historical Research hero card (PRD #125 / slice #127).
@@ -166,7 +166,10 @@ export default function HistoricalResearchCard({
         </div>
       )}
 
-      <ProvenanceFooter entries={provenance} section="Historical Research" />
+      <ProvenanceFooter
+        entries={provenance}
+        section={PROVENANCE_SECTIONS.historicalResearch}
+      />
     </div>
   );
 }

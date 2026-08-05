@@ -15,7 +15,7 @@ from pptx import Presentation
 from pptx.oxml.ns import qn
 
 from src.font_embed import embed_fonts
-from src.provenance import format_provenance_line
+from src.provenance import format_provenance_row
 from src.slide_content import (
     INSIGHT_TILES,
     PRODUCT_TILES,
@@ -100,16 +100,9 @@ def _build_fields(slide_content, advertiser):
     provenance = slide_content.get("provenance") or []
     for i in range(PROVENANCE_TILES):
         entry = provenance[i] if i < len(provenance) else None
-        fields["[PROVENANCE_%d]" % (i + 1)] = _provenance_line(entry)
+        fields["[PROVENANCE_%d]" % (i + 1)] = format_provenance_row(entry)
 
     return {marker: _one_line(value) for marker, value in fields.items()}
-
-
-def _provenance_line(entry):
-    """One appendix line: the section, then where its figures came from."""
-    if not entry:
-        return ""
-    return "%s — %s" % (entry.get("section", ""), format_provenance_line(entry))
 
 
 def _one_line(value):

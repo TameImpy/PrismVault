@@ -37,9 +37,10 @@ FIELDS = ("section", "source", "as_at", "coverage", "period", "cadence")
 # as-at date is the date the brief was run.
 RUN_DATE_TOKEN = "{run_date}"
 
-# The section whose provenance comes from the matched study rather than the
-# registry row, which holds only its unmatched defaults.
+# Its provenance comes from the matched study rather than the registry row,
+# which holds only the defaults used before a study is known.
 HISTORICAL_SECTION = "Historical Research"
+# Read live, and only when the brief asked for it.
 TRENDS_SECTION = "Google Trends"
 
 # Label shown against each field, in render order.
@@ -84,10 +85,20 @@ def build_provenance(historical_research=None, include_google_trends=True,
     # type: (dict, bool, datetime.date, str) -> list
     """Resolve the registry against one brief run.
 
-    Sections the brief did not render are dropped — a source line for a section
-    that is not there would be its own kind of untraceable. Sections read live
-    are dated with ``run_date`` (today by default), and Historical Research is
-    re-described from the study that actually matched.
+    Two sections are conditional, because the brief itself omits them: Google
+    Trends when the run did not request it, and Historical Research when no
+    study matched. A source line for a section that is not there would be its
+    own kind of untraceable.
+
+    The rest are unconditional, including on an empty result. A brief that
+    found no direct campaign history, or no strongly-matched segments, still
+    renders those sections to say so — and "we looked in the delivery export,
+    as at this date, and it holds nothing for this advertiser" is exactly the
+    statement a reviewer needs. An absence is only worth trusting when you can
+    see what was searched.
+
+    Sections read live are dated with ``run_date`` (today by default), and
+    Historical Research is re-described from the study that actually matched.
     """
     if run_date is None:
         run_date = datetime.date.today()
@@ -176,18 +187,28 @@ def format_provenance_line(entry):
     return " · ".join(parts)
 
 
-def format_provenance_block(entries, heading=BLOCK_HEADING):
-    # type: (list, str) -> str
-    """Plain-text provenance for surfaces that carry no structure.
+def format_provenance_row(entry):
+    # type: (dict) -> str
+    """One section's name followed by where its figures came from.
 
-    Used by the email footer and the deck's appendix, so the same four fields
-    reach every place a figure from this brief can end up. Returns "" for an
-    empty registry so a caller can append it unconditionally.
+    The single row format for every unstructured surface — the email footer
+    builds its block from these, and the deck places one per appendix line — so
+    the two cannot describe the same figure differently.
+    """
+    if not entry:
+        return ""
+    return "%s — %s" % (entry.get("section", ""), format_provenance_line(entry))
+
+
+def format_provenance_block(entries):
+    # type: (list) -> str
+    """The whole brief's provenance as plain text, for the email footer.
+
+    Returns "" for an empty registry so a caller can append it unconditionally.
     """
     if not entries:
         return ""
 
-    lines = ["%s:" % heading] if heading else []
-    for entry in entries:
-        lines.append("%s — %s" % (entry["section"], format_provenance_line(entry)))
-    return "\n".join(lines)
+    return "\n".join(
+        ["%s:" % BLOCK_HEADING] + [format_provenance_row(e) for e in entries]
+    )

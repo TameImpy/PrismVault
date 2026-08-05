@@ -74,6 +74,13 @@ def _clear_extra_paragraphs(text_frame, keep):
 def _set_single_run(para, text, size):
     """Collapse a paragraph to one run carrying `text` at `size`."""
     runs = para.runs
+    if not runs:
+        # The cloned paragraph carried no run to inherit formatting from, so
+        # there is nothing to write into without inventing styling here.
+        raise SystemExit(
+            "Cloned paragraph has no run to fill — the Methodology body text "
+            "box has changed shape; re-check the clone source."
+        )
     for run in runs[1:]:
         run._r.getparent().remove(run._r)
     runs[0].text = text

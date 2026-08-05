@@ -25,6 +25,19 @@ export interface ProvenanceField {
   value: string;
 }
 
+/**
+ * Section names that a surface has to name as a literal, because it has no
+ * markdown heading to read one from. A typo here renders nothing at all — no
+ * error, no empty box — so the names live in one place and
+ * `tests/test_provenance.py` checks the registry still carries them.
+ */
+export const PROVENANCE_SECTIONS = {
+  audienceSegments: "Audience Segments & Reach",
+  clientRelationship: "Client Relationship",
+  googleTrends: "Google Trends",
+  historicalResearch: "Historical Research",
+} as const;
+
 /** Field render order — source first, because it is the question people ask. */
 const FIELD_LABELS: [keyof ProvenanceEntry, string][] = [
   ["source", "Source"],

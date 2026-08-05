@@ -14,6 +14,7 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 import datetime
+import re
 
 import pytest
 
@@ -23,6 +24,7 @@ from src.provenance import (
     build_provenance,
     format_provenance_block,
     format_provenance_line,
+    format_provenance_row,
     load_provenance,
     provenance_for,
 )
@@ -110,6 +112,47 @@ def test_campaign_history_names_the_export_not_the_ad_server():
     """
     entry = provenance_for(load_provenance(), "Client Relationship")
     assert "ad server" in entry["source"].lower() or "ad manager" in entry["source"].lower()
+
+
+def test_the_brief_still_writes_the_headings_the_footers_bind_to():
+    """The UI attaches a section's footer by matching the registry's section
+    name against the brief's `## ` heading — which the model writes. If a
+    prompt edit renames a heading the footer silently vanishes, so the two are
+    pinned together here rather than discovered in production.
+
+    Google Trends is exempt: it has no heading of its own and its footer is
+    attached to the panel by name (`lib/provenance.ts PROVENANCE_SECTIONS`).
+    """
+    from src.prompts import SYSTEM_PROMPT
+
+    for entry in load_provenance():
+        if entry["section"] == "Google Trends":
+            continue
+        assert "## %s" % entry["section"] in SYSTEM_PROMPT, (
+            "the brief no longer has a '%s' heading for its provenance footer "
+            "to attach to" % entry["section"]
+        )
+
+
+def test_the_uis_hardcoded_section_names_exist_in_the_registry():
+    """`lib/provenance.ts` names sections as literals for the surfaces that
+    have no markdown heading to read one from. Those literals and this registry
+    are two halves of one pair across a language boundary, and a mismatch fails
+    silently — the footer just never appears.
+    """
+    path = os.path.join(PROJECT_ROOT, "frontend", "lib", "provenance.ts")
+    with open(path, encoding="utf-8") as f:
+        block = f.read().split("PROVENANCE_SECTIONS = {")[1].split("}")[0]
+
+    named = re.findall(r':\s*"([^"]+)"', block)
+    assert named, "PROVENANCE_SECTIONS names no sections — has it been renamed?"
+
+    sections = [e["section"] for e in load_provenance()]
+    for name in named:
+        assert name in sections, (
+            "the UI asks for provenance for %r, which the registry does not "
+            "carry" % name
+        )
 
 
 def test_missing_registry_degrades_to_nothing(tmp_path):
@@ -234,6 +277,23 @@ def test_a_line_omits_fields_with_nothing_behind_them():
     assert "As at:" not in line
     assert "Coverage:" not in line
     assert line.startswith("Source: A study")
+
+
+def test_a_row_leads_with_the_section_it_describes():
+    """The deck appendix and the email footer share this row, so neither can
+    describe the same figure differently."""
+    row = format_provenance_row({
+        "section": "Recommended Products", "source": "Benchmarking sheet",
+        "as_at": "2026-07-20", "coverage": "Whole network",
+        "period": "Rolling 12 months", "cadence": "Monthly",
+    })
+    assert row.startswith("Recommended Products — Source: Benchmarking sheet")
+
+
+def test_a_row_for_nothing_is_nothing():
+    """The deck asks for more rows than a brief has; the spare ones blank."""
+    assert format_provenance_row(None) == ""
+    assert format_provenance_row({}) == ""
 
 
 def test_a_block_carries_one_labelled_line_per_section():

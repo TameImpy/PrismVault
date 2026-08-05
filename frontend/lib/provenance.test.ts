@@ -1,9 +1,16 @@
 import { describe, it, expect } from "vitest";
-import { ProvenanceEntry, provenanceFields, provenanceFor } from "./provenance";
+import {
+  PROVENANCE_SECTIONS,
+  ProvenanceEntry,
+  provenanceFields,
+  provenanceFor,
+} from "./provenance";
 
 const SEGMENTS: ProvenanceEntry = {
   section: "Audience Segments & Reach",
-  source: "data/segments.csv — the Permutive and AudienceProject extracts",
+  // Names the system, never a repository path — the deck's appendix carries
+  // this same string to clients, and a reviewer reconciles against the export.
+  source: "The Permutive segment export and the AudienceProject reach extract",
   as_at: "2026-07-21",
   coverage: "Whole network — pooled across all Immediate sites",
   period: "Rolling 90 days",
@@ -33,6 +40,26 @@ describe("provenanceFor", () => {
   it("returns null for a brief saved before provenance existed", () => {
     expect(provenanceFor(undefined, "Recommended Products")).toBeNull();
     expect(provenanceFor(null, "Recommended Products")).toBeNull();
+  });
+});
+
+describe("PROVENANCE_SECTIONS", () => {
+  it("spells the names the backend registry uses", () => {
+    // A typo renders nothing at all — no error, no empty box — so these are
+    // pinned. data/provenance.csv is the other half of the pair, checked by
+    // tests/test_provenance.py.
+    expect(Object.values(PROVENANCE_SECTIONS)).toEqual([
+      "Audience Segments & Reach",
+      "Client Relationship",
+      "Google Trends",
+      "Historical Research",
+    ]);
+  });
+
+  it("resolves against an entry the backend produced", () => {
+    expect(
+      provenanceFor([SEGMENTS], PROVENANCE_SECTIONS.audienceSegments),
+    ).toBe(SEGMENTS);
   });
 });
 

@@ -728,3 +728,23 @@ making the registry prose more explanatory, which would silently overflow the
 slide — the very defect #162 raised in this same QA round. The first draft of
 the registry needed 4.4 inches of a 5.6-inch slide; trimming it to name systems
 instead of paths brought that down with it.
+
+**Postscript — the review found the footer in the wrong place.** The first
+implementation put the source strip only on the brief's prose cards, on a
+strict reading of "the fields appear once per data section". The spec review
+pointed out that the two surfaces rendering the _actual disputed numbers_ — the
+audience reach table and the Client Relationship panel — had no footer at all,
+and those are precisely the figures the two false reports were raised about. A
+reviewer reading the reach table had to know to scroll to a different card to
+find out which export it came from. The AC means "not once per figure"; it does
+not mean "only once in the whole UI". Fixed by adding the footer to both
+panels, accepting that those two sections now state their provenance twice.
+
+Two further things the review was right about. `provenance` arrived at the API
+as a bare `Optional[list]`, and the entries are read downstream with `.get()` —
+so a client posting a list of strings got an `AttributeError` and a 500 instead
+of a 422. It is the same untyped-`list` shape #164 already wrote up, and a
+six-line pydantic model fixes it. And the footer binds to a `##` heading the
+_model_ writes, so a prompt edit could silently detach every footer in the
+brief; the headings are now pinned against `SYSTEM_PROMPT` by a test. Both are
+the same class of bug: a failure that produces nothing rather than an error.

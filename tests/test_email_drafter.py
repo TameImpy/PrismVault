@@ -217,6 +217,43 @@ def test_api_draft_email_returns_401_without_auth(api_client):
 
 
 @patch("api.main.draft_email")
+def test_api_draft_email_rejects_a_malformed_provenance_shape(mock_draft, api_client):
+    """Provenance entries are read with `.get()` downstream, so a list of
+    strings has to be refused at the edge as a 422 rather than becoming an
+    AttributeError and a 500 (the shape LESSONS_LEARNED flags for #164)."""
+    mock_draft.return_value = {"subject": "s", "body": "b"}
+    api_client.post(
+        "/api/auth/signup",
+        json={"email": "shape@immediate.co.uk", "name": "Test", "password": "password123"},
+    )
+    resp = api_client.post(
+        "/api/draft-email",
+        json={"content": "b", "topic": "t", "advertiser": "a", "kpi": "k",
+              "provenance": ["not an entry"]},
+    )
+    assert resp.status_code == 422
+    mock_draft.assert_not_called()
+
+
+@patch("api.main.draft_email")
+def test_api_draft_email_passes_provenance_through_as_plain_dicts(mock_draft, api_client):
+    """The drafter reads dicts, not pydantic models."""
+    mock_draft.return_value = {"subject": "s", "body": "b"}
+    api_client.post(
+        "/api/auth/signup",
+        json={"email": "pass@immediate.co.uk", "name": "Test", "password": "password123"},
+    )
+    resp = api_client.post(
+        "/api/draft-email",
+        json={"content": "b", "topic": "t", "advertiser": "a", "kpi": "k",
+              "provenance": [PROVENANCE[0]]},
+    )
+    assert resp.status_code == 200
+    passed = mock_draft.call_args[1]["provenance"]
+    assert passed == [PROVENANCE[0]]
+
+
+@patch("api.main.draft_email")
 def test_api_draft_email_returns_subject_and_body(mock_draft, api_client):
     """POST /api/draft-email with auth returns subject and body from drafter."""
     mock_draft.return_value = {"subject": "Test Subject", "body": "Test body"}

@@ -1,6 +1,7 @@
 "use client";
 
 import CollapsiblePanel from "@/components/CollapsiblePanel";
+import ProvenanceFooter from "@/components/ProvenanceFooter";
 import {
   AudienceSegmentsPayload,
   formatReach,
@@ -8,6 +9,7 @@ import {
   segmentEvidence,
   visiblePlatforms,
 } from "@/lib/audienceSegments";
+import { PROVENANCE_SECTIONS, ProvenanceEntry } from "@/lib/provenance";
 
 /**
  * "Audience Segments & Reach" brief section (PRD #96 / slice #99).
@@ -18,20 +20,37 @@ import {
  * plain-English "why" is the headline with the raw methodology as secondary
  * evidence; reach is quoted verbatim; and there is NEVER a summed total — a
  * visible note says so because segments overlap and are not de-duplicated.
+ *
+ * The reach figures live here, so the source line does too (#156). The brief's
+ * "Audience Segments & Reach" prose card carries the same footer: this is the
+ * one place the same section states its provenance twice, and deliberately —
+ * a reviewer reconciling a reach number is reading this table, and sending
+ * them to another card to find out which export it came from is the gap the
+ * ticket was raised about.
  */
 export default function AudienceSegmentsPanel({
   data,
+  provenance,
 }: {
   data?: AudienceSegmentsPayload;
+  provenance?: ProvenanceEntry[];
 }) {
   if (!data) return null;
 
   return (
     <CollapsiblePanel title="Audience Segments & Reach" defaultOpen={false}>
       {isEmptyState(data) ? (
-        <p className="text-on-surface-variant text-sm leading-relaxed">
-          No strongly-matched audience segments were found for this brief.
-        </p>
+        <>
+          <p className="text-on-surface-variant text-sm leading-relaxed">
+            No strongly-matched audience segments were found for this brief.
+          </p>
+          {/* An absence is only worth trusting when you can see what was
+              searched, so the empty state names the catalogue too. */}
+          <ProvenanceFooter
+            entries={provenance}
+            section={PROVENANCE_SECTIONS.audienceSegments}
+          />
+        </>
       ) : (
         <div className="space-y-5">
           {/* Never-sum note — reach must never be totalled across segments. */}
@@ -98,6 +117,11 @@ export default function AudienceSegmentsPanel({
               </ul>
             </div>
           ))}
+
+          <ProvenanceFooter
+            entries={provenance}
+            section={PROVENANCE_SECTIONS.audienceSegments}
+          />
         </div>
       )}
     </CollapsiblePanel>

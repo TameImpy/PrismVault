@@ -17,7 +17,7 @@ import ProvenanceFooter from "@/components/ProvenanceFooter";
 import { useAnalytics } from "@/components/AnalyticsProvider";
 import { useAuth } from "@/contexts/AuthContext";
 import { AudienceSegmentsPayload } from "@/lib/audienceSegments";
-import { ProvenanceEntry } from "@/lib/provenance";
+import { PROVENANCE_SECTIONS, ProvenanceEntry } from "@/lib/provenance";
 
 interface Source {
   editor: string;
@@ -906,6 +906,7 @@ export default function InsightsTool() {
 
                     <AudienceSegmentsPanel
                       data={savedResult.audience_segments}
+                      provenance={savedResult.provenance}
                     />
 
                     {savedResult.google_trends && (
@@ -918,7 +919,7 @@ export default function InsightsTool() {
                         </p>
                         <ProvenanceFooter
                           entries={savedResult.provenance}
-                          section="Google Trends"
+                          section={PROVENANCE_SECTIONS.googleTrends}
                         />
                       </CollapsiblePanel>
                     )}
@@ -1215,11 +1216,21 @@ export default function InsightsTool() {
                             <p className="text-on-surface-variant text-sm leading-relaxed whitespace-pre-wrap">
                               {result.campaign_history}
                             </p>
+                            {/* The CTR figures are here, so the line naming
+                                the delivery export — and saying it is not the
+                                ad server — belongs here too (#156). */}
+                            <ProvenanceFooter
+                              entries={result.provenance}
+                              section={PROVENANCE_SECTIONS.clientRelationship}
+                            />
                           </CollapsiblePanel>
                         )}
 
                       {/* Audience Segments & Reach panel */}
-                      <AudienceSegmentsPanel data={result.audience_segments} />
+                      <AudienceSegmentsPanel
+                        data={result.audience_segments}
+                        provenance={result.provenance}
+                      />
 
                       {/* Google Trends panel */}
                       {result.google_trends && (
@@ -1234,7 +1245,7 @@ export default function InsightsTool() {
                               so its source line lives on the panel. */}
                           <ProvenanceFooter
                             entries={result.provenance}
-                            section="Google Trends"
+                            section={PROVENANCE_SECTIONS.googleTrends}
                           />
                         </CollapsiblePanel>
                       )}
