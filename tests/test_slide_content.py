@@ -320,12 +320,7 @@ def test_unparseable_response_degrades_to_empty_content(mock_openai_cls):
 
 def test_the_prompt_asks_for_the_length_the_code_enforces():
     """A cap the model is never told about is a cap that truncates every run."""
-    from src.slide_content import (
-        INSIGHT_STAT_MAX_CHARS,
-        INSIGHT_TEXT_MAX_WORDS,
-        OVERVIEW_MAX_WORDS,
-        SYSTEM_PROMPT,
-    )
+    from src.slide_content import SYSTEM_PROMPT
 
     assert "max %d words" % OVERVIEW_MAX_WORDS in SYSTEM_PROMPT
     assert "max %d words" % INSIGHT_TEXT_MAX_WORDS in SYSTEM_PROMPT
@@ -342,7 +337,6 @@ def test_the_caps_fit_the_tiles_they_are_written_for():
     that the cap is somewhere near the tile, so shortening is the exception
     rather than something every deck goes through.
     """
-    from src.slide_content import INSIGHT_TEXT_MAX_WORDS, OVERVIEW_MAX_WORDS
     from src.tile_fit import budget_for, rendered_lines
 
     for marker, cap in (("[INSIGHT_1_STAT]", INSIGHT_TEXT_MAX_WORDS),

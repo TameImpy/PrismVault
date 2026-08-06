@@ -24,22 +24,24 @@ import re
 
 import pytest
 from pptx import Presentation
-from pptx.oxml.ns import qn
+from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 
 from src.deck_builder import TEMPLATE_PATH
 from src.tile_fit import (
     ELLIPSIS,
     EXEMPT_MARKERS,
+    MARKER_RE,
     TILE_BUDGETS,
     budget_for,
     fit_to_tile,
     line_height,
+    inches,
+    marker_family,
     rendered_lines,
     text_width,
+    wrapping_width,
 )
-
-EMU = 914400.0
-_MARKER_RE = re.compile(r"\[[A-Z0-9_]+\]")
+from tests.tile_geometry import artwork_rects, overlaps, text_origin
 
 
 # ---------------------------------------------------------------------------
@@ -70,10 +72,10 @@ def test_unknown_typeface_still_measures():
 
 
 def test_wrapping_breaks_on_words():
+    """Wrapping splits between words and loses none of them."""
     lines = rendered_lines("one two three four five six", 0.8, "Barlow", 11)
     assert len(lines) > 1
-    assert all(" ".join(lines).split() == "one two three four five six".split()
-               for _ in [0])
+    assert " ".join(lines) == "one two three four five six"
 
 
 def test_wrapping_keeps_a_short_string_on_one_line():
@@ -107,13 +109,14 @@ def test_truncated_text_actually_fits_its_tile():
 
 
 def test_truncation_falls_on_a_word_boundary():
-    fitted = fit_to_tile("[INSIGHT_1_STAT]",
-                         "of home bakers plan their bakes around a seasonal moment every year")
+    """What survives is whole words from the front — never half a word."""
+    original = "of home bakers plan their bakes around a seasonal moment every year"
+    fitted = fit_to_tile("[INSIGHT_1_STAT]", original)
+
     assert fitted.endswith(ELLIPSIS)
-    # Whatever survives is whole words from the front of the original.
-    kept = fitted[: -len(ELLIPSIS)].strip()
-    assert "of home bakers plan".startswith(kept[:19])
-    assert not kept.endswith("-")
+    kept = fitted[: -len(ELLIPSIS)].split()
+    assert kept, "everything was cut"
+    assert kept == original.split()[: len(kept)]
 
 
 def test_an_unbreakable_word_is_cut_rather_than_left_to_overflow():
@@ -148,37 +151,32 @@ def test_every_indexed_tile_shares_one_budget():
 
 
 def _marker_shapes():
-    """Every marker in the template, with the shape and run that carry it."""
-    prs = Presentation(TEMPLATE_PATH)
+    """Every marker in the template: (slide index, marker, shape, run)."""
     found = []
-    for slide in prs.slides:
+    for index, slide in enumerate(Presentation(TEMPLATE_PATH).slides):
         for shape in slide.shapes:
             if not shape.has_text_frame:
                 continue
             for para in shape.text_frame.paragraphs:
                 for run in para.runs:
-                    for marker in _MARKER_RE.findall(run.text):
-                        found.append((marker, shape, run, prs))
+                    for marker in MARKER_RE.findall(run.text):
+                        found.append((index, marker, shape, run))
     return found
 
 
 def test_every_template_marker_has_a_budget_or_a_documented_exemption():
-    for marker, _, _, _ in _marker_shapes():
-        key = _family(marker)
+    for _, marker, _, _ in _marker_shapes():
+        key = marker_family(marker)
         assert key in TILE_BUDGETS or key in EXEMPT_MARKERS, (
             "%s has no tile budget — a new marker must be measured against the "
             "template before it can be filled" % marker
         )
 
 
-def _family(marker):
-    return re.sub(r"_\d+", "_N", marker)
-
-
 def test_budgets_use_the_typeface_and_size_the_template_uses():
     """The budget is a reading of the template, so a template restyle that
     changes a tile's font has to fail here rather than silently mis-measure."""
-    for marker, _, run, _ in _marker_shapes():
+    for _, marker, _, run in _marker_shapes():
         tile = budget_for(marker)
         if tile is None:
             continue
@@ -201,12 +199,15 @@ def test_every_budget_width_is_exactly_its_box_width():
     scripts/narrow_overwide_tiles.py exists: the boxes were brought in to their
     columns rather than the budgets being written down smaller.
     """
-    for marker, shape, _, _ in _marker_shapes():
+    for _, marker, shape, _ in _marker_shapes():
         tile = budget_for(marker)
         if tile is None:
             continue
-        usable = (shape.width / EMU) - _inset(shape, "lIns", 0.1) - _inset(shape, "rIns", 0.1)
-        assert tile.width == pytest.approx(usable, abs=0.005), (
+        usable = wrapping_width(shape)
+        # A hundredth of an inch: the budgets are round numbers by choice, and
+        # scripts/narrow_overwide_tiles.py leaves a box alone within the same
+        # margin. Nothing at this scale is visible.
+        assert tile.width == pytest.approx(usable, abs=0.01), (
             "%s is budgeted %.2f\" but its box wraps at %.2f\" — re-run "
             "scripts/narrow_overwide_tiles.py or update TILE_BUDGETS"
             % (marker, tile.width, usable)
@@ -216,26 +217,38 @@ def test_every_budget_width_is_exactly_its_box_width():
 def _budget_rects():
     """The rect each tile's text may occupy, at its full budget."""
     rects = {}
-    for marker, shape, _, prs in _marker_shapes():
+    for _, marker, shape, _ in _marker_shapes():
         tile = budget_for(marker)
         if tile is None:
             continue
-        left = shape.left / EMU + _inset(shape, "lIns", 0.1)
-        top = shape.top / EMU + _inset(shape, "tIns", 0.05)
+        left, top = text_origin(shape)
         rects[marker] = (left, top, left + tile.width,
                          top + tile.lines * line_height(tile.typeface, tile.size))
     return rects
 
 
-def _inset(shape, key, default):
-    bodyPr = shape.text_frame._txBody.find(qn("a:bodyPr"))
-    if bodyPr is None or bodyPr.get(key) is None:
-        return default
-    return int(bodyPr.get(key)) / EMU
+def test_marker_text_is_left_aligned_and_top_anchored():
+    """The claim that narrowing a box is a no-op for text that already fitted
+    rests on this, and on nothing else.
 
-
-def _overlaps(a, b):
-    return a[0] < b[2] and b[0] < a[2] and a[1] < b[3] and b[1] < a[3]
+    Left-aligned, top-anchored text starts in the same place whatever the box
+    width is, so bringing the right edge in cannot move it. Centre a tile in a
+    template revision and that stops being true — every short value shifts —
+    so scripts/narrow_overwide_tiles.py would need re-thinking rather than
+    re-running.
+    """
+    for _, marker, shape, _ in _marker_shapes():
+        for para in shape.text_frame.paragraphs:
+            if not para.text.strip():
+                continue
+            assert para.alignment in (None, PP_ALIGN.LEFT), (
+                "%s is %s-aligned; the budgets assume left" % (marker, para.alignment)
+            )
+        anchor = shape.text_frame.vertical_anchor
+        assert anchor in (None, MSO_ANCHOR.TOP), (
+            "%s is anchored %s; the budgets assume text grows downward from the "
+            "top of the box" % (marker, anchor)
+        )
 
 
 def test_no_two_tile_budgets_overlap_each_other():
@@ -243,7 +256,7 @@ def test_no_two_tile_budgets_overlap_each_other():
     point of #162."""
     rects = _budget_rects()
     slides = {}
-    for marker, shape, _, _ in _marker_shapes():
+    for _, marker, shape, _ in _marker_shapes():
         slides.setdefault(id(shape.part), []).append(marker)
 
     for markers in slides.values():
@@ -251,7 +264,7 @@ def test_no_two_tile_budgets_overlap_each_other():
             for b in markers[i + 1:]:
                 if a not in rects or b not in rects or a == b:
                     continue
-                assert not _overlaps(rects[a], rects[b]), (
+                assert not overlaps(rects[a], rects[b]), (
                     "tiles %s and %s overlap when both are full" % (a, b)
                 )
 
@@ -261,15 +274,12 @@ def test_no_tile_budget_runs_off_the_slide_or_over_the_artwork():
     a full tile must not reach them either."""
     prs = Presentation(TEMPLATE_PATH)
     rects = _budget_rects()
-    width, height = prs.slide_width / EMU, prs.slide_height / EMU
+    width, height = inches(prs.slide_width), inches(prs.slide_height)
 
     for slide in prs.slides:
         markers = [m for shape in slide.shapes if shape.has_text_frame
-                   for m in _MARKER_RE.findall(shape.text_frame.text)]
-        logos = [(s.left / EMU, s.top / EMU,
-                  (s.left + s.width) / EMU, (s.top + s.height) / EMU)
-                 for s in slide.shapes
-                 if not s.has_text_frame and s.width / EMU < width * 0.95]
+                   for m in MARKER_RE.findall(shape.text_frame.text)]
+        logos = artwork_rects(slide, width)
         for marker in markers:
             rect = rects.get(marker)
             if rect is None:
@@ -277,8 +287,8 @@ def test_no_tile_budget_runs_off_the_slide_or_over_the_artwork():
             assert rect[2] <= width and rect[3] <= height, (
                 "%s runs off the slide when full" % marker
             )
-            for logo in logos:
-                assert not _overlaps(rect, logo), (
+            for _, logo in logos:
+                assert not overlaps(rect, logo), (
                     "%s reaches the logo artwork when full" % marker
                 )
 
@@ -308,7 +318,7 @@ def test_every_reach_figure_fits_untruncated():
     assert truncated == [], truncated
 
 
-def test_almost_every_segment_name_fits_untruncated():
+def test_every_segment_name_in_the_catalogue_fits_untruncated():
     """Segment names are the one field the catalogue lets run long (to 95
     characters). The tile takes four lines so the longest still lands whole."""
     names = set(_column("data/segments.csv", "segment_name"))

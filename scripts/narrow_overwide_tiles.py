@@ -16,10 +16,15 @@ text is left-aligned and top-anchored, so for every value short enough to fit
 today the rendering is byte-for-byte what it was. The edit only bites where
 text used to spill.
 
-The widths below are the columns, measured from the template itself — the gap
-to the next tile to the right, or to the slide edge, or to the logo artwork.
-`src.tile_fit.TILE_BUDGETS` holds the matching usable widths and
-`tests/test_tile_fit.py` asserts the two agree, so the pair cannot drift.
+There is deliberately no table of widths here. Each box is set to exactly the
+width its tile is budgeted in `src.tile_fit.TILE_BUDGETS`, plus that shape's own
+insets — so the number the renderer wraps at and the number the fitter measures
+against are one number, not two kept in step by hand.
+
+The budgets themselves are the columns, read off the template: the gap to the
+next tile on the right, to the slide edge, or to the logo artwork. Markers whose
+box already matches their budget — the 2.62" name and format labels, the title,
+the overview — are left untouched, so running this is a no-op for them.
 
 Idempotent: the widths are absolute, so re-running after a template revision
 re-applies them rather than shrinking anything twice.
@@ -27,7 +32,6 @@ re-applies them rather than shrinking anything twice.
     python3 scripts/narrow_overwide_tiles.py
 """
 import os
-import re
 import sys
 
 from pptx import Presentation
@@ -38,35 +42,7 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from src.deck_builder import TEMPLATE_PATH  # noqa: E402
-
-MARKER_RE = re.compile(r"\[[A-Z0-9_]+\]")
-
-# Marker family -> box width in inches.
-#
-# Products and segments: 4.80" is the gap from the left column (x=0.35"/0.22")
-# to the right column (x=5.15"/5.18"), and the right column has the same width
-# again before the slide edge. The third product tile sits between them and
-# takes the same width so all three wrap alike.
-#
-# Insights: 3.74" for the supporting line. The column is 4.53" wide, but the
-# third tile sits under the Prism logo at x=6.41", and 2.57" + 3.74" clears it.
-# All three tiles take that width rather than only the one that needs it —
-# three tiles drawn identically have to wrap identically. The 40pt figure above
-# it is a single short string and keeps the full 4.53" column.
-#
-# The 2.62" name and format boxes are already inside their columns and are the
-# deliberate width of the label beneath a figure; they are left alone.
-COLUMN_WIDTHS = {
-    "[PRODUCT_N_CTR]": 4.80,
-    "[PRODUCT_N_VIEW]": 4.80,
-    "[SEGMENT_N_REACH]": 4.80,
-    "[INSIGHT_N]": 4.53,
-    "[INSIGHT_N_STAT]": 3.74,
-}
-
-
-def family(marker):
-    return re.sub(r"_\d+", "_N", marker)
+from src.tile_fit import MARKER_RE, budget_for, inches, text_inset  # noqa: E402
 
 
 def narrow(path=TEMPLATE_PATH):
@@ -80,15 +56,23 @@ def narrow(path=TEMPLATE_PATH):
             markers = MARKER_RE.findall(shape.text_frame.text)
             if not markers:
                 continue
-            target = COLUMN_WIDTHS.get(family(markers[0]))
-            if target is None:
+            tile = budget_for(markers[0])
+            if tile is None:
                 continue
+            target = (tile.width
+                      + text_inset(shape, "lIns") + text_inset(shape, "rIns"))
             was = shape.width
+            # The budgets are round numbers by choice, so a box already at its
+            # budget sits a few thousandths of an inch off it. Rewriting over
+            # that would churn slides this edit has no business touching — and
+            # the boxes that genuinely need narrowing are out by 0.15" or more,
+            # so a hundredth of an inch separates the two cleanly.
+            if abs(Inches(target) - was) <= Inches(0.01):
+                continue
             shape.width = Inches(target)
-            if shape.width != was:
-                changed.append("slide %d  %-20s %-12s %.2f\" -> %.2f\""
-                               % (index, markers[0], shape.name,
-                                  was / 914400.0, target))
+            changed.append("slide %d  %-20s %-12s %.2f\" -> %.2f\""
+                           % (index, markers[0], shape.name,
+                              inches(was), target))
 
     prs.save(path)
     return changed

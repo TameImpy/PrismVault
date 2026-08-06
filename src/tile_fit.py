@@ -33,18 +33,26 @@ import re
 from collections import namedtuple
 
 from fontTools.ttLib import TTFont
+from pptx.oxml.ns import qn
 
-FONTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "fonts")
+from src.font_embed import BARLOW_FONTS, FONTS_DIR
 
-# The weights the template uses, as its runs name them (see src/font_embed.py).
-FONT_FILES = {
-    "Barlow": "Barlow-Regular.ttf",
-    "Barlow ExtraBold": "Barlow-ExtraBold.ttf",
-    "Barlow ExtraLight": "Barlow-ExtraLight.ttf",
-}
+EMU_PER_INCH = 914400.0
+
+# PowerPoint's defaults when a <a:bodyPr> omits them. Worth applying rather
+# than ignoring: 0.2" of horizontal inset is most of a 2.62" name tile.
+DEFAULT_INSETS = {"lIns": 0.1, "rIns": 0.1, "tIns": 0.05, "bIns": 0.05}
+
+# Measured from the same files the deck embeds, keyed by the typeface string the
+# template's runs carry — so a weight can never be embedded but measured as
+# something else.
+FONT_FILES = {font.typeface: font.filename for font in BARLOW_FONTS}
 FALLBACK_FONT = "Barlow"
 
 ELLIPSIS = "…"
+
+# The deck's marker syntax, shared by everything that reads or fills one.
+MARKER_RE = re.compile(r"\[[A-Z0-9_]+\]")
 
 # width: inches of text the tile may occupy. lines: how far it may grow.
 Tile = namedtuple("Tile", "width lines typeface size")
@@ -82,6 +90,11 @@ TILE_BUDGETS = {
 # The appendix is one flowing block of paragraphs rather than a tile, so it is
 # measured whole (test_the_real_registry_fits_on_the_appendix_slide) instead of
 # line by line. Truncating a source line would defeat what #156 added it for.
+#
+# This is a declaration, not a runtime branch: `fit_to_tile` passes through any
+# marker with no budget either way. What it buys is that a marker added to the
+# template and forgotten about fails a test, rather than quietly joining the
+# exempt set — the exemption has to be written down to count as one.
 EXEMPT_MARKERS = frozenset(["[PROVENANCE_N]"])
 
 _INDEX_RE = re.compile(r"_\d+")
@@ -90,11 +103,35 @@ _metrics_cache = {}
 
 def budget_for(marker):
     """The tile budget for a marker, or None if it has none."""
-    return TILE_BUDGETS.get(_family(marker))
+    return TILE_BUDGETS.get(marker_family(marker))
 
 
-def _family(marker):
+def marker_family(marker):
+    """The budget key for a marker: [SEGMENT_1_NAME] -> [SEGMENT_N_NAME]."""
     return _INDEX_RE.sub("_N", marker)
+
+
+def inches(emu):
+    """python-pptx reports EMU; 914,400 of them make an inch."""
+    return emu / EMU_PER_INCH
+
+
+def text_inset(shape, key):
+    """One of a text frame's four insets, in inches."""
+    bodyPr = shape.text_frame._txBody.find(qn("a:bodyPr"))
+    if bodyPr is None or bodyPr.get(key) is None:
+        return DEFAULT_INSETS[key]
+    return inches(int(bodyPr.get(key)))
+
+
+def wrapping_width(shape):
+    """The width PowerPoint will wrap this shape's text at.
+
+    This, not the budget, is what the renderer obeys — which is why a tile whose
+    box is wider than its column cannot be fixed by writing a smaller number
+    down (see scripts/narrow_overwide_tiles.py).
+    """
+    return inches(shape.width) - text_inset(shape, "lIns") - text_inset(shape, "rIns")
 
 
 def fit_to_tile(marker, text):
@@ -181,7 +218,9 @@ def _metrics(typeface):
                 if glyph in hmtx.metrics}
     hhea = font["hhea"]
     line_ems = (hhea.ascender - hhea.descender + hhea.lineGap) / upem
-    # An unmapped character renders as .notdef, which is the em box's own width.
+    # A character the weight has no glyph for is measured as the widest common
+    # one, so an exotic character in a segment name over-counts rather than
+    # under-counts and the fit stays honest.
     fallback = advances.get("W", 0.7)
 
     _metrics_cache[filename] = (advances, line_ems, fallback)

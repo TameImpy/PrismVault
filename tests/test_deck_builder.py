@@ -25,6 +25,8 @@ from pptx import Presentation
 from pptx.oxml.ns import qn
 
 from src.deck_builder import TEMPLATE_PATH, build_deck
+from src.tile_fit import inches
+from tests.tile_geometry import artwork_rects, overlaps, rendered_text_rect
 
 _A_NS = "http://schemas.openxmlformats.org/drawingml/2006/main"
 _MARKER_RE = re.compile(r"\[[A-Z0-9_]+\]")
@@ -324,54 +326,16 @@ LONGEST_SEGMENT_NAME = ("Dietary change - Reduced Meat Intake or Changes for "
 LONGEST_FORMAT_NAME = "Standard display - Double Height Mobile Banner"
 
 
-def _rendered_rects(slide):
-    """Where each shape's text actually lands once the renderer autofits it.
-
-    Rects, not boxes: the template's boxes overlap each other by design (a 5.34"
-    box in a 4.5" column), so only the drawn text can say whether two tiles
-    collide.
-    """
-    from pptx.oxml.ns import qn as _qn
-    from src.tile_fit import line_height, rendered_lines, text_width
-
-    def inset(shape, key, default):
-        bodyPr = shape.text_frame._txBody.find(_qn("a:bodyPr"))
-        if bodyPr is None or bodyPr.get(key) is None:
-            return default
-        return int(bodyPr.get(key)) / 914400.0
-
+def _text_rects(slide):
+    """(name, rect) for every shape on the slide that draws text."""
     rects = []
     for shape in slide.shapes:
-        if not shape.has_text_frame or not shape.text_frame.text.strip():
+        if not shape.has_text_frame:
             continue
-        left = shape.left / 914400.0 + inset(shape, "lIns", 0.1)
-        top = shape.top / 914400.0 + inset(shape, "tIns", 0.05)
-        width = shape.width / 914400.0 - inset(shape, "lIns", 0.1) - inset(shape, "rIns", 0.1)
-
-        bottom, widest = top, 0.0
-        for para in shape.text_frame.paragraphs:
-            run = next((r for r in para.runs if r.text.strip()), None)
-            if run is None:
-                continue
-            face = run.font.name or "Barlow"
-            size = run.font.size.pt if run.font.size else 14.0
-            for line in rendered_lines(para.text, width, face, size):
-                bottom += line_height(face, size)
-                widest = max(widest, text_width(line, face, size))
-        rects.append((shape.name, (left, top, left + widest, bottom)))
+        rect = rendered_text_rect(shape)
+        if rect is not None:
+            rects.append((shape.name, rect))
     return rects
-
-
-def _logo_rects(slide, slide_width):
-    """The Prism and Immediate marks. The full-bleed background is not one."""
-    return [(s.name, (s.left / 914400.0, s.top / 914400.0,
-                      (s.left + s.width) / 914400.0, (s.top + s.height) / 914400.0))
-            for s in slide.shapes
-            if not s.has_text_frame and s.width / 914400.0 < slide_width * 0.95]
-
-
-def _intersect(a, b):
-    return a[0] < b[2] and b[0] < a[2] and a[1] < b[3] and b[1] < a[3]
 
 
 def _longest_payload():
@@ -410,10 +374,10 @@ def test_no_text_overlaps_other_text_on_any_slide(payload, advertiser):
     prs = Presentation(build_deck(payload, advertiser))
     collisions = []
     for index, slide in enumerate(prs.slides):
-        rects = _rendered_rects(slide)
+        rects = _text_rects(slide)
         for i, (name_a, a) in enumerate(rects):
             for name_b, b in rects[i + 1:]:
-                if _intersect(a, b):
+                if overlaps(a, b):
                     collisions.append("slide %d: %s over %s" % (index, name_a, name_b))
     assert collisions == [], collisions
 
@@ -424,16 +388,16 @@ def test_no_text_overlaps_other_text_on_any_slide(payload, advertiser):
 ])
 def test_no_text_runs_off_the_slide_or_over_the_logos(payload, advertiser):
     prs = Presentation(build_deck(payload, advertiser))
-    width, height = prs.slide_width / 914400.0, prs.slide_height / 914400.0
+    width, height = inches(prs.slide_width), inches(prs.slide_height)
 
     problems = []
     for index, slide in enumerate(prs.slides):
-        logos = _logo_rects(slide, width)
-        for name, rect in _rendered_rects(slide):
+        logos = artwork_rects(slide, width)
+        for name, rect in _text_rects(slide):
             if rect[2] > width or rect[3] > height:
                 problems.append("slide %d: %s leaves the slide" % (index, name))
             for logo_name, logo in logos:
-                if _intersect(rect, logo):
+                if overlaps(rect, logo):
                     problems.append("slide %d: %s covers %s" % (index, name, logo_name))
     assert problems == [], problems
 

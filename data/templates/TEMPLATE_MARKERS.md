@@ -8,10 +8,10 @@ Naming convention: `UPPER_SNAKE_CASE`, wrapped in square brackets, with a numeri
 
 | Slide | Marker(s) | Source | Fill rule |
 |---|---|---|---|
-| 0 Title | `[ADVERTISER_NAME]` | brief input (advertiser) | verbatim (renders "`<Advertiser>` Brief") |
+| 0 Title | `[ADVERTISER_NAME]` | brief input (advertiser) | verbatim, fitted to two 50pt lines |
 | 2 Advertiser Overview | `[ADVERTISER_OVERVIEW]` | brief advertiser research | LLM prose |
-| 3 Recommended Products (×3) | `[PRODUCT_n_FORMAT]`, `[PRODUCT_n_CTR]`, `[PRODUCT_n_VIEW]` (n=1..3) | `format_recommendations` rows (`Format`, `CTR avg`, `Viewability`) | **verbatim** |
-| 4 Recommended Segments (×4) | `[SEGMENT_n_NAME]`, `[SEGMENT_n_REACH]` (n=1..4) | `audience_segments` (`segment_name`, `reach`) | **verbatim** |
+| 3 Recommended Products (×3) | `[PRODUCT_n_FORMAT]`, `[PRODUCT_n_CTR]`, `[PRODUCT_n_VIEW]` (n=1..3) | `format_recommendations` rows (`Format`, `CTR avg`, `Viewability`) | **verbatim**, fitted to the tile (a name too long for two 11pt lines is cut on a word boundary and marked `…`; no catalogue name is) |
+| 4 Recommended Segments (×4) | `[SEGMENT_n_NAME]`, `[SEGMENT_n_REACH]` (n=1..4) | `audience_segments` (`segment_name`, `reach`) | **verbatim**, fitted to the tile (a name too long for four 11pt lines is cut and marked `…`; no catalogue name is). Reach is never cut |
 | 5 Historical Insights (×3) | `[INSIGHT_n]`, `[INSIGHT_n_STAT]` (n=1..3) | matched `historical_research` body | LLM-selected 3 insights, grounded in the matched body |
 | 6 Appendix (×6) | `[PROVENANCE_n]` (n=1..6) | `provenance` entries from the brief run | **verbatim** — one line per data section |
 
