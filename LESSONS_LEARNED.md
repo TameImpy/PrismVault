@@ -885,3 +885,61 @@ notice now sends them to My Briefs first. When a feature is built entirely on
 the client, it is easy to write recovery copy that describes the client's view
 of events — the connection died, so the work died — and quietly contradicts
 what the server actually did.
+
+## 6 Aug 2026 — "Back logs me out" was Back showing the login page (#161)
+
+Abel's report was that the browser Back button logs you out. It does not. The
+session survives Back perfectly intact — `/api/me` answers 200 the whole way
+through. What Back did was land the user on `/login`, which rendered its form to
+anyone who asked, signed in or not. "Welcome back" and an empty email field is
+what being logged out looks like, so that is what it was reported as, and the
+next thing a user does is type their password again.
+
+The cause was one word. Signing in ran `window.location.href = redirect`, which
+**pushes**. The proxy's redirect to `/login?redirect=/app` had replaced the
+`/app` entry, so history read `[…, /, /login]` and then gained `/app` on top:
+the login form sat exactly one Back press behind the app. `location.replace`
+consumes that entry instead, and Back reaches the screen the user was actually
+on. The same push/replace error was in three other places — the assistant page's
+auth bounce, the `/app` 401 handler — all of them turning "you need to sign in"
+into a history entry you can walk back into and be bounced out of again.
+
+Two things were worth the trip through a real browser rather than reasoning from
+the code.
+
+The first was a false lead that would have wasted a day. In `next dev`, Back
+into `/app` renders a **completely blank page** — no navbar, nothing — while
+`/api/me` returns 200. It looks like a much worse bug than the reported one. It
+is not a bug at all: the HMR websocket disqualifies the page from Chrome's
+back/forward cache, so Back refetches the document, and `/app` returns `null`
+until its auth check resolves. Against `next build && next start` the same
+sequence restores from bfcache instantly and renders fine. **Reproduce
+production bugs against a production build**; a dev server has different
+navigation behaviour, and the difference here pointed at the wrong subsystem
+entirely.
+
+The second only appeared _after_ the fix. Back now reached the landing page as
+intended — but showed "Login" and "Launch App" in the navbar, because that page
+was restored from bfcache exactly as it had been frozen before sign-in. A
+bfcache restore does not remount React, so the provider's mount effect never
+re-runs and the auth state stays as stale as the pixels. `AuthProvider` now also
+revalidates on `pageshow` when `event.persisted` — the one moment the browser
+tells you a page has come back from the dead. Any state a provider fetches once
+on mount has this hole in it.
+
+Testing this needed two throwaway pieces of scaffolding, both worth remembering.
+There is no DOM test harness in this repo, so the decisions went into
+`lib/authNavigation.ts` as plain functions taking a `location` object as an
+argument — the same shape `lib/briefDraft.ts` uses for storage — and the test
+asserts `replace` was called and `assign` was not, which is the whole defect in
+one assertion. And the "genuinely expired session" criterion was checked by
+minting an expired JWT with the app's own secret and serving it from a scratch
+HTTP server on another port: **cookies ignore ports**, so a cookie set from
+`localhost:9999` is sent to the app on `localhost:3002`. That is a neat way to
+plant an httpOnly cookie a page's own JavaScript is not allowed to write.
+
+One thing was fixed in passing because the change landed on the exact line: the
+`redirect` query parameter was fed straight to `window.location`, so
+`/login?redirect=https://evil.example` sent the user off-site after a successful
+sign-in. `safeReturnPath` now honours only same-origin absolute paths, rejecting
+`//host` and `/\host`, which browsers read as another origin.

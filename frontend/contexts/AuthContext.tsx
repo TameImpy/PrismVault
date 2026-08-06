@@ -42,19 +42,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
-    fetch(`/api/me`, { credentials: "include" })
-      .then((res) => {
-        if (res.ok) return res.json();
-        return null;
-      })
-      .then((data) => {
-        setUser(data);
-        if (data) identifyUser(data);
-      })
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false));
+  const refreshUser = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/me`, { credentials: "include" });
+      const data = res.ok ? await res.json() : null;
+      setUser(data);
+      if (data) identifyUser(data);
+    } catch {
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    refreshUser();
+
+    // A page restored from the back/forward cache never remounts, so it carries
+    // whatever session state it was frozen with — press Back onto a page you
+    // last saw while signed out and the navbar still says "Login" (#161). The
+    // browser announces the restore with `persisted`, and that is the one
+    // moment this provider cannot learn about any other way.
+    function handlePageShow(event: PageTransitionEvent) {
+      if (event.persisted) refreshUser();
+    }
+
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, [refreshUser]);
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await fetch(`/api/auth/login`, {

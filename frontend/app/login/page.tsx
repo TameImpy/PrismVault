@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
@@ -8,6 +8,7 @@ import Footer from "@/components/Footer";
 import GlassCard from "@/components/GlassCard";
 import Button from "@/components/Button";
 import { useAuth } from "@/contexts/AuthContext";
+import { completeSignIn, signedInDestination } from "@/lib/authNavigation";
 
 export default function LoginPage() {
   return (
@@ -20,13 +21,25 @@ export default function LoginPage() {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/app";
-  const { login } = useAuth();
+  const redirect = searchParams.get("redirect");
+  const { user, loading: authLoading, login } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Someone already signed in has no business being shown a login form (#161)
+  // — by bookmark, by typed URL, or by a Back press that reaches this entry.
+  const destination = signedInDestination({
+    loading: authLoading,
+    signedIn: Boolean(user),
+    returnPath: redirect,
+  });
+
+  useEffect(() => {
+    if (destination) router.replace(destination);
+  }, [destination, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -35,13 +48,17 @@ function LoginForm() {
 
     try {
       await login(email, password);
-      window.location.href = redirect;
+      completeSignIn(window.location, redirect);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
       setLoading(false);
     }
   }
+
+  // Hold the form back until the session check has answered. Showing it and
+  // then whipping it away is the same confusion #161 is about, only briefer.
+  if (authLoading || destination) return null;
 
   return (
     <>
@@ -63,7 +80,10 @@ function LoginForm() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-slate-300 mb-2">
+              <label
+                htmlFor="email"
+                className="block text-sm font-semibold text-slate-300 mb-2"
+              >
                 Email
               </label>
               <input
@@ -78,7 +98,10 @@ function LoginForm() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-slate-300 mb-2">
+              <label
+                htmlFor="password"
+                className="block text-sm font-semibold text-slate-300 mb-2"
+              >
                 Password
               </label>
               <input
@@ -98,7 +121,10 @@ function LoginForm() {
           </form>
 
           <p className="text-slate-400 text-sm text-center mt-4">
-            <Link href="/forgot-password" className="text-accent-cyan hover:underline">
+            <Link
+              href="/forgot-password"
+              className="text-accent-cyan hover:underline"
+            >
               Forgot password?
             </Link>
           </p>

@@ -132,6 +132,24 @@ def test_me_with_invalid_token_returns_401(db_url):
     assert response.status_code == 401
 
 
+def test_me_with_expired_token_returns_401(db_url):
+    """A validly-signed, well-formed JWT past its exp claim must be rejected
+    the same as a garbled one (#161: the bfcache-restore refreshUser() call
+    must not treat a stale expired cookie as an authenticated session)."""
+    from jose import jwt as jose_jwt
+    from datetime import datetime, timedelta
+    import config
+
+    expired_token = jose_jwt.encode(
+        {"sub": "1", "exp": datetime.utcnow() - timedelta(days=1)},
+        config.JWT_SECRET,
+        algorithm="HS256",
+    )
+    client = TestClient(app, cookies={"access_token": expired_token})
+    response = client.get("/api/me")
+    assert response.status_code == 401
+
+
 # ---------------------------------------------------------------------------
 # Logout
 # ---------------------------------------------------------------------------

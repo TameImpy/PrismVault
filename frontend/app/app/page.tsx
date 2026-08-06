@@ -576,7 +576,9 @@ export default function InsightsTool() {
 
       if (!res.ok) {
         if (res.status === 401) {
-          router.push("/login?redirect=/app");
+          // Replace, as the mount guard above does — an expired session should
+          // send the user to login, not stack it on top of the app (#161).
+          router.replace("/login?redirect=/app");
           return;
         }
         const data = await res.json().catch(() => null);
