@@ -25,6 +25,8 @@ from pptx import Presentation
 from pptx.oxml.ns import qn
 
 from src.deck_builder import TEMPLATE_PATH, build_deck
+from src.tile_fit import inches
+from tests.tile_geometry import artwork_rects, overlaps, rendered_text_rect
 
 _A_NS = "http://schemas.openxmlformats.org/drawingml/2006/main"
 _MARKER_RE = re.compile(r"\[[A-Z0-9_]+\]")
@@ -311,6 +313,117 @@ def test_the_real_registry_fits_on_the_appendix_slide():
         "the appendix source lines need %.2f\" and the slide is %.2f\" — trim "
         "data/provenance.csv" % (bottom, slide_height)
     )
+
+
+# ---------------------------------------------------------------------------
+# Overlapping text (#162) — the whole deck, measured
+# ---------------------------------------------------------------------------
+
+# The longest values the real data files hold. Every one of these is a string a
+# brief can genuinely produce, not a synthetic worst case.
+LONGEST_SEGMENT_NAME = ("Dietary change - Reduced Meat Intake or Changes for "
+                        "Sustainability Reason in the last 12 Months")
+LONGEST_FORMAT_NAME = "Standard display - Double Height Mobile Banner"
+
+
+def _text_rects(slide):
+    """(name, rect) for every shape on the slide that draws text."""
+    rects = []
+    for shape in slide.shapes:
+        if not shape.has_text_frame:
+            continue
+        rect = rendered_text_rect(shape)
+        if rect is not None:
+            rects.append((shape.name, rect))
+    return rects
+
+
+def _longest_payload():
+    """A brief whose every field is the longest its source data can produce."""
+    audience = {
+        "matched": True,
+        "platforms": [{"platform": "AP", "segments": [
+            {"segment_name": LONGEST_SEGMENT_NAME, "reach": 32165645},
+            {"segment_name": LONGEST_SEGMENT_NAME, "reach": 32165645},
+            {"segment_name": LONGEST_SEGMENT_NAME, "reach": 32165645},
+            {"segment_name": LONGEST_SEGMENT_NAME, "reach": 32165645},
+        ]}],
+    }
+    formats = [dict(row, format=LONGEST_FORMAT_NAME) for row in FORMAT_ROWS]
+    insights = [{"stat": "999,999.9%", "text": w} for w in (
+        "of home bakers plan their seasonal bakes around a family occasion",
+        "more likely to try an unfamiliar brand partway through a bake",
+        "read long-form recipe content weekly or more often than that",
+    )]
+    return _content(audience_segments=audience, format_recommendations=formats,
+                    insights=insights,
+                    advertiser_overview=" ".join(["sustainability"] * 60))
+
+
+@pytest.mark.parametrize("payload,advertiser", [
+    (_content(), "Homepride"),
+    (_longest_payload(), "Homepride Flour & Sauces International"),
+])
+def test_no_text_overlaps_other_text_on_any_slide(payload, advertiser):
+    """#162: text stays inside its tile across short and long content.
+
+    The template's boxes are all spAutoFit, so a value longer than its
+    placeholder grows the shape downward when PowerPoint lays the slide out —
+    which is invisible in the file and lands on the neighbouring tile on screen.
+    """
+    prs = Presentation(build_deck(payload, advertiser))
+    collisions = []
+    for index, slide in enumerate(prs.slides):
+        rects = _text_rects(slide)
+        for i, (name_a, a) in enumerate(rects):
+            for name_b, b in rects[i + 1:]:
+                if overlaps(a, b):
+                    collisions.append("slide %d: %s over %s" % (index, name_a, name_b))
+    assert collisions == [], collisions
+
+
+@pytest.mark.parametrize("payload,advertiser", [
+    (_content(), "Homepride"),
+    (_longest_payload(), "Homepride Flour & Sauces International"),
+])
+def test_no_text_runs_off_the_slide_or_over_the_logos(payload, advertiser):
+    prs = Presentation(build_deck(payload, advertiser))
+    width, height = inches(prs.slide_width), inches(prs.slide_height)
+
+    problems = []
+    for index, slide in enumerate(prs.slides):
+        logos = artwork_rects(slide, width)
+        for name, rect in _text_rects(slide):
+            if rect[2] > width or rect[3] > height:
+                problems.append("slide %d: %s leaves the slide" % (index, name))
+            for logo_name, logo in logos:
+                if overlaps(rect, logo):
+                    problems.append("slide %d: %s covers %s" % (index, name, logo_name))
+    assert problems == [], problems
+
+
+def test_a_value_too_long_for_its_tile_is_marked_as_shortened():
+    """Truncation has to be visible — a silently clipped segment name reads as
+    a different segment."""
+    payload = _content(audience_segments={
+        "matched": True,
+        "platforms": [{"platform": "AP", "segments": [
+            {"segment_name": "Dietary change - " + "and sustainability reasons " * 12,
+             "reach": 10486296},
+        ]}],
+    })
+    text = _slide_text(_find_slide(Presentation(build_deck(payload, "Homepride")),
+                                   "Recommended Segments"))
+    assert "…" in text
+
+
+def test_the_real_catalogue_is_never_shortened_on_the_deck():
+    """The tiles are sized for the real data — a product name or reach figure
+    arriving whole must leave whole."""
+    prs = Presentation(build_deck(_longest_payload(), "Homepride"))
+    assert LONGEST_SEGMENT_NAME in _slide_text(_find_slide(prs, "Recommended Segments"))
+    assert LONGEST_FORMAT_NAME in _slide_text(_find_slide(prs, "Recommended Products"))
+    assert "32,165,645" in _slide_text(_find_slide(prs, "Recommended Segments"))
 
 
 def test_appendix_survives_a_deck_built_without_provenance():

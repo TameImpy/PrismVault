@@ -953,3 +953,55 @@ One thing was fixed in passing because the change landed on the exact line: the
 `/login?redirect=https://evil.example` sent the user off-site after a successful
 sign-in. `safeReturnPath` now honours only same-origin absolute paths, rejecting
 `//host` and `/\host`, which browsers read as another origin.
+
+---
+
+## 2026-08-06 — Overlapping deck text: the file was fine, the renderer wasn't (#162)
+
+**What went wrong:** QA reported "some exported slides have text overlapping".
+Nothing in the .pptx looked wrong, and every existing test passed — the tests
+inspected text content, run formatting and file integrity, none of which the
+defect touches.
+
+**Why:** every text box in the template is `spAutoFit` — PowerPoint's "resize
+shape to fit text". python-pptx writes the text and leaves the stored height
+alone, so the shape only grows when **PowerPoint** lays the slide out on open.
+A value longer than its placeholder is therefore written happily, reads back
+correctly, and lands on the tile below it on screen. Anything that inspects the
+file cannot see this. The only way to catch it is to _measure_: wrap the text
+the way the renderer will, at the box's own width and font, and check where it
+lands.
+
+**The second half, which was the actual root cause:** the fix is not just
+"shorten the text". Several boxes were drawn wider than the column they sit in
+— `[INSIGHT_2_STAT]` was a 5.34" box starting at x=4.88" on a 10" slide, so it
+hung 0.22" off the edge. PowerPoint wraps at the _box_, not at the column you
+think the tile occupies, so a long line spills sideways into the neighbouring
+tile no matter what. With the boxes as drawn, the only insight phrase
+guaranteed to stay inside tile 1 was about four words. Content limits alone
+could not fix a geometry bug; the boxes had to come in to their columns
+(`scripts/narrow_overwide_tiles.py`, `cx` only — a no-op for anything that
+already fitted, because the text is left-aligned and top-anchored).
+
+**The generalisable bit:** when a layout constant is a _reading_ of an asset,
+make a test re-derive it from that asset. `TILE_BUDGETS` would rot silently the
+first time someone nudged a box in PowerPoint, so the test asserts each budget
+uses the template's own typeface and size, equals its box's wrapping width
+**exactly**, and clears every neighbour, the slide edge and the logo artwork
+when full. A budget narrower than its box is a fiction, and the exact-equality
+assertion is what says so.
+
+**A quieter bug found on the way:** the prompt asked for insight phrases of up
+to 12 words; the 26pt tile holds about six. Every deck had been shipping with
+its insight lines cut off mid-sentence, and nobody had reported it because
+truncation looked like terse copywriting. Worth separating the two jobs: the
+fitter is the _guarantee_ (it cannot be allowed to fail), the prompt cap is
+there so the guarantee rarely has to fire. They are now pinned to each other by
+a test that spans both files.
+
+**Measuring text without a renderer:** the real Barlow files are already in the
+repo for font embedding, so `fontTools` gives exact advance widths — far better
+than the "average glyph is half the point size" estimate used elsewhere, which
+cannot tell `iiii` from `WWWW`. Line height comes from the font's own `hhea`
+metrics. Default OOXML insets are 0.1" left/right and 0.05" top/bottom, and
+they matter at these box sizes.

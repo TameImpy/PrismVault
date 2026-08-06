@@ -8,9 +8,7 @@ or colour. Change the look by editing the template, not this file.
 """
 import io
 import os
-import re
 
-from lxml import etree
 from pptx import Presentation
 from pptx.oxml.ns import qn
 
@@ -24,6 +22,7 @@ from src.slide_content import (
     build_product_rows,
     build_segment_rows,
 )
+from src.tile_fit import MARKER_RE, fit_to_tile
 
 TEMPLATE_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
@@ -33,7 +32,6 @@ TEMPLATE_PATH = os.path.join(
 # The Historical Insights slide is dropped whole when no research matched.
 INSIGHT_SLIDE_MARKER = "[INSIGHT_1]"
 
-_MARKER_RE = re.compile(r"\[[A-Z0-9_]+\]")
 _XML_SPACE = "{http://www.w3.org/XML/1998/namespace}space"
 
 
@@ -67,6 +65,10 @@ def _build_fields(slide_content, advertiser):
 
     Every marker gets an entry — tiles with no data behind them resolve to ""
     and are blanked, so no `[MARKER]` can survive into a client-facing deck.
+
+    Values leave here fitted to their tile (`src/tile_fit.py`): one choke point,
+    so a marker added later cannot escape the guard that stops long content
+    landing on the tile below it (#162).
     """
     fields = {
         "[ADVERTISER_NAME]": advertiser,
@@ -102,16 +104,7 @@ def _build_fields(slide_content, advertiser):
         entry = provenance[i] if i < len(provenance) else None
         fields["[PROVENANCE_%d]" % (i + 1)] = format_provenance_row(entry)
 
-    return {marker: _one_line(value) for marker, value in fields.items()}
-
-
-def _one_line(value):
-    """Collapse a value to a single line of text.
-
-    Every marker sits in a one-line placeholder, and a literal newline inside
-    an <a:t> element is what PowerPoint reads as a corrupt file.
-    """
-    return " ".join(str(value or "").split())
+    return {marker: fit_to_tile(marker, value) for marker, value in fields.items()}
 
 
 def _drop_slide_with_marker(prs, marker):
@@ -142,7 +135,7 @@ def _fill_markers(prs, fields):
 
 
 def _fill_paragraph(para, fields):
-    markers = _MARKER_RE.findall(para.text)
+    markers = MARKER_RE.findall(para.text)
     if not markers:
         return
 

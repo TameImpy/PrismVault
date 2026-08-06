@@ -115,6 +115,20 @@ Formats need no new logic: the reason is the catalogue's existing `best_for_brie
 
 Both lines are internal planning vocabulary and deliberately do not reach the client-facing surfaces (drafted email, deck) — unlike provenance, which does.
 
+**Deck text fitting** (`src/tile_fit.py`):
+
+Reported as "some exported slides have text overlapping" (#162). The template's text boxes are all `spAutoFit` — "resize shape to fit text" — and python-pptx never recomputes a shape's height, so a value longer than its placeholder is written happily, looks correct in the file, and is only grown downward onto the tile below when PowerPoint lays the slide out on open. The defect is therefore invisible to anything that inspects the .pptx and shows up only on screen.
+
+So every marker carries a **tile budget**: the width its text may occupy and how many lines it may grow to. `deck_builder._build_fields` fits every value through one choke point, so a marker added later cannot escape the guard. Values are measured in the template's real Barlow advance widths (`fonttools`, reading the same files `src/font_embed.py` embeds) rather than by a glyph-width estimate, because the question is whether a specific string fits a specific box.
+
+Half the fix was geometry, not content. Several boxes were drawn wider than the column they sit in — `[INSIGHT_2_STAT]` was a 5.34" box at x=4.88" on a 10" slide — and PowerPoint wraps at the box, so text spilled into the neighbouring tile however short it was. With the boxes as drawn, the only insight phrase guaranteed to stay inside tile 1 was about four words, which would have gutted the tiles. `scripts/narrow_overwide_tiles.py` brings those boxes in to their columns; it sets `cx` and nothing else, and since the text is left-aligned and top-anchored it is a no-op for every value that already fitted.
+
+`TILE_BUDGETS` is a reading of the template rather than a set of preferences, and `tests/test_tile_fit.py` re-derives it: each budget must use the template's own typeface and point size, equal its box's wrapping width exactly, and clear every other tile, the slide edge and the logo artwork when full. A budget narrower than its box would be a fiction — the renderer wraps where the box says, not where we would prefer.
+
+The caps in `slide_content.py` are a separate thing from the guarantee: they exist so that shortening stays rare. The insight phrase was asked for at 12 words while its 26pt tile holds about six, so nearly every deck arrived with its insight lines cut off — the prompt and the tile now agree, pinned by a test across both files. Where a value genuinely will not fit it is cut on a word boundary and marked `…`, visibly, because a silently clipped segment name reads as a different segment. The tiles are sized so the real catalogues never reach that path, and tests assert it: the longest segment name (95 characters) and every format name land whole.
+
+The appendix is deliberately exempt. It is one flowing block of paragraphs rather than a tile, measured whole by `test_the_real_registry_fits_on_the_appendix_slide` — truncating a source line would defeat what #156 added it for.
+
 **Pipeline flow**:
 `api/main.py` → `synthesiser.generate_insights()` → gathers all sources → assembles prompt from `src/prompts.py` → calls GPT-4o → returns dict with synthesis + raw data for UI.
 
