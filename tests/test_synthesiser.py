@@ -1,8 +1,7 @@
+import glob
 import json
 import logging
 import os
-
-PROJECT_ROOT = os.path.join(os.path.dirname(__file__), "..")
 
 from src.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
 from src.synthesiser import (
@@ -10,6 +9,8 @@ from src.synthesiser import (
     _format_advertiser_research,
     _run_format_name_guardrail,
 )
+
+PROJECT_ROOT = os.path.join(os.path.dirname(__file__), "..")
 
 
 def test_system_prompt_not_empty():
@@ -555,11 +556,16 @@ def test_no_prompt_asks_the_model_about_google_trends():
 
 def test_nothing_imports_the_trends_module_or_pytrends():
     """The module and its dependency left together. A stale import would only
-    surface at runtime, on a machine that had never uninstalled pytrends."""
-    import glob
+    surface at runtime, on a machine that had never uninstalled pytrends — so
+    every directory that ships Python is swept, not just the package the
+    pipeline lives in.
+    """
+    paths = glob.glob(os.path.join(PROJECT_ROOT, "*.py"))
+    for package in ("src", "api", "scripts"):
+        paths += glob.glob(os.path.join(PROJECT_ROOT, package, "*.py"))
+    assert len(paths) > 20, "the sweep found almost nothing — has a path moved?"
 
-    for path in glob.glob(os.path.join(PROJECT_ROOT, "src", "*.py")) + \
-            glob.glob(os.path.join(PROJECT_ROOT, "api", "*.py")):
+    for path in paths:
         with open(path, encoding="utf-8") as f:
             source = f.read()
         assert "pytrends" not in source, "%s still imports pytrends" % path

@@ -540,6 +540,13 @@ about **$0.0077 saved per assistant turn**, and an assistant turn that uses the 
 tool makes **two** calls, both carrying the prefix.
 
 **The brief (`src/synthesiser.py`) — cannot cache the big block, by construction.**
+
+> **Superseded in part, 6 Aug 2026 (#176):** `google_trends` has since been removed
+> from `USER_PROMPT_TEMPLATE`. The measurement below is left as it was taken rather
+> than restated, because it is the record of what was true on 1 August. The
+> conclusion is unaffected: `advertiser_research` and `audience_segments` still
+> precede the static format block and still change on every brief.
+
 **[VERIFIED LOCALLY]** the placeholders in `USER_PROMPT_TEMPLATE` resolve in this order:
 
 ```

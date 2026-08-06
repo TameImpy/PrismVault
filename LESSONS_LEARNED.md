@@ -1074,12 +1074,31 @@ broken; the test had been resting on a coincidence between fixture length and
 tile count.
 
 **How it was fixed:** the test now skips runs whose markers the brief supplied
-no value for, which is what "populated runs" meant all along. `PROVENANCE_TILES`
-deliberately **stays at 6** rather than dropping to 5: a brief saved _before_
-the removal carries six provenance entries, and narrowing the loop would
-silently drop its last source line on export. Same principle as the rest of the
-ticket — the stored payload is the record of what that run produced, and the
-deck should render all of it rather than trim history to today's feature set.
+no value for, which is what "populated runs" meant all along.
+
+**The wrong turn, and what corrected it.** My first answer was to keep
+`PROVENANCE_TILES` at 6, reasoning that a brief saved _before_ the removal
+carries six entries and narrowing the loop would drop its last source line —
+"the payload is the faithful record, so render all of it". Code review caught
+that this was the wrong trade, and a direct check confirmed it: a deck exported
+from a pre-change brief printed `Google Trends — Source: Google Trends, queried
+live` onto the **client-facing** appendix. The ticket had said plainly that for
+such briefs "the provenance entry is ignored".
+
+The confusion was between _keeping_ old data and _rendering_ it. Not writing a
+migration means storage keeps the record; it does not mean every surface must
+display it. The browser had this right for free — it looks provenance up by
+section name, so it never asks for the retired one. The deck and the email
+place whatever list they are handed, in order, so they had to be told:
+`drop_retired_sections()` in `src/provenance.py`, applied at
+`api/main._provenance_dicts()`, the one choke point both surfaces pass through.
+
+**The part worth remembering:** the tile count was never the real guard. A brief
+that matched no historical research carries only five entries, so the Trends
+line lands at tile **5** — any cap of 5 or 6 renders it. Filtering by section
+name is the only thing that actually works; `PROVENANCE_TILES = 5` is a second
+line of defence, not the first. When you catch yourself sizing a container to
+exclude bad data, check whether the data's position is actually fixed.
 
 **Transferable point:** in this repo a "content" change can be a layout change.
 Anything counted against the template — appendix lines, product tiles, insight

@@ -159,6 +159,31 @@ def _resolve_historical(entry, research):
     )
 
 
+def drop_retired_sections(entries, csv_path=None):
+    # type: (list, str) -> list
+    """The posted-back entries for sections this product still has.
+
+    A brief is stored as the whole payload its run produced and is never
+    rewritten, so one saved before Google Trends was removed (#176) still
+    carries a source line for it. Keeping that in storage is the point — the
+    record should say what the run actually did. Rendering it is a different
+    question, and the answer is no: the deck's appendix and the email footer
+    both reach clients, and a source line for a section the brief no longer
+    contains describes nothing the reader can find.
+
+    The browser gets this for free, because it looks provenance up by section
+    name and simply never asks for the retired one. These two surfaces place
+    every entry they are given in order, so they need the rule stated.
+
+    It is the registry that decides, not a list of retired names, so a section
+    removed later needs no second edit here.
+    """
+    if not entries:
+        return entries
+    known = set(e["section"] for e in load_provenance(csv_path))
+    return [e for e in entries if e.get("section") in known]
+
+
 def provenance_for(entries, section):
     # type: (list, str) -> dict
     """The entry for one section, or None when it carries no provenance."""

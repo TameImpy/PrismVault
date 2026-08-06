@@ -474,6 +474,9 @@ def test_populated_runs_keep_the_template_run_formatting(deck):
         # left to keep. The template carries six appendix lines and the registry
         # now holds five sections (#176 took Google Trends out), which is the
         # ordinary way for a marker to go unfilled; see PROVENANCE_TILES.
+        # This skip derives from production code, so a `_build_fields` that
+        # returned nothing would skip everything and make the test vacuous.
+        # The `checked` floor at the end is what rules that out.
         if all(not fields.get(m) for m in markers):
             continue
         assert coords in output_runs, "template run at %s vanished from the output" % (coords,)
@@ -731,3 +734,54 @@ def test_api_passes_matched_research_to_the_content_step(mock_build, mock_gen, a
     _post_deck(api_client, mock_build, historical_research=RESEARCH_PAYLOAD)
 
     assert mock_gen.call_args[1]["historical_research"] == RESEARCH_PAYLOAD
+
+
+@patch("api.main.generate_slide_content")
+@patch("api.main.build_deck")
+def test_api_download_deck_drops_a_retired_sections_source_line(mock_build, mock_gen, api_client):
+    """A deck exported from a brief saved before Google Trends was removed
+    carries no Trends line on its appendix (#176).
+
+    The appendix reaches clients, and it places whatever provenance it is given
+    in order — so unlike the browser, which looks entries up by name and simply
+    never asks for the retired one, this surface has to be told. The tile count
+    is not the guard: a brief that matched no historical research carries only
+    five entries, so the Trends line would land well inside the appendix.
+    """
+    mock_gen.return_value = _content()
+    legacy = [
+        {"section": "Advertiser Overview", "source": "Live public web search",
+         "as_at": "2026-04-16", "coverage": "External", "period": "As published",
+         "cadence": "Live"},
+        {"section": "Google Trends", "source": "Google Trends, queried live",
+         "as_at": "2026-04-16", "coverage": "Worldwide search interest",
+         "period": "Rolling 12 months", "cadence": "Live"},
+    ]
+
+    resp, slide_content = _post_deck(api_client, mock_build, provenance=legacy)
+
+    assert resp.status_code == 200
+    assert [e["section"] for e in slide_content["provenance"]] == ["Advertiser Overview"]
+
+
+@patch("api.main.draft_email")
+def test_api_draft_email_drops_a_retired_sections_source_line(mock_draft, api_client):
+    """The email footer states the same provenance as the deck, so it cannot
+    be allowed to state a section the deck has dropped (#176)."""
+    mock_draft.return_value = {"subject": "s", "body": "b"}
+    api_client.post(
+        "/api/auth/signup",
+        json={"email": "email-prov@immediate.co.uk", "name": "Test", "password": "password123"},
+    )
+
+    resp = api_client.post("/api/draft-email", json={
+        "content": "brief", "topic": "t", "advertiser": "a", "kpi": "k",
+        "provenance": [
+            {"section": "Recommended Products", "source": "Benchmarking sheet"},
+            {"section": "Google Trends", "source": "Google Trends, queried live"},
+        ],
+    })
+
+    assert resp.status_code == 200
+    passed = mock_draft.call_args[1]["provenance"]
+    assert [e["section"] for e in passed] == ["Recommended Products"]

@@ -22,6 +22,7 @@ from src.provenance import (
     FIELDS,
     RUN_DATE_TOKEN,
     build_provenance,
+    drop_retired_sections,
     format_provenance_block,
     format_provenance_line,
     format_provenance_row,
@@ -214,6 +215,37 @@ def test_build_provenance_takes_no_trends_flag():
 
     assert "include_google_trends" not in inspect.signature(
         build_provenance).parameters
+
+
+def test_a_retired_sections_line_is_not_rendered_to_a_client(tmp_path):
+    """A brief saved before Google Trends was removed still carries its source
+    line (#176). Storage keeps it — the payload is the record of what that run
+    did — but the deck appendix and the email footer reach clients, and a
+    source line for a section the brief no longer contains describes nothing.
+    """
+    path = _write_csv(tmp_path, [
+        {"section": "Recommended Products", "source": "Benchmarking sheet",
+         "as_at": "2026-07-20", "coverage": "Whole network", "period": "12 months",
+         "cadence": "Monthly"},
+    ])
+    legacy = [
+        {"section": "Recommended Products", "source": "Benchmarking sheet"},
+        {"section": "Google Trends", "source": "Google Trends, queried live"},
+    ]
+    kept = drop_retired_sections(legacy, csv_path=path)
+    assert [e["section"] for e in kept] == ["Recommended Products"]
+
+
+def test_dropping_retired_sections_leaves_a_current_brief_untouched():
+    """Every section of a brief run today survives, in order."""
+    entries = build_provenance(historical_research=MATCHED_RESEARCH)
+    assert drop_retired_sections(entries) == entries
+
+
+def test_dropping_retired_sections_passes_an_absent_list_through():
+    """A brief saved before provenance existed carries none at all."""
+    assert drop_retired_sections(None) is None
+    assert drop_retired_sections([]) == []
 
 
 def test_historical_research_is_dropped_when_nothing_matched():
