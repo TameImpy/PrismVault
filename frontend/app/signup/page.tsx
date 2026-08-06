@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
@@ -8,15 +8,27 @@ import Footer from "@/components/Footer";
 import GlassCard from "@/components/GlassCard";
 import Button from "@/components/Button";
 import { useAuth } from "@/contexts/AuthContext";
+import { completeSignIn, signedInDestination } from "@/lib/authNavigation";
 
 export default function SignupPage() {
   const router = useRouter();
-  const { signup } = useAuth();
+  const { user, loading: authLoading, signup } = useAuth();
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // As on the login page (#161): signing up already leaves you signed in, so
+  // this form must not be what a Back press or a bookmark hands you back.
+  const destination = signedInDestination({
+    loading: authLoading,
+    signedIn: Boolean(user),
+  });
+
+  useEffect(() => {
+    if (destination) router.replace(destination);
+  }, [destination, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -25,13 +37,15 @@ export default function SignupPage() {
 
     try {
       await signup(email, name, password);
-      window.location.href = "/app";
+      completeSignIn(window.location, null);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Signup failed");
     } finally {
       setLoading(false);
     }
   }
+
+  if (authLoading || destination) return null;
 
   return (
     <>

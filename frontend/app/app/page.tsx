@@ -17,6 +17,7 @@ import ProvenanceFooter from "@/components/ProvenanceFooter";
 import FormatRationale from "@/components/FormatRationale";
 import { useAnalytics } from "@/components/AnalyticsProvider";
 import { useAuth } from "@/contexts/AuthContext";
+import { loginPath } from "@/lib/authNavigation";
 import { AudienceSegmentsPayload } from "@/lib/audienceSegments";
 import { FormatRecommendation } from "@/lib/formatRecommendations";
 import { PROVENANCE_SECTIONS, ProvenanceEntry } from "@/lib/provenance";
@@ -380,7 +381,7 @@ export default function InsightsTool() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      router.replace("/login?redirect=/app");
+      router.replace(loginPath("/app"));
     }
   }, [authLoading, user, router]);
 
@@ -576,7 +577,9 @@ export default function InsightsTool() {
 
       if (!res.ok) {
         if (res.status === 401) {
-          router.push("/login?redirect=/app");
+          // Replace, as the mount guard above does — an expired session should
+          // send the user to login, not stack it on top of the app (#161).
+          router.replace(loginPath("/app"));
           return;
         }
         const data = await res.json().catch(() => null);

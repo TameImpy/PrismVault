@@ -50,7 +50,9 @@ function ResetPasswordForm() {
         const data = await res.json().catch(() => null);
         throw new Error(data?.detail || "Failed to reset password");
       }
-      router.push("/login");
+      // Replace: the form behind us holds a now-spent one-time token, and Back
+      // onto it would offer a password field that can only fail (#161).
+      router.replace("/login");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to reset password");
     } finally {
@@ -70,7 +72,10 @@ function ResetPasswordForm() {
             <p className="text-slate-400 mb-6">
               This reset link is missing or invalid. Please request a new one.
             </p>
-            <Link href="/forgot-password" className="text-accent-cyan hover:underline text-sm">
+            <Link
+              href="/forgot-password"
+              className="text-accent-cyan hover:underline text-sm"
+            >
               Request a new reset link
             </Link>
           </GlassCard>
@@ -88,16 +93,17 @@ function ResetPasswordForm() {
           <h1 className="font-headline text-3xl font-bold tracking-tight text-white mb-2">
             Set new password
           </h1>
-          <p className="text-slate-400 mb-8">
-            Enter your new password below.
-          </p>
+          <p className="text-slate-400 mb-8">Enter your new password below.</p>
 
           {error && (
             <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 mb-6 text-red-400 text-sm">
               {error}
               {(error.includes("expired") || error.includes("Invalid")) && (
                 <span className="block mt-2">
-                  <Link href="/forgot-password" className="text-accent-cyan hover:underline">
+                  <Link
+                    href="/forgot-password"
+                    className="text-accent-cyan hover:underline"
+                  >
                     Request a new reset link
                   </Link>
                 </span>
@@ -107,7 +113,10 @@ function ResetPasswordForm() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-slate-300 mb-2">
+              <label
+                htmlFor="password"
+                className="block text-sm font-semibold text-slate-300 mb-2"
+              >
                 New password
               </label>
               <input
@@ -123,7 +132,10 @@ function ResetPasswordForm() {
             </div>
 
             <div>
-              <label htmlFor="confirm" className="block text-sm font-semibold text-slate-300 mb-2">
+              <label
+                htmlFor="confirm"
+                className="block text-sm font-semibold text-slate-300 mb-2"
+              >
                 Confirm password
               </label>
               <input

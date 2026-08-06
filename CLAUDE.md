@@ -141,6 +141,22 @@ Requests concerning GDPR Article 9 special category data — health conditions, 
 1. **Server-side**: `proxy.ts` checks for `access_token` cookie on `/app/*` routes, redirects to `/login?redirect=...` if missing
 2. **Client-side**: `useAuth()` guard in `/app/page.tsx` handles client-side navigation that bypasses the proxy
 
+**Session and the Back button** (`lib/authNavigation.ts`):
+
+Reported as "the Back button logs you out" (#161), and it does not — the session survives Back intact. What survived with it was the `/login` entry: signing in ran `window.location.href = redirect`, which _pushes_, leaving the login form one Back press behind the app. A form headed "Welcome back" beside an empty email field is what being logged out looks like, so that is what it was reported as.
+
+So **every auth navigation replaces rather than pushes**. `completeSignIn()` uses `location.replace`, and the guards that bounce an unauthenticated user to `/login` use `router.replace` with `loginPath()` — a "you need to sign in" is not a place, and a history entry you can walk back into is one that bounces you out again. The same goes for the navigations either side of it: `logout()` (otherwise Back restores the last person's brief on a shared tab) and the password-reset form (otherwise Back offers a spent one-time token). Two tests hold the rule — one asserting `completeSignIn` calls `replace` and not `assign`, one reading the six files that navigate and failing on a `router.push`, since there is no DOM harness here that could catch it any other way.
+
+The other half is that `/login` and `/signup` **check for a session before rendering**, via `signedInDestination()`, and hold the form back until that check settles rather than flashing it. Replace removes the one route back to a stale login form; this covers the rest — a bookmark, a typed URL, a restored tab.
+
+`AuthProvider` also revalidates on `pageshow` when `event.persisted`. A page restored from the browser's back/forward cache never remounts, so a mount-only effect leaves it displaying whatever session state it was frozen with: press Back onto a page last seen while signed out and the navbar still says "Login" even though `/api/me` would say otherwise.
+
+That revalidation only clears the user on an answer from the server, never on a failed request. Once the check runs on every restore, "the request never arrived" stops being rare — Back after a sleep, a tunnel, a dropped mobile connection — and treating silence as a 401 would sign people out for going offline, which is this bug wearing a new hat.
+
+`safeReturnPath()` honours only same-origin absolute paths. The return path arrives in the query string, so the person choosing it need not be the person following it; `//host` and `/\host` are read by browsers as another origin.
+
+Reproduce anything in this area against `next build && next start`, never `next dev`. The HMR websocket disqualifies pages from the back/forward cache, so Back refetches the document and `/app` renders blank until its auth check resolves — a dev-only symptom that looks far worse than the real bug and points at the wrong subsystem.
+
 **Brief form draft** (`lib/briefDraft.ts`):
 
 The New Brief form is mirrored into **sessionStorage** on every change, so a reload hands the input back instead of an empty form (#160). Generation is the longest wait in the product, which is exactly when a user reloads — so the persisted draft also carries a `generating` flag, and a reload that lands mid-run restores the input _and_ says the run was interrupted, rather than presenting a full form with nothing happening.
@@ -160,6 +176,7 @@ The interrupted-run notice sends the user to **My Briefs first and the Generate 
 - Login/signup pages must use `useAuth()` methods (not raw fetch) so state updates before navigation
 - Calls `mixpanel.identify()` on successful auth
 - `logout()` also clears the saved brief draft (see above)
+- Re-checks `/api/me` on a `pageshow` restored from the back/forward cache (see above)
 
 **Analytics** (`components/AnalyticsProvider.tsx`):
 

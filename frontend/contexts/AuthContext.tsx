@@ -42,19 +42,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
-    fetch(`/api/me`, { credentials: "include" })
-      .then((res) => {
-        if (res.ok) return res.json();
-        return null;
-      })
-      .then((data) => {
-        setUser(data);
-        if (data) identifyUser(data);
-      })
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false));
+  const refreshUser = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/me`, { credentials: "include" });
+      // Only the server gets to say a session has ended. A request that never
+      // arrived has said nothing — and once this runs on every back/forward
+      // restore, "never arrived" is common: Back after a sleep, a tunnel, a
+      // dropped mobile connection. Clearing the user there would sign people
+      // out for going offline, which is the bug (#161) wearing a new hat.
+      const data = res.ok ? await res.json() : null;
+      setUser(data);
+      if (data) identifyUser(data);
+    } catch {
+      // Leave whatever we last knew in place; only settle `loading` below, or
+      // the guarded pages would render nothing for the rest of the session.
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    refreshUser();
+
+    // A page restored from the back/forward cache never remounts, so it carries
+    // whatever session state it was frozen with — press Back onto a page you
+    // last saw while signed out and the navbar still says "Login" (#161). The
+    // browser announces the restore with `persisted`, and that is the one
+    // moment this provider cannot learn about any other way.
+    function handlePageShow(event: PageTransitionEvent) {
+      if (event.persisted) refreshUser();
+    }
+
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, [refreshUser]);
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await fetch(`/api/auth/login`, {
@@ -100,7 +121,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // The saved brief form (#160) belongs to the person who typed it, not to
     // the tab — whoever signs in next must not find it waiting for them.
     clearDraft(draftStorage());
-    router.push("/");
+    // Replace, so Back cannot walk into the page they just signed out of. On a
+    // shared tab that page would restore from the back/forward cache showing
+    // the last person's brief until the session re-check catches up (#161).
+    router.replace("/");
   }, [router]);
 
   return (

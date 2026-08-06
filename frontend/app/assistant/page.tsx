@@ -7,6 +7,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import GlassCard from "@/components/GlassCard";
 import { useAuth } from "@/contexts/AuthContext";
+import { loginPath } from "@/lib/authNavigation";
 import { useAnalytics } from "@/components/AnalyticsProvider";
 
 interface Message {
@@ -33,7 +34,9 @@ export default function AssistantPage() {
 
   useEffect(() => {
     if (!loading && !user) {
-      router.push("/login?redirect=/assistant");
+      // Replace, not push: a bounce to the login page must not become a history
+      // entry, or Back from login lands here and bounces again (#161).
+      router.replace(loginPath("/assistant"));
     }
   }, [user, loading, router]);
 
@@ -218,12 +221,15 @@ export default function AssistantPage() {
                   <div className="text-sm text-slate-200 space-y-3">
                     {(msg.content || "...").split("\n").map((line, j) =>
                       line.trim() ? (
-                        <div key={j} className="prose prose-invert prose-sm max-w-none [&>p]:m-0">
+                        <div
+                          key={j}
+                          className="prose prose-invert prose-sm max-w-none [&>p]:m-0"
+                        >
                           <ReactMarkdown>{line}</ReactMarkdown>
                         </div>
                       ) : (
                         <div key={j} className="h-1" />
-                      )
+                      ),
                     )}
                   </div>
                 ) : (
