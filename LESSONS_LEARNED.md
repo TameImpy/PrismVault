@@ -1005,3 +1005,52 @@ than the "average glyph is half the point size" estimate used elsewhere, which
 cannot tell `iiii` from `WWWW`. Line height comes from the font's own `hhea`
 metrics. Default OOXML insets are 0.1" left/right and 0.05" top/bottom, and
 they matter at these box sizes.
+
+## 6 Aug 2026 — A missing feature reported as a disappearing one (#177)
+
+**What went wrong:** "Open a brief from My Briefs and the Download Deck and
+Draft Email buttons have gone." They had never been there. The export row was
+nested inside the New Brief branch of `app/app/page.tsx`; the saved-brief detail
+view is a sibling branch that ended before it. Viewing a historical brief
+switches the active tab, unmounting the row — and because the freshly generated
+result stays in memory, going back to New Brief brings the buttons back. An
+absence that comes and goes reads as a regression, and looking for one wastes
+the first half hour.
+
+**The trap in the obvious fix:** moving the row is a five-minute job and would
+have shipped a worse bug. The download handler closed over the New Brief form
+state for topic, advertiser and KPI — not over the result it was exporting.
+Rendered in the saved-brief view unchanged, it would have posted a saved
+brief's content under whatever advertiser happened to be part-typed into the
+form, and produced a confidently mislabelled client deck. Nothing would have
+errored.
+
+**How it was fixed:** the export row became one component taking the brief it
+exports as a prop (`BriefExportActions`), over a `lib/briefExport.ts` whose
+request body is a function of the brief alone. The error banner and the Draft
+Email modal had to move with it — both were also inside the New Brief branch,
+so a failed export from a saved brief would have set an error nobody could see.
+
+**The generalisable bit:** when a component is only ever rendered in one place,
+"which state does this close over?" is invisible — form state and result state
+are both just in scope. The question only becomes answerable when the thing
+takes its inputs as arguments. Extracting for a second caller is worth doing
+carefully for that reason alone, not for the reuse.
+
+**Testing without a DOM harness:** the frontend has no jsdom or Testing Library
+(deliberately — see #161), so the coverage is the logic module tested in Node
+with `fetch`/`saveBlob`/`track`/`now` injected, plus source-reading pins in the
+spirit of `authNavigation.test.ts`: the page must no longer name the deck
+endpoint, both branches must render the row, the row must read `brief.topic`
+and hold no topic state of its own. A pin that reads source is not as good as
+rendering the page, but it is much better than trusting a comment.
+
+**A gotcha only review caught (same ticket):** injecting `fetch` as a
+dependency and calling it unbound — `const { fetch: fetchImpl } = deps;
+fetchImpl(url, init)` — is fine in Node and rejected by the browser, because
+`fetch` is a method of the window and loses its receiver when passed by bare
+reference. The whole point of the injection was Node-testability, so the test
+suite is structurally incapable of catching it. Pass a wrapper
+(`(...args) => fetch(...args)`), not the reference. Any DI boundary that
+crosses from browser globals into Node tests has this shape: the test
+environment is precisely where the bug cannot appear.
