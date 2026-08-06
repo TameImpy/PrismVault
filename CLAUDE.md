@@ -171,6 +171,20 @@ That revalidation only clears the user on an answer from the server, never on a 
 
 Reproduce anything in this area against `next build && next start`, never `next dev`. The HMR websocket disqualifies pages from the back/forward cache, so Back refetches the document and `/app` renders blank until its auth check resolves — a dev-only symptom that looks far worse than the real bug and points at the wrong subsystem.
 
+**Exporting a brief** (`lib/briefExport.ts`, `components/BriefExportActions.tsx`):
+
+Reported as "the export buttons disappear when you view a historical brief" (#177). They were never there. The export row lived inside the New Brief branch of the app page, and the saved-brief detail view is a separate branch that ended before it — so opening a brief from My Briefs switched the active tab and unmounted the whole row. The freshly generated result stayed in memory throughout, which is why returning to New Brief brought the buttons back and why an absence read as a disappearance.
+
+The row is now **one component rendered by both views**, and it takes the brief it is exporting as a prop. That is the substance of the fix rather than a tidy-up: the old handler closed over the New Brief _form_ for topic, advertiser and KPI — not over the result it was exporting — so lifting it unchanged would have posted whatever was typed into the form alongside a saved brief's content, and the deck would have come out labelled with another advertiser. `deckRequestBody()` is a function of the brief alone and deliberately not of `source`, which is what makes a deck exported from My Briefs identical to one exported from the same brief freshly generated.
+
+The error surface moved for the same reason. It also sat in the New Brief branch, so a failed export from a saved brief would have set an error nobody could see; it now lives in the export row, beside the button that failed, in both views. The Draft Email modal moved with it and is fed `brief.content`, not the page's `result`.
+
+`downloadDeck()` returns its failure rather than throwing it, and takes `fetch`, `saveBlob`, `track` and `now` as arguments — the browser-only half is `saveBlobToDisk`, kept apart exactly as `draftStorage()` is in `briefDraft.ts`, so the logic is testable in Node in a repo with no DOM harness. `tests` in `lib/briefExport.test.ts` also pin the rule across the file boundary as `authNavigation.test.ts` does for #161: the app page must no longer name the deck endpoint, both branches must render the row, and the row must read its identity off `brief`.
+
+Every export event carries `brief_source` (`"new"` or `"saved"`) alongside the exported brief's own topic, advertiser and KPI, so an export from history can be told from one off a fresh run. The Draft Email modal's own events get it through a wrapping `track`.
+
+A brief generated before structured segments, historical research or provenance existed exports a valid but thinner deck — fewer slides, blank appendix rows, no segment tiles. No backfill is possible, because that data was never computed; every optional field is optional on the server too.
+
 **Brief form draft** (`lib/briefDraft.ts`):
 
 The New Brief form is mirrored into **sessionStorage** on every change, so a reload hands the input back instead of an empty form (#160). Generation is the longest wait in the product, which is exactly when a user reloads — so the persisted draft also carries a `generating` flag, and a reload that lands mid-run restores the input _and_ says the run was interrupted, rather than presenting a full form with nothing happening.

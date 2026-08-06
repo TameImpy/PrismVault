@@ -7,8 +7,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import GlassCard from "@/components/GlassCard";
 import CollapsiblePanel from "@/components/CollapsiblePanel";
-import WritingSamplesModal from "@/components/WritingSamplesModal";
-import DraftEmailModal from "@/components/DraftEmailModal";
+import BriefExportActions from "@/components/BriefExportActions";
 import AudienceSegmentsPanel from "@/components/AudienceSegmentsPanel";
 import HistoricalResearchCard, {
   HistoricalResearch,
@@ -393,10 +392,7 @@ export default function InsightsTool() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<InsightsResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [samplesModalOpen, setSamplesModalOpen] = useState(false);
-  const [draftModalOpen, setDraftModalOpen] = useState(false);
   const [sampleCount, setSampleCount] = useState(0);
-  const [deckLoading, setDeckLoading] = useState(false);
   const { track } = useAnalytics();
 
   // Brief library state
@@ -996,6 +992,28 @@ export default function InsightsTool() {
                       </CollapsiblePanel>
                     )}
                   </div>
+
+                  {/* A brief opened from history exports exactly as a fresh one
+                      does (#177). The identity comes off the saved record, not
+                      the New Brief form — which may hold another advertiser
+                      entirely. */}
+                  <BriefExportActions
+                    brief={{
+                      content: savedResult.content,
+                      topic: viewingBrief.topic,
+                      advertiser: viewingBrief.advertiser,
+                      kpi: viewingBrief.kpi,
+                      audience_segments: savedResult.audience_segments,
+                      format_recommendations:
+                        savedResult.format_recommendations,
+                      historical_research: savedResult.historical_research,
+                      provenance: savedResult.provenance,
+                    }}
+                    source="saved"
+                    sampleCount={sampleCount}
+                    onSampleCountChange={handleSampleCountChange}
+                    track={track}
+                  />
                 </div>
               );
             })()}
@@ -1389,126 +1407,26 @@ export default function InsightsTool() {
                   );
                 })()}
 
-              {/* Export actions */}
+              {/* Export actions — the same row the saved-brief view gets,
+                  fed the result it is exporting rather than the form (#177). */}
               {result && !loading && (
-                <div className="flex items-center gap-4 mt-6">
-                  <button
-                    onClick={() => {
-                      track("Draft Email Clicked", {
-                        has_samples: sampleCount > 0,
-                        sample_count: sampleCount,
-                      });
-                      setDraftModalOpen(true);
-                    }}
-                    className="refractive-gradient px-6 py-3 rounded-xl font-bold text-white shadow-lg active:scale-95 transition-all"
-                  >
-                    Draft Email
-                  </button>
-                  <button
-                    onClick={async () => {
-                      track("Download Deck Clicked", {
-                        topic,
-                        advertiser,
-                        kpi,
-                      });
-                      setDeckLoading(true);
-                      const startTime = Date.now();
-                      try {
-                        const res = await fetch("/api/download-deck", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          credentials: "include",
-                          body: JSON.stringify({
-                            content: result.content,
-                            topic: topic.trim(),
-                            advertiser: advertiser.trim(),
-                            kpi,
-                            // Structured data the brief already produced —
-                            // sent back so the deck reuses it verbatim rather
-                            // than re-extracting numbers from the markdown.
-                            audience_segments: result.audience_segments,
-                            format_recommendations:
-                              result.format_recommendations,
-                            historical_research: result.historical_research,
-                            // Source, date, coverage and period per section —
-                            // the deck's appendix carries the same account of
-                            // the figures it shows (#156).
-                            provenance: result.provenance,
-                          }),
-                        });
-                        if (!res.ok) {
-                          const data = await res.json().catch(() => null);
-                          throw new Error(
-                            data?.detail || "Failed to generate deck",
-                          );
-                        }
-                        const blob = await res.blob();
-                        const filename =
-                          res.headers
-                            .get("content-disposition")
-                            ?.match(/filename="(.+)"/)?.[1] ||
-                          "Prism_Plan_Deck.pptx";
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement("a");
-                        a.href = url;
-                        a.download = filename;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
-                        track("Deck Generated", {
-                          topic,
-                          advertiser,
-                          kpi,
-                          duration_ms: Date.now() - startTime,
-                        });
-                      } catch (err) {
-                        const message =
-                          err instanceof Error
-                            ? err.message
-                            : "Failed to generate deck";
-                        setError(message);
-                        track("Deck Download Failed", {
-                          error_message: message,
-                        });
-                      } finally {
-                        setDeckLoading(false);
-                      }
-                    }}
-                    disabled={deckLoading}
-                    className="refractive-gradient px-6 py-3 rounded-xl font-bold text-white shadow-lg active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    {deckLoading ? "Generating..." : "Download Deck"}
-                  </button>
-                  <button
-                    onClick={() => setSamplesModalOpen(true)}
-                    className="text-sm text-on-surface-variant hover:text-accent-cyan transition-colors"
-                  >
-                    Writing style: {sampleCount} sample
-                    {sampleCount !== 1 ? "s" : ""}
-                  </button>
-                </div>
+                <BriefExportActions
+                  brief={{
+                    content: result.content,
+                    topic,
+                    advertiser,
+                    kpi,
+                    audience_segments: result.audience_segments,
+                    format_recommendations: result.format_recommendations,
+                    historical_research: result.historical_research,
+                    provenance: result.provenance,
+                  }}
+                  source="new"
+                  sampleCount={sampleCount}
+                  onSampleCountChange={handleSampleCountChange}
+                  track={track}
+                />
               )}
-
-              <DraftEmailModal
-                open={draftModalOpen}
-                onClose={() => setDraftModalOpen(false)}
-                briefContent={result?.content || ""}
-                provenance={result?.provenance}
-                topic={topic}
-                advertiser={advertiser}
-                kpi={kpi}
-                sampleCount={sampleCount}
-                onSampleCountChange={handleSampleCountChange}
-                track={track}
-              />
-
-              <WritingSamplesModal
-                open={samplesModalOpen}
-                onClose={() => setSamplesModalOpen(false)}
-                onSampleCountChange={handleSampleCountChange}
-                track={track}
-              />
 
               {/* Empty state */}
               {!result && !loading && !error && (
