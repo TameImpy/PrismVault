@@ -87,7 +87,6 @@ class InsightsRequest(BaseModel):
     topic: str
     advertiser: str
     kpi: str
-    include_google_trends: bool = True
     client_brief: str = ""
 
 
@@ -104,7 +103,6 @@ async def create_insights(req: InsightsRequest, user: dict = Depends(get_current
                 topic=req.topic,
                 advertiser=req.advertiser,
                 kpi=req.kpi,
-                include_google_trends=req.include_google_trends,
                 client_brief=req.client_brief,
             ),
         )

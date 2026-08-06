@@ -17,7 +17,7 @@ the number.
 
 Two sections are per-brief rather than per-registry and are resolved here:
 Historical Research takes its dates and base from the study the brief matched,
-and the live sources (web research, Google Trends) are dated with the run date.
+and live sources (the advertiser web research) are dated with the run date.
 """
 import csv
 import logging
@@ -40,8 +40,6 @@ RUN_DATE_TOKEN = "{run_date}"
 # Its provenance comes from the matched study rather than the registry row,
 # which holds only the defaults used before a study is known.
 HISTORICAL_SECTION = "Historical Research"
-# Read live, and only when the brief asked for it.
-TRENDS_SECTION = "Google Trends"
 
 # Label shown against each field, in render order.
 _LABELS = (
@@ -80,15 +78,15 @@ def load_provenance(csv_path=None):
     return entries
 
 
-def build_provenance(historical_research=None, include_google_trends=True,
-                     run_date=None, csv_path=None):
-    # type: (dict, bool, datetime.date, str) -> list
+def build_provenance(historical_research=None, run_date=None, csv_path=None):
+    # type: (dict, datetime.date, str) -> list
     """Resolve the registry against one brief run.
 
-    Two sections are conditional, because the brief itself omits them: Google
-    Trends when the run did not request it, and Historical Research when no
-    study matched. A source line for a section that is not there would be its
-    own kind of untraceable.
+    One section is conditional, because the brief itself omits it: Historical
+    Research, when no study matched. A source line for a section that is not
+    there would be its own kind of untraceable. (Google Trends was the other,
+    omitted when a run declined to fetch it; #176 removed the feature and this
+    branch with it.)
 
     The rest are unconditional, including on an empty result. A brief that
     found no direct campaign history, or no strongly-matched segments, still
@@ -108,8 +106,6 @@ def build_provenance(historical_research=None, include_google_trends=True,
     for entry in load_provenance(csv_path):
         section = entry["section"]
 
-        if section == TRENDS_SECTION and not include_google_trends:
-            continue
         if section == HISTORICAL_SECTION:
             entry = _resolve_historical(entry, historical_research)
             if entry is None:

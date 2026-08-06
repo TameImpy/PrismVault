@@ -1054,3 +1054,62 @@ suite is structurally incapable of catching it. Pass a wrapper
 (`(...args) => fetch(...args)`), not the reference. Any DI boundary that
 crosses from browser globals into Node tests has this shape: the test
 environment is precisely where the bug cannot appear.
+
+---
+
+## 6 Aug 2026 — Removing a data source turned out to be a geometry problem too (#176)
+
+**What went wrong:** deleting the `Google Trends` row from `data/provenance.csv`
+broke a deck test with nothing to do with Trends —
+`test_populated_runs_keep_the_template_run_formatting`, which asserts every
+marker run in the PowerPoint template survives into the built deck with
+byte-identical run properties. It reported that a run had "vanished".
+
+**Why:** the template's Appendix slide draws **six** provenance lines
+(`PROVENANCE_TILES = 6`), and the test's fixture happened to supply exactly six
+entries, so every slot was filled. Drop the registry to five and the sixth
+marker resolves to `""` — and `_drop_empty_runs()` then deletes that run
+outright, because an empty `<a:t/>` reads as corrupt to PowerPoint. Nothing was
+broken; the test had been resting on a coincidence between fixture length and
+tile count.
+
+**How it was fixed:** the test now skips runs whose markers the brief supplied
+no value for, which is what "populated runs" meant all along. `PROVENANCE_TILES`
+deliberately **stays at 6** rather than dropping to 5: a brief saved _before_
+the removal carries six provenance entries, and narrowing the loop would
+silently drop its last source line on export. Same principle as the rest of the
+ticket — the stored payload is the record of what that run produced, and the
+deck should render all of it rather than trim history to today's feature set.
+
+**Transferable point:** in this repo a "content" change can be a layout change.
+Anything counted against the template — appendix lines, product tiles, insight
+tiles — has a fixed capacity, and both under- and over-filling it has visible
+effects. It is the same lesson as
+[[overlapping-deck-text-the-renderer-not-the-file]] from another direction: the
+.pptx is a fixed-size grid pretending to be a document.
+
+---
+
+## 6 Aug 2026 — Dropping a field from a persisted shape is free only if you never cast (#176)
+
+**The trap:** the same ticket removed `includeTrends` from the brief draft
+mirrored into sessionStorage (`frontend/lib/briefDraft.ts`). A sessionStorage
+key outlives the deploy that stopped writing it, so the first load after the
+change reads a value carrying a field the parser no longer knows about.
+
+**Why it was already safe:** `readDraft` rebuilds the draft field by field
+(`stringOr(raw.topic, …)`) rather than casting the parsed JSON to `BriefDraft`.
+That was written for corrupt values and wrong types (#160), but it makes
+_removed_ fields safe for the same reason — a key nothing asks for is never
+read. Had it cast, or validated against an exact key set, the stale value would
+have thrown or been rejected, losing exactly the input the draft exists to
+protect.
+
+**The same shape on the server:** briefs are persisted as the whole synthesiser
+payload, so every brief in the database still carries `google_trends`. Nothing
+reads it, nothing migrates it, and it costs nothing to leave. A migration to
+strip it would have been the expensive way to achieve exactly the same screen.
+
+**Transferable point:** parse into your shape, don't cast onto it. It buys
+forwards _and_ backwards compatibility from the same few lines, and it is the
+difference between a schema change being a migration and being a no-op.

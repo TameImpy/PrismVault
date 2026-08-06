@@ -24,7 +24,7 @@ from lxml import etree
 from pptx import Presentation
 from pptx.oxml.ns import qn
 
-from src.deck_builder import TEMPLATE_PATH, build_deck
+from src.deck_builder import TEMPLATE_PATH, _build_fields, build_deck
 from src.tile_fit import inches
 from tests.tile_geometry import artwork_rects, overlaps, rendered_text_rect
 
@@ -102,9 +102,6 @@ PROVENANCE = [
     {"section": "Historical Research", "source": "Immediate Media — Travel Audience Research",
      "as_at": "2024-12-02", "coverage": "Survey of Immediate audiences (n=1,589)",
      "period": "Fieldwork 2024-11-26 to 2024-12-02", "cadence": "On publication"},
-    {"section": "Google Trends", "source": "Google Trends via pytrends",
-     "as_at": "2026-08-05", "coverage": "Worldwide search interest",
-     "period": "Rolling 12 months", "cadence": "Live on every run"},
 ]
 
 
@@ -269,11 +266,15 @@ def test_appendix_lines_are_one_per_section_not_one_per_figure(deck):
 
 
 def test_appendix_blanks_the_lines_a_brief_did_not_use():
-    """A brief with no trends and no matched research leaves no empty labels."""
+    """A brief with no matched research leaves no empty labels behind it.
+
+    The appendix has a fixed number of lines and a brief may fill fewer, so the
+    spare markers have to be blanked rather than left showing.
+    """
     prs = Presentation(build_deck(_content(provenance=PROVENANCE[:2]), "Homepride"))
     text = _slide_text(_find_slide(prs, "Appendix"))
     assert "Client Relationship" in text
-    assert "Google Trends" not in text
+    assert "Historical Research" not in text
     assert _MARKER_RE.findall(text) == []
 
 
@@ -461,10 +462,19 @@ def test_populated_runs_keep_the_template_run_formatting(deck):
     properties (font, size, colour, spacing) in the output."""
     template_runs = _run_coords(Presentation(TEMPLATE_PATH))
     output_runs = _run_coords(deck)
+    fields = _build_fields(_content(), "Homepride")
 
     checked = 0
     for coords, (text, rPr) in template_runs.items():
-        if not _MARKER_RE.search(text):
+        markers = _MARKER_RE.findall(text)
+        if not markers:
+            continue
+        # A run the brief had no value for is blanked and then removed — an
+        # empty <a:t/> reads as corrupt to PowerPoint — so it has no formatting
+        # left to keep. The template carries six appendix lines and the registry
+        # now holds five sections (#176 took Google Trends out), which is the
+        # ordinary way for a marker to go unfilled; see PROVENANCE_TILES.
+        if all(not fields.get(m) for m in markers):
             continue
         assert coords in output_runs, "template run at %s vanished from the output" % (coords,)
         assert output_runs[coords][1] == rPr, (

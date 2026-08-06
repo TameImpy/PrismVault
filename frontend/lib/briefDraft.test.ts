@@ -41,7 +41,6 @@ const FILLED: BriefDraft = {
   advertiser: "Yakult",
   kpi: "Awareness",
   clientBrief: "Launching in September, 25-34 women, mid-tier budget.",
-  includeTrends: false,
   generating: false,
 };
 
@@ -54,10 +53,6 @@ describe("isEmptyDraft", () => {
     expect(
       isEmptyDraft({ ...EMPTY_DRAFT, topic: "   ", clientBrief: "\n" }),
     ).toBe(true);
-  });
-
-  it("counts an unticked Google Trends box as input worth keeping", () => {
-    expect(isEmptyDraft({ ...EMPTY_DRAFT, includeTrends: false })).toBe(false);
   });
 
   it("counts the client brief alone as input worth keeping", () => {
@@ -155,7 +150,6 @@ describe("readDraft", () => {
     const storage = fakeStorage({
       [DRAFT_STORAGE_KEY]: JSON.stringify({
         topic: 42,
-        includeTrends: "yes",
         advertiser: "Yakult",
       }),
     });
@@ -180,9 +174,35 @@ describe("readDraft", () => {
 
   it("returns null when every field was junk, leaving nothing to restore", () => {
     const storage = fakeStorage({
-      [DRAFT_STORAGE_KEY]: JSON.stringify({ topic: 42, includeTrends: "yes" }),
+      [DRAFT_STORAGE_KEY]: JSON.stringify({ topic: 42, kpi: false }),
     });
     expect(readDraft(storage)).toBeNull();
+  });
+
+  it("ignores a leftover includeTrends key from a draft the previous version saved", () => {
+    // The key stays in sessionStorage for the life of the tab, so the first
+    // load after the deploy that removed Google Trends (#176) reads a shape
+    // with a field the parser no longer knows. It has to drop the field and
+    // keep the typing, not throw and not refuse the draft — the whole point of
+    // the draft is the reload that would otherwise lose the input.
+    const storage = fakeStorage({
+      [DRAFT_STORAGE_KEY]: JSON.stringify({
+        topic: "gut health",
+        advertiser: "Yakult",
+        kpi: "Awareness",
+        clientBrief: "",
+        includeTrends: false,
+        generating: false,
+      }),
+    });
+    const restored = readDraft(storage);
+    expect(restored).toEqual({
+      ...EMPTY_DRAFT,
+      topic: "gut health",
+      advertiser: "Yakult",
+      kpi: "Awareness",
+    });
+    expect(restored).not.toHaveProperty("includeTrends");
   });
 
   it("returns null for a stored draft with nothing in it", () => {
@@ -219,7 +239,6 @@ describe("sameInput", () => {
     );
     expect(sameInput(FILLED, { ...FILLED, kpi: "Clicks" })).toBe(false);
     expect(sameInput(FILLED, { ...FILLED, clientBrief: "" })).toBe(false);
-    expect(sameInput(FILLED, { ...FILLED, includeTrends: true })).toBe(false);
   });
 });
 

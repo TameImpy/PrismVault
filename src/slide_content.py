@@ -24,7 +24,11 @@ DECK_CONTENT_MODEL = getattr(config, "DECK_CONTENT_MODEL", "gpt-4o-mini")
 SEGMENT_TILES = 4
 PRODUCT_TILES = 3
 INSIGHT_TILES = 3
-# Appendix source lines — one per data section a brief can carry (#156).
+# Appendix source lines the template draws (#156). One more than the registry
+# now holds, since Google Trends left it (#176): the spare line is blanked like
+# any other unfilled marker, and keeping it means a brief saved *before* that
+# removal still exports its full appendix rather than losing its last source
+# line. The stored payload is the record of what that run produced.
 PROVENANCE_TILES = 6
 
 # Content caps that keep text inside its tile. Sizes and fonts are the

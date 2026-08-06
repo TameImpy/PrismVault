@@ -8,20 +8,20 @@ The product name is **Prism Data Vault**. The codebase lives in the `EditorStore
 
 ## Tech Stack
 
-| Layer | Technology | Version |
-|-------|-----------|---------|
-| Frontend | Next.js (Turbopack) | 16.2.1 |
-| UI Framework | React | 19.2.4 |
-| Styling | Tailwind CSS v4 | `@theme` tokens |
-| Design System | Prism Deep Sea | Custom dark/glass theme |
-| Backend | FastAPI | Latest |
-| Language Model | GPT-4o | Via OpenAI API |
-| Vector DB | ChromaDB | Persistent, local |
-| Auth | JWT + bcrypt | httponly cookies |
-| User DB | SQLite | aiosqlite (async) |
-| Analytics | Mixpanel | EU data residency |
-| Python | 3.9 | macOS system Python |
-| Tests | pytest (backend), vitest (frontend) | |
+| Layer          | Technology                          | Version                 |
+| -------------- | ----------------------------------- | ----------------------- |
+| Frontend       | Next.js (Turbopack)                 | 16.2.1                  |
+| UI Framework   | React                               | 19.2.4                  |
+| Styling        | Tailwind CSS v4                     | `@theme` tokens         |
+| Design System  | Prism Deep Sea                      | Custom dark/glass theme |
+| Backend        | FastAPI                             | Latest                  |
+| Language Model | GPT-4o                              | Via OpenAI API          |
+| Vector DB      | ChromaDB                            | Persistent, local       |
+| Auth           | JWT + bcrypt                        | httponly cookies        |
+| User DB        | SQLite                              | aiosqlite (async)       |
+| Analytics      | Mixpanel                            | EU data residency       |
+| Python         | 3.9                                 | macOS system Python     |
+| Tests          | pytest (backend), vitest (frontend) |                         |
 
 ## Project Structure
 
@@ -37,8 +37,7 @@ EditorStore/
 │   ├── embeddings.py       # Transcript chunking & embedding
 │   ├── vectorstore.py      # ChromaDB interface
 │   ├── web_search.py       # DuckDuckGo + skill-based research
-│   ├── audience.py         # Audience trends from CSV
-│   ├── trends.py           # Google Trends (pytrends)
+│   ├── audience.py         # Audience segments and reach from CSV
 │   ├── formats.py          # Ad format recommendations
 │   └── brief.py            # Client brief summarisation
 ├── frontend/               # Next.js frontend
@@ -75,7 +74,7 @@ EditorStore/
 │   └── strategy_and_challenges.md
 ├── data/
 │   ├── transcripts/        # Editorial interview JSON files
-│   ├── audience_trends.csv # Audience engagement by topic/segment
+│   ├── segments.csv        # Permutive + AudienceProject segments and reach
 │   ├── format_recommendations.csv  # Ad format benchmarks
 │   └── leaderboard.db      # Tetris scores (auto-created)
 ├── db/                     # ChromaDB vector store (auto-created)
@@ -100,10 +99,9 @@ User Input (topic, advertiser, KPI, optional client brief)
   │
   ├─→ 1. Editorial Search (ChromaDB vector similarity)
   ├─→ 2. Advertiser Research (DuckDuckGo → GPT-4o per skill)
-  ├─→ 3. Audience Timing (CSV lookup by topic/segment)
-  ├─→ 4. Google Trends (pytrends, optional)
-  ├─→ 5. Format Recommendations (CSV ad format data)
-  └─→ 6. Client Brief Summary (GPT-4o, if provided)
+  ├─→ 3. Audience Segments & Reach (CSV lookup, ranked deterministically)
+  ├─→ 4. Format Recommendations (CSV ad format data)
+  └─→ 5. Client Brief Summary (GPT-4o, if provided)
         │
         ▼
   Prompt Assembly (system + user templates from prompts.py)
@@ -146,9 +144,10 @@ Frontend AuthContext ← POST /api/auth/login → cookie set ─────┘
 Skills are Markdown files in `skills/` with YAML frontmatter defining search queries and a GPT-4o processing prompt. The system loads all skills dynamically at runtime — add a new `.md` file to add a new research dimension with zero code changes.
 
 Current skills:
+
 - **Company Overview** — core business, products, market position
 - **Recent News** — latest campaigns, announcements, strategic shifts
-- **Strategy & Challenges** — competitive dynamics, goals, market trends
+- **Strategy & Challenges** — competitive dynamics, goals, market position
 
 ## Design System (Prism Deep Sea)
 
@@ -166,6 +165,7 @@ Full spec in `PRISM DESIGN.MD`. Tokens defined in `frontend/app/globals.css` via
 ## Running Locally
 
 ### Prerequisites
+
 - Python 3.9+
 - Node.js 18+
 - `.env` file at root with `OPENAI_API_KEY`
@@ -193,6 +193,7 @@ Frontend runs on http://localhost:3000, backend on http://localhost:8000.
 ### Database
 
 SQLite databases are auto-created:
+
 - `users.db` — user accounts (root directory)
 - `data/leaderboard.db` — Tetris scores
 
@@ -203,19 +204,21 @@ Note: passwords are bcrypt-hashed and cannot be reversed.
 ## Features
 
 ### Insights Tool (`/app`)
+
 - Topic + advertiser + KPI input form
-- Optional Google Trends toggle
 - Optional client brief upload
 - Rendered markdown brief with collapsible source panels
 - Protected route (login required)
 
 ### Tetris (`/tetris`)
+
 - NES-style scoring with level progression
 - Hold piece, next-piece preview, 7-bag randomiser, SRS rotation
 - Persistent leaderboard (SQLite backend)
 - Designed per `PRD-prism-play.md`
 
 ### Landing Page (`/`)
+
 - Hero section with animated monolith cube
 - Feature cards, data sources showcase
 - CTA buttons with Mixpanel tracking

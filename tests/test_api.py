@@ -73,7 +73,6 @@ MOCK_INSIGHTS_RESULT = {
              "segments": []},
         ],
     },
-    "google_trends": "Rising queries: organic skincare.",
 }
 
 
@@ -113,7 +112,6 @@ def test_insights_returns_200_with_valid_payload():
                 "topic": "sustainable fashion",
                 "advertiser": "EcoWear",
                 "kpi": "Consideration",
-                "include_google_trends": True,
             },
         )
     assert response.status_code == 200
@@ -131,14 +129,13 @@ def test_insights_response_body_matches_generate_insights_return_value():
                 "topic": "sustainable fashion",
                 "advertiser": "EcoWear",
                 "kpi": "Clicks",
-                "include_google_trends": True,
             },
         )
     assert response.json() == MOCK_INSIGHTS_RESULT
 
 
 def test_insights_passes_correct_arguments_to_generate_insights():
-    """POST /api/insights forwards topic, advertiser, kpi, and include_google_trends to generate_insights."""
+    """POST /api/insights forwards topic, advertiser, kpi and client_brief."""
     client = _authed_client()
     with patch("api.main.config") as mock_config, \
          patch("api.main.generate_insights", return_value=MOCK_INSIGHTS_RESULT) as mock_gen:
@@ -149,35 +146,36 @@ def test_insights_passes_correct_arguments_to_generate_insights():
                 "topic": "gut health",
                 "advertiser": "NutriCo",
                 "kpi": "Awareness",
-                "include_google_trends": False,
             },
         )
     mock_gen.assert_called_once_with(
         topic="gut health",
         advertiser="NutriCo",
         kpi="Awareness",
-        include_google_trends=False,
         client_brief="",
     )
 
 
-def test_insights_include_google_trends_defaults_to_true():
-    """POST /api/insights uses include_google_trends=True when the field is omitted."""
+def test_insights_ignores_a_google_trends_flag_from_an_older_client():
+    """A browser holding the previous bundle still posts include_google_trends
+    (#176). Rejecting it would turn a stale tab into a 422 the user cannot read
+    their way out of, so the field is ignored rather than refused — and it must
+    not reach generate_insights, which no longer takes it."""
     client = _authed_client()
     with patch("api.main.config") as mock_config, \
          patch("api.main.generate_insights", return_value=MOCK_INSIGHTS_RESULT) as mock_gen:
         mock_config.OPENAI_API_KEY = "sk-test-key"
-        client.post(
+        response = client.post(
             "/api/insights",
-            json={"topic": "travel", "advertiser": "Airwaves", "kpi": "Viewability"},
+            json={
+                "topic": "travel",
+                "advertiser": "Airwaves",
+                "kpi": "Viewability",
+                "include_google_trends": True,
+            },
         )
-    mock_gen.assert_called_once_with(
-        topic="travel",
-        advertiser="Airwaves",
-        kpi="Viewability",
-        include_google_trends=True,
-        client_brief="",
-    )
+    assert response.status_code == 200
+    assert "include_google_trends" not in mock_gen.call_args.kwargs
 
 
 # ---------------------------------------------------------------------------

@@ -1,5 +1,8 @@
 import json
 import logging
+import os
+
+PROJECT_ROOT = os.path.join(os.path.dirname(__file__), "..")
 
 from src.prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
 from src.synthesiser import (
@@ -185,7 +188,9 @@ def test_user_prompt_template_has_placeholders():
     assert "{editorial_insights}" not in USER_PROMPT_TEMPLATE
     assert "{advertiser_research}" in USER_PROMPT_TEMPLATE
     assert "{audience_segments}" in USER_PROMPT_TEMPLATE
-    assert "{google_trends}" in USER_PROMPT_TEMPLATE
+    # {google_trends} went with the feature (#176) — the template must not ask
+    # the synthesiser for a value it no longer computes.
+    assert "{google_trends}" not in USER_PROMPT_TEMPLATE
     assert "{advertiser_kpi}" in USER_PROMPT_TEMPLATE
     assert "{format_recommendations}" in USER_PROMPT_TEMPLATE
     assert "{campaign_history}" in USER_PROMPT_TEMPLATE
@@ -200,7 +205,6 @@ def test_user_prompt_renders():
         advertiser_kpi="Awareness",
         advertiser_research="some research",
         audience_segments="some segments",
-        google_trends="some trends",
         format_recommendations="some formats",
         campaign_history="some history",
         client_brief="some brief",
@@ -245,7 +249,7 @@ def test_generate_insights_accepts_kpi_and_injects_into_prompt():
         mock_openai_cls.return_value = mock_client
 
         from src.synthesiser import generate_insights
-        result = generate_insights(topic="test", advertiser="TestCo", kpi="Clicks", include_google_trends=False)
+        result = generate_insights(topic="test", advertiser="TestCo", kpi="Clicks")
 
         call_args = mock_client.chat.completions.create.call_args
         user_prompt = call_args[1]["messages"][1]["content"]
@@ -440,7 +444,7 @@ def _run_generate_insights(historical=None, content=BRIEF_NAMING_A_FORMAT):
 
         from src.synthesiser import generate_insights
         result = generate_insights(
-            topic="city breaks", advertiser="TestCo", kpi="Clicks", include_google_trends=False
+            topic="city breaks", advertiser="TestCo", kpi="Clicks"
         )
         user_prompt = mock_client.chat.completions.create.call_args[1]["messages"][1]["content"]
 
@@ -520,6 +524,52 @@ def test_generate_insights_payload_is_json_serialisable():
 
 
 # ---------------------------------------------------------------------------
+# Google Trends is gone (#176)
+#
+# The removal crosses the fetch, the payload, the prompt and the dependency
+# list, and a half-removal is worse than either end of it: a prompt still
+# asking for a "### Google Trends" block the synthesiser no longer fills would
+# either raise on format() or, worse, quietly hand the model an empty section
+# to reason about. These pin each end.
+# ---------------------------------------------------------------------------
+
+
+def test_the_brief_payload_carries_no_google_trends_key():
+    result, _ = _run_generate_insights()
+
+    assert "google_trends" not in result
+
+
+def test_no_prompt_asks_the_model_about_google_trends():
+    """Neither half of the prompt may mention a source the model is not given.
+
+    Asking it to "note when Trends data is unavailable" against a prompt with
+    no Trends block at all is an invitation to write about an absence the user
+    never chose.
+    """
+    _, user_prompt = _run_generate_insights()
+
+    assert "google trends" not in user_prompt.lower()
+    assert "google trends" not in SYSTEM_PROMPT.lower()
+
+
+def test_nothing_imports_the_trends_module_or_pytrends():
+    """The module and its dependency left together. A stale import would only
+    surface at runtime, on a machine that had never uninstalled pytrends."""
+    import glob
+
+    for path in glob.glob(os.path.join(PROJECT_ROOT, "src", "*.py")) + \
+            glob.glob(os.path.join(PROJECT_ROOT, "api", "*.py")):
+        with open(path, encoding="utf-8") as f:
+            source = f.read()
+        assert "pytrends" not in source, "%s still imports pytrends" % path
+        assert "src.trends" not in source, "%s still imports src.trends" % path
+
+    with open(os.path.join(PROJECT_ROOT, "requirements.txt"), encoding="utf-8") as f:
+        assert "pytrends" not in f.read()
+
+
+# ---------------------------------------------------------------------------
 # Provenance (#156)
 #
 # Every figure a brief carries has to name the source, date, coverage and
@@ -542,11 +592,10 @@ def test_generate_insights_attaches_provenance_for_every_section_it_rendered():
 
 
 def test_generate_insights_omits_provenance_for_sections_it_did_not_render():
-    """No trends requested and no research matched — no source lines for either."""
+    """No research matched, so there is no source line claiming one did."""
     result, _ = _run_generate_insights()
 
     sections = [e["section"] for e in result["provenance"]]
-    assert "Google Trends" not in sections
     assert "Historical Research" not in sections
 
 
@@ -605,7 +654,6 @@ def test_advertiser_research_receives_the_topic_and_brief():
             topic="Christmas",
             advertiser="Morrisons",
             kpi="Reach",
-            include_google_trends=False,
             client_brief="We want to drive festive food sales in November.",
         )
 
@@ -640,7 +688,6 @@ def test_advertiser_research_gets_no_brief_context_when_none_supplied():
             topic="Christmas",
             advertiser="Morrisons",
             kpi="Reach",
-            include_google_trends=False,
         )
 
     assert mock_research.call_args.kwargs["client_brief"] == ""
@@ -685,8 +732,7 @@ def test_recommended_formats_come_back_in_the_order_the_brief_listed_them():
         mock_openai_cls.return_value = mock_client
 
         from src.synthesiser import generate_insights
-        result = generate_insights(topic="t", advertiser="A", kpi="Awareness",
-                                   include_google_trends=False)
+        result = generate_insights(topic="t", advertiser="A", kpi="Awareness")
 
     assert [row["format"] for row in result["format_recommendations"]] == [
         "Host Read", "Standard display - MPU",
