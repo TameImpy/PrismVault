@@ -45,11 +45,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshUser = useCallback(async () => {
     try {
       const res = await fetch(`/api/me`, { credentials: "include" });
+      // Only the server gets to say a session has ended. A request that never
+      // arrived has said nothing — and once this runs on every back/forward
+      // restore, "never arrived" is common: Back after a sleep, a tunnel, a
+      // dropped mobile connection. Clearing the user there would sign people
+      // out for going offline, which is the bug (#161) wearing a new hat.
       const data = res.ok ? await res.json() : null;
       setUser(data);
       if (data) identifyUser(data);
     } catch {
-      setUser(null);
+      // Leave whatever we last knew in place; only settle `loading` below, or
+      // the guarded pages would render nothing for the rest of the session.
     } finally {
       setLoading(false);
     }
@@ -115,7 +121,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // The saved brief form (#160) belongs to the person who typed it, not to
     // the tab — whoever signs in next must not find it waiting for them.
     clearDraft(draftStorage());
-    router.push("/");
+    // Replace, so Back cannot walk into the page they just signed out of. On a
+    // shared tab that page would restore from the back/forward cache showing
+    // the last person's brief until the session re-check catches up (#161).
+    router.replace("/");
   }, [router]);
 
   return (

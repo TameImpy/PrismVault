@@ -1,6 +1,8 @@
+import { readFileSync } from "node:fs";
 import { describe, it, expect, vi } from "vitest";
 import {
   DEFAULT_SIGNED_IN_PATH,
+  loginPath,
   safeReturnPath,
   signedInDestination,
   completeSignIn,
@@ -118,4 +120,68 @@ describe("completeSignIn", () => {
 
     expect(location.replace).toHaveBeenCalledWith(DEFAULT_SIGNED_IN_PATH);
   });
+});
+
+describe("safeReturnPath and the sign-in pages", () => {
+  it("will not send a signed-in visitor back to a sign-in page", () => {
+    // /login?redirect=/login would otherwise redirect the page onto itself.
+    expect(safeReturnPath("/login")).toBe(DEFAULT_SIGNED_IN_PATH);
+    expect(safeReturnPath("/signup")).toBe(DEFAULT_SIGNED_IN_PATH);
+    expect(safeReturnPath("/login?redirect=/login")).toBe(
+      DEFAULT_SIGNED_IN_PATH,
+    );
+  });
+
+  it("does not mistake a path that merely starts the same way", () => {
+    expect(safeReturnPath("/login-help")).toBe("/login-help");
+  });
+});
+
+describe("loginPath", () => {
+  it("carries the path the visitor was trying to reach", () => {
+    expect(loginPath("/app")).toBe("/login?redirect=%2Fapp");
+    expect(loginPath("/assistant")).toBe("/login?redirect=%2Fassistant");
+  });
+
+  it("asks for nothing in particular when there is nowhere to return to", () => {
+    expect(loginPath()).toBe("/login");
+    expect(loginPath(null)).toBe("/login");
+    expect(loginPath("")).toBe("/login");
+  });
+
+  it("encodes the return path, as the proxy's URL builder does", () => {
+    expect(loginPath("/app?tab=mine")).toBe(
+      "/login?redirect=%2Fapp%3Ftab%3Dmine",
+    );
+  });
+});
+
+/**
+ * Pinned across the file boundary, in the spirit of `tests/test_provenance.py`
+ * pinning section headings against the prompt. The rule of #161 is that no
+ * auth navigation may push — but the rule lives in page components this repo
+ * has no DOM harness to render. Reading their source is the honest way to keep
+ * a future edit from quietly reintroducing the defect.
+ */
+describe("no auth navigation pushes a history entry (#161)", () => {
+  const PAGES = [
+    "app/app/page.tsx",
+    "app/assistant/page.tsx",
+    "app/login/page.tsx",
+    "app/signup/page.tsx",
+    "app/reset-password/page.tsx",
+    "contexts/AuthContext.tsx",
+  ];
+
+  for (const page of PAGES) {
+    it(`${page} navigates with replace, never push`, () => {
+      const source = readFileSync(
+        new URL(`../${page}`, import.meta.url),
+        "utf8",
+      );
+      expect(source).not.toMatch(/router\.push\(/);
+      expect(source).not.toMatch(/window\.location\.href\s*=/);
+      expect(source).not.toMatch(/location\.assign\(/);
+    });
+  }
 });

@@ -900,9 +900,19 @@ The cause was one word. Signing in ran `window.location.href = redirect`, which
 `/app` entry, so history read `[…, /, /login]` and then gained `/app` on top:
 the login form sat exactly one Back press behind the app. `location.replace`
 consumes that entry instead, and Back reaches the screen the user was actually
-on. The same push/replace error was in three other places — the assistant page's
-auth bounce, the `/app` 401 handler — all of them turning "you need to sign in"
-into a history entry you can walk back into and be bounced out of again.
+on.
+
+The same push/replace error turned out to be in four more places, and it took a
+review to find the last two: the assistant page's auth bounce, `/app`'s 401
+handler, `logout()`, and the password-reset form. All of them leave behind an
+entry you can walk back into — a "you need to sign in" that bounces you out
+again, a signed-out tab that restores the last person's brief from the
+back/forward cache, a spent one-time reset token offering a password field that
+can only fail. The first draft of this entry claimed "three other places" and
+then listed two, which is its own small lesson: a count in prose is a claim, and
+nothing checks it. The rule is now pinned by a test that reads those files and
+fails on `router.push`, because the repo has no DOM harness that could catch it
+any other way.
 
 Two things were worth the trip through a real browser rather than reasoning from
 the code.

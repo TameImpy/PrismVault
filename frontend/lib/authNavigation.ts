@@ -24,6 +24,13 @@
 /** Where a signed-in visitor goes when nothing else was asked for. */
 export const DEFAULT_SIGNED_IN_PATH = "/app";
 
+/**
+ * The pages that exist to get you signed in. Never a destination for someone
+ * who already is: `/login?redirect=/login` would otherwise send a signed-in
+ * visitor to the page they are standing on, over and over.
+ */
+const AUTH_PATHS = ["/login", "/signup"];
+
 /** The slice of the Location API this module uses. */
 export type AuthLocation = Pick<Location, "replace">;
 
@@ -41,7 +48,23 @@ export function safeReturnPath(path: string | null | undefined): string {
   if (path.startsWith("//") || path.startsWith("/\\")) {
     return DEFAULT_SIGNED_IN_PATH;
   }
+  const route = path.split(/[?#]/)[0];
+  if (AUTH_PATHS.includes(route)) return DEFAULT_SIGNED_IN_PATH;
   return path;
+}
+
+/**
+ * The sign-in page to bounce an unauthenticated visitor to, carrying the path
+ * they were trying to reach.
+ *
+ * Built in one place because it is built in several: the proxy, the `/app`
+ * guard, that page's 401 handler, the assistant guard. Each had its own hand-
+ * rolled string, and the client's were unencoded where the proxy's were not.
+ * Always pair it with `router.replace` — see `completeSignIn` for why.
+ */
+export function loginPath(returnPath?: string | null): string {
+  if (!returnPath) return "/login";
+  return `/login?redirect=${encodeURIComponent(returnPath)}`;
 }
 
 /** What a sign-in page knows about the visitor in front of it. */

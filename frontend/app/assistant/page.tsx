@@ -7,6 +7,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import GlassCard from "@/components/GlassCard";
 import { useAuth } from "@/contexts/AuthContext";
+import { loginPath } from "@/lib/authNavigation";
 import { useAnalytics } from "@/components/AnalyticsProvider";
 
 interface Message {
@@ -35,7 +36,7 @@ export default function AssistantPage() {
     if (!loading && !user) {
       // Replace, not push: a bounce to the login page must not become a history
       // entry, or Back from login lands here and bounces again (#161).
-      router.replace("/login?redirect=/assistant");
+      router.replace(loginPath("/assistant"));
     }
   }, [user, loading, router]);
 
