@@ -20,6 +20,10 @@ import pytest
 from unittest.mock import patch, MagicMock
 
 from src.slide_content import (
+    INSIGHT_STAT_MAX_CHARS,
+    INSIGHT_TEXT_MAX_WORDS,
+    INSIGHT_TILES,
+    OVERVIEW_MAX_WORDS,
     build_product_rows,
     build_segment_rows,
     generate_slide_content,
@@ -152,8 +156,8 @@ SAMPLE_LLM_OUTPUT = json.dumps({
         "grocery multiples and increasingly positioned around everyday gut health."
     ),
     "insights": [
-        {"stat": "68%", "text": "of readers say gut health shapes their food choices"},
-        {"stat": "2.4x", "text": "more likely to try a new functional drink"},
+        {"stat": "68%", "text": "of readers say gut health matters"},
+        {"stat": "2.4x", "text": "more likely to try a new drink"},
         {"stat": "41%", "text": "read health content at least weekly"},
     ],
 })
@@ -185,7 +189,7 @@ def test_generate_slide_content_returns_overview_and_insights(mock_openai_cls):
     assert len(result["insights"]) == 3
     assert result["insights"][0] == {
         "stat": "68%",
-        "text": "of readers say gut health shapes their food choices",
+        "text": "of readers say gut health matters",
     }
 
 
@@ -270,11 +274,11 @@ def test_validation_enforces_tile_limits():
 
     result = _parse_and_validate(overlong, has_research=True)
 
-    assert len(result["advertiser_overview"].split()) <= 60
-    assert len(result["insights"]) == 3
+    assert len(result["advertiser_overview"].split()) <= OVERVIEW_MAX_WORDS
+    assert len(result["insights"]) == INSIGHT_TILES
     for insight in result["insights"]:
-        assert len(insight["stat"]) <= 12
-        assert len(insight["text"].split()) <= 12
+        assert len(insight["stat"]) <= INSIGHT_STAT_MAX_CHARS
+        assert len(insight["text"].split()) <= INSIGHT_TEXT_MAX_WORDS
 
 
 def test_validation_drops_a_partial_insight():
@@ -307,3 +311,46 @@ def test_unparseable_response_degrades_to_empty_content(mock_openai_cls):
     result = generate_slide_content("brief", "topic", "Yakult", "Awareness")
 
     assert result == {"advertiser_overview": "", "insights": []}
+
+
+# ---------------------------------------------------------------------------
+# The caps agree with the prompt, and with the tile that has to hold them (#162)
+# ---------------------------------------------------------------------------
+
+
+def test_the_prompt_asks_for_the_length_the_code_enforces():
+    """A cap the model is never told about is a cap that truncates every run."""
+    from src.slide_content import (
+        INSIGHT_STAT_MAX_CHARS,
+        INSIGHT_TEXT_MAX_WORDS,
+        OVERVIEW_MAX_WORDS,
+        SYSTEM_PROMPT,
+    )
+
+    assert "max %d words" % OVERVIEW_MAX_WORDS in SYSTEM_PROMPT
+    assert "max %d words" % INSIGHT_TEXT_MAX_WORDS in SYSTEM_PROMPT
+    assert "max %d characters" % INSIGHT_STAT_MAX_CHARS in SYSTEM_PROMPT
+
+
+def test_the_caps_fit_the_tiles_they_are_written_for():
+    """Asked-for length and tile capacity have to agree, or every deck arrives
+    with its insight lines cut short — the state #162 found them in.
+
+    Measured at the average English word length. A cap cannot guarantee a fit
+    for every phrasing — "supermarket" costs half a 26pt line on its own — and
+    it does not have to: `src.tile_fit` is the hard guarantee. What this pins is
+    that the cap is somewhere near the tile, so shortening is the exception
+    rather than something every deck goes through.
+    """
+    from src.slide_content import INSIGHT_TEXT_MAX_WORDS, OVERVIEW_MAX_WORDS
+    from src.tile_fit import budget_for, rendered_lines
+
+    for marker, cap in (("[INSIGHT_1_STAT]", INSIGHT_TEXT_MAX_WORDS),
+                        ("[ADVERTISER_OVERVIEW]", OVERVIEW_MAX_WORDS)):
+        tile = budget_for(marker)
+        at_cap = " ".join(["bread"] * cap)  # five letters: the English average
+        lines = rendered_lines(at_cap, tile.width, tile.typeface, tile.size)
+        assert len(lines) <= tile.lines, (
+            "%s is asked for %d words but its tile holds %d lines, and %d "
+            "average-length words need %d" % (marker, cap, tile.lines, cap, len(lines))
+        )

@@ -22,3 +22,6 @@ passlib[bcrypt]>=1.7.0
 bcrypt>=4.0,<5.0
 python-jose[cryptography]>=3.3.0
 python-pptx>=1.0.0
+# Real Barlow advance widths, so src/tile_fit.py can tell whether a value will
+# fit its deck tile before it is written (#162). Pure Python, no build step.
+fonttools>=4.40.0

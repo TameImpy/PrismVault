@@ -29,9 +29,16 @@ PROVENANCE_TILES = 6
 
 # Content caps that keep text inside its tile. Sizes and fonts are the
 # template's business — these are purely about length.
+#
+# The tile is the authority on what fits (`src/tile_fit.py`), and it shortens
+# anything that doesn't. These caps exist so that shortening stays rare: what
+# the model is asked for should be roughly what the tile holds, rather than the
+# model writing to one length and the deck cutting it to another. The insight
+# phrase was asked for at 12 words and the 26pt tile holds about 6 (#162), so
+# nearly every insight arrived with its tail cut off.
 OVERVIEW_MAX_WORDS = 60
 INSIGHT_STAT_MAX_CHARS = 12
-INSIGHT_TEXT_MAX_WORDS = 12
+INSIGHT_TEXT_MAX_WORDS = 6
 
 
 def build_segment_rows(payload, limit=SEGMENT_TILES):
@@ -93,7 +100,7 @@ Return ONLY valid JSON with this exact structure:
   "advertiser_overview": "<2-3 sentences, max 60 words>",
   "insights": [
     {"stat": "<the figure itself, max 12 characters, e.g. 68% or 2.4x>",
-     "text": "<what the figure shows, max 12 words>"}
+     "text": "<what the figure shows, max 6 words>"}
   ]
 }
 
