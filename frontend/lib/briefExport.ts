@@ -49,16 +49,50 @@ export interface ExportableBrief {
 /** Where the user was standing when they exported. */
 export type BriefSource = "new" | "saved";
 
-export interface DeckRequestBody {
-  content: string;
+/**
+ * The synthesiser payload without the fields that name the brief. A saved
+ * record and a fresh result both carry exactly this; what differs is where
+ * their identity comes from, which is the whole of #177.
+ */
+export type BriefPayload = Omit<
+  ExportableBrief,
+  "topic" | "advertiser" | "kpi"
+>;
+
+/** What names a brief. Three fields that always travel together. */
+export interface BriefIdentity {
   topic: string;
   advertiser: string;
   kpi: string;
-  audience_segments?: AudienceSegmentsPayload;
-  format_recommendations?: FormatRecommendation[];
-  historical_research?: HistoricalResearch;
-  provenance?: ProvenanceEntry[];
 }
+
+/**
+ * The brief to export: its content and structured data from the run that
+ * produced it, its identity from the record that names it — a saved brief's
+ * own topic, advertiser and KPI, or the form that produced a fresh result.
+ *
+ * Assembling the two here rather than in JSX is deliberate. Mixing them is the
+ * exact defect in #177 — a saved brief's content posted under the form's
+ * advertiser — so the join belongs somewhere a test can hold it.
+ */
+export function toExportableBrief(
+  payload: BriefPayload,
+  identity: BriefIdentity,
+): ExportableBrief {
+  return {
+    ...payload,
+    topic: identity.topic,
+    advertiser: identity.advertiser,
+    kpi: identity.kpi,
+  };
+}
+
+/**
+ * The wire shape is the brief itself. An alias rather than a second copy of
+ * the fields, so a field added to a brief cannot reach the deck endpoint by
+ * being declared in one of two identical lists and forgotten in the other.
+ */
+export type DeckRequestBody = ExportableBrief;
 
 /**
  * The deck request for a brief. A function of the brief alone — deliberately
@@ -117,6 +151,18 @@ export function exportEventProps(
 }
 
 type TrackFn = (event: string, properties?: Record<string, unknown>) => void;
+
+/**
+ * An analytics sink that stamps `brief_source` on everything sent through it.
+ *
+ * The Draft Email modal raises its own events and already carries the brief's
+ * topic, advertiser and KPI from its props; this is how those events also say
+ * whether the draft came off history or a fresh run.
+ */
+export function withBriefSource(track: TrackFn, source: BriefSource): TrackFn {
+  return (event, properties) =>
+    track(event, { ...properties, brief_source: source });
+}
 
 export interface DownloadDeckDeps {
   fetch: typeof fetch;
@@ -178,6 +224,14 @@ export async function downloadDeck(
     return { ok: false, error };
   }
 }
+
+/**
+ * The page's `fetch`, called through a wrapper rather than passed by
+ * reference. `fetch` is a method of the window: hand a bare reference to
+ * something that calls it unbound and the browser rejects the call. Node's
+ * `fetch` does not care, so no test here could catch it.
+ */
+export const browserFetch: typeof fetch = (...args) => fetch(...args);
 
 /**
  * The browser's way of handing a blob to the user. Kept apart from the logic

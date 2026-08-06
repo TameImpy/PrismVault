@@ -1044,3 +1044,13 @@ spirit of `authNavigation.test.ts`: the page must no longer name the deck
 endpoint, both branches must render the row, the row must read `brief.topic`
 and hold no topic state of its own. A pin that reads source is not as good as
 rendering the page, but it is much better than trusting a comment.
+
+**A gotcha only review caught (same ticket):** injecting `fetch` as a
+dependency and calling it unbound — `const { fetch: fetchImpl } = deps;
+fetchImpl(url, init)` — is fine in Node and rejected by the browser, because
+`fetch` is a method of the window and loses its receiver when passed by bare
+reference. The whole point of the injection was Node-testability, so the test
+suite is structurally incapable of catching it. Pass a wrapper
+(`(...args) => fetch(...args)`), not the reference. Any DI boundary that
+crosses from browser globals into Node tests has this shape: the test
+environment is precisely where the bug cannot appear.

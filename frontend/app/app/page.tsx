@@ -20,6 +20,7 @@ import { loginPath } from "@/lib/authNavigation";
 import { AudienceSegmentsPayload } from "@/lib/audienceSegments";
 import { FormatRecommendation } from "@/lib/formatRecommendations";
 import { PROVENANCE_SECTIONS, ProvenanceEntry } from "@/lib/provenance";
+import { toExportableBrief } from "@/lib/briefExport";
 import {
   BriefDraft,
   clearDraft,
@@ -998,17 +999,7 @@ export default function InsightsTool() {
                       the New Brief form — which may hold another advertiser
                       entirely. */}
                   <BriefExportActions
-                    brief={{
-                      content: savedResult.content,
-                      topic: viewingBrief.topic,
-                      advertiser: viewingBrief.advertiser,
-                      kpi: viewingBrief.kpi,
-                      audience_segments: savedResult.audience_segments,
-                      format_recommendations:
-                        savedResult.format_recommendations,
-                      historical_research: savedResult.historical_research,
-                      provenance: savedResult.provenance,
-                    }}
+                    brief={toExportableBrief(savedResult, viewingBrief)}
                     source="saved"
                     sampleCount={sampleCount}
                     onSampleCountChange={handleSampleCountChange}
@@ -1411,16 +1402,7 @@ export default function InsightsTool() {
                   fed the result it is exporting rather than the form (#177). */}
               {result && !loading && (
                 <BriefExportActions
-                  brief={{
-                    content: result.content,
-                    topic,
-                    advertiser,
-                    kpi,
-                    audience_segments: result.audience_segments,
-                    format_recommendations: result.format_recommendations,
-                    historical_research: result.historical_research,
-                    provenance: result.provenance,
-                  }}
+                  brief={toExportableBrief(result, { topic, advertiser, kpi })}
                   source="new"
                   sampleCount={sampleCount}
                   onSampleCountChange={handleSampleCountChange}

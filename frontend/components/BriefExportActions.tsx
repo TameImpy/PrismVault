@@ -7,9 +7,11 @@ import WritingSamplesModal from "@/components/WritingSamplesModal";
 import {
   BriefSource,
   ExportableBrief,
+  browserFetch,
   downloadDeck,
   exportEventProps,
   saveBlobToDisk,
+  withBriefSource,
 } from "@/lib/briefExport";
 
 interface BriefExportActionsProps {
@@ -51,7 +53,7 @@ export default function BriefExportActions({
     setDeckLoading(true);
     setError(null);
     const outcome = await downloadDeck(brief, source, {
-      fetch,
+      fetch: browserFetch,
       saveBlob: saveBlobToDisk,
       track,
     });
@@ -110,9 +112,7 @@ export default function BriefExportActions({
         // The modal's own events already carry the brief's topic, advertiser
         // and KPI from the props above; this adds where the export came from,
         // so a draft off a saved brief can be told from one off a fresh run.
-        track={(event, properties) =>
-          track(event, { ...properties, brief_source: source })
-        }
+        track={withBriefSource(track, source)}
       />
 
       <WritingSamplesModal

@@ -8,6 +8,8 @@ import {
   deckRequestBody,
   downloadDeck,
   exportEventProps,
+  toExportableBrief,
+  withBriefSource,
 } from "./briefExport";
 
 /** A brief with everything a recent run produces. Cast because the fixtures
@@ -116,14 +118,77 @@ describe("deckRequestBody", () => {
     // is a valid request with them absent.
     expect(() => JSON.stringify(body)).not.toThrow();
   });
+});
 
-  it("does not vary with where the brief was opened from", () => {
-    // The acceptance criterion that a deck exported from My Briefs matches the
-    // one exported from the same brief freshly generated: the request body is
-    // a function of the brief alone.
-    expect(deckRequestBody(FULL_BRIEF)).toEqual(
-      deckRequestBody({ ...FULL_BRIEF }),
+describe("toExportableBrief", () => {
+  const PAYLOAD = {
+    content: "## At a Glance\nCore Products: Newsletter",
+    audience_segments: FULL_BRIEF.audience_segments,
+    provenance: FULL_BRIEF.provenance,
+  };
+
+  it("takes the content and structured data from the run that produced them", () => {
+    const brief = toExportableBrief(PAYLOAD, {
+      topic: "gut health",
+      advertiser: "Yakult",
+      kpi: "Awareness",
+    });
+
+    expect(brief.content).toBe(PAYLOAD.content);
+    expect(brief.audience_segments).toBe(PAYLOAD.audience_segments);
+    expect(brief.provenance).toBe(PAYLOAD.provenance);
+  });
+
+  it("takes the identity from the record that names the brief, and only from there", () => {
+    // The join that #177 turns on. A saved brief's payload carries no identity
+    // of its own — it comes off the saved record — and the New Brief form must
+    // not be able to reach a brief it did not produce.
+    const brief = toExportableBrief(PAYLOAD, {
+      topic: "skincare",
+      advertiser: "The Ordinary",
+      kpi: "Clicks",
+    });
+
+    expect(brief.topic).toBe("skincare");
+    expect(brief.advertiser).toBe("The Ordinary");
+    expect(brief.kpi).toBe("Clicks");
+  });
+
+  it("ignores any identity the payload happens to be carrying", () => {
+    // A saved record is passed straight in, and the parsed result may hold
+    // stale identity fields from an older shape. The argument wins.
+    const brief = toExportableBrief(
+      { ...PAYLOAD, topic: "stale", advertiser: "Stale Co" } as never,
+      { topic: "skincare", advertiser: "The Ordinary", kpi: "Clicks" },
     );
+
+    expect(brief.topic).toBe("skincare");
+    expect(brief.advertiser).toBe("The Ordinary");
+  });
+});
+
+describe("withBriefSource", () => {
+  it("stamps where the export came from onto another sink's events", () => {
+    const track = vi.fn();
+
+    withBriefSource(track, "saved")("Draft Email Generated", {
+      advertiser: "Yakult",
+    });
+
+    expect(track).toHaveBeenCalledWith("Draft Email Generated", {
+      advertiser: "Yakult",
+      brief_source: "saved",
+    });
+  });
+
+  it("stamps an event that carries no properties of its own", () => {
+    const track = vi.fn();
+
+    withBriefSource(track, "new")("Draft Email Copied");
+
+    expect(track).toHaveBeenCalledWith("Draft Email Copied", {
+      brief_source: "new",
+    });
   });
 });
 
@@ -290,6 +355,29 @@ describe("downloadDeck", () => {
 
     expect(outcome).toEqual({ ok: false, error: "Failed to fetch" });
     expect(saveBlob).not.toHaveBeenCalled();
+  });
+
+  it("posts a byte-identical body whether the brief came from history or a fresh run", async () => {
+    // The acceptance criterion that a deck exported from My Briefs matches the
+    // one exported from the same brief freshly generated. Asserted on what is
+    // actually sent, so threading `source` into the request would fail here.
+    const fresh = harness(okDeckResponse());
+    const saved = harness(okDeckResponse());
+
+    await downloadDeck(FULL_BRIEF, "new", {
+      fetch: fresh.fetchImpl as unknown as typeof fetch,
+      saveBlob: fresh.saveBlob,
+      track: fresh.track,
+    });
+    await downloadDeck(FULL_BRIEF, "saved", {
+      fetch: saved.fetchImpl as unknown as typeof fetch,
+      saveBlob: saved.saveBlob,
+      track: saved.track,
+    });
+
+    const bodyOf = (h: ReturnType<typeof harness>) =>
+      (h.fetchImpl.mock.calls[0][1] as unknown as RequestInit).body;
+    expect(bodyOf(saved)).toBe(bodyOf(fresh));
   });
 
   it("works without an analytics sink", async () => {
