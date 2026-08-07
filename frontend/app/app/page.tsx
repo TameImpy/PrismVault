@@ -59,7 +59,6 @@ interface InsightsResult {
   sources: Source[];
   research_skills: SkillResult[];
   audience_segments: AudienceSegmentsPayload;
-  google_trends: string;
   format_recommendations: FormatRecommendation[];
   campaign_history: string;
   client_brief_summary: string;
@@ -389,7 +388,6 @@ export default function InsightsTool() {
   const [advertiser, setAdvertiser] = useState("");
   const [kpi, setKpi] = useState("");
   const [clientBrief, setClientBrief] = useState("");
-  const [includeTrends, setIncludeTrends] = useState(true);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<InsightsResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -450,10 +448,6 @@ export default function InsightsTool() {
     setAdvertiser(brief.advertiser);
     setKpi(brief.kpi);
     setClientBrief(brief.client_brief || "");
-    // Saved briefs do not record the Google Trends choice, so it resets to the
-    // form's default rather than keeping whatever the last draft happened to
-    // hold — every field of the form should come from the brief being re-run.
-    setIncludeTrends(true);
     setViewingBrief(null);
     setActiveTab("new");
   }
@@ -485,7 +479,6 @@ export default function InsightsTool() {
       setAdvertiser(draft.advertiser);
       setKpi(draft.kpi);
       setClientBrief(draft.clientBrief);
-      setIncludeTrends(draft.includeTrends);
       setInterruptedRun(draft.generating);
     }
     setDraftRestored(true);
@@ -496,7 +489,7 @@ export default function InsightsTool() {
    * persisted by the save effect and forgotten by the submitted-input snapshot.
    */
   function currentDraft(generating: boolean): BriefDraft {
-    return { topic, advertiser, kpi, clientBrief, includeTrends, generating };
+    return { topic, advertiser, kpi, clientBrief, generating };
   }
 
   useEffect(() => {
@@ -516,7 +509,6 @@ export default function InsightsTool() {
     advertiser,
     kpi,
     clientBrief,
-    includeTrends,
     loading,
     interruptedRun,
     submittedInput,
@@ -551,7 +543,6 @@ export default function InsightsTool() {
       topic: topic.trim(),
       advertiser: advertiser.trim(),
       kpi,
-      include_google_trends: includeTrends,
       has_client_brief: clientBrief.trim() !== "",
     };
 
@@ -567,7 +558,6 @@ export default function InsightsTool() {
           topic: topic.trim(),
           advertiser: advertiser.trim(),
           kpi,
-          include_google_trends: includeTrends,
           client_brief: clientBrief.trim(),
         }),
       });
@@ -621,7 +611,7 @@ export default function InsightsTool() {
             </h1>
             <p className="text-slate-400 text-lg max-w-2xl">
               Generate strategic advertising briefs by combining editorial
-              expertise, brand research, audience data, and market trends.
+              expertise, brand research, audience data, and campaign history.
             </p>
           </div>
 
@@ -977,21 +967,6 @@ export default function InsightsTool() {
                       data={savedResult.audience_segments}
                       provenance={savedResult.provenance}
                     />
-
-                    {savedResult.google_trends && (
-                      <CollapsiblePanel
-                        title="Google Trends"
-                        defaultOpen={false}
-                      >
-                        <p className="text-on-surface-variant text-sm leading-relaxed whitespace-pre-wrap">
-                          {savedResult.google_trends}
-                        </p>
-                        <ProvenanceFooter
-                          entries={savedResult.provenance}
-                          section={PROVENANCE_SECTIONS.googleTrends}
-                        />
-                      </CollapsiblePanel>
-                    )}
                   </div>
 
                   {/* A brief opened from history exports exactly as a fresh one
@@ -1114,19 +1089,7 @@ export default function InsightsTool() {
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <label className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={includeTrends}
-                      onChange={(e) => setIncludeTrends(e.target.checked)}
-                      className="w-4 h-4 rounded bg-surface-container-lowest border-outline-variant text-accent-cyan focus:ring-accent-cyan/30 focus:ring-offset-0"
-                    />
-                    <span className="text-sm text-on-surface-variant">
-                      Include Google Trends data
-                    </span>
-                  </label>
-
+                <div className="flex items-center justify-end">
                   <button
                     onClick={handleGenerate}
                     disabled={!canGenerate || loading}
@@ -1362,24 +1325,6 @@ export default function InsightsTool() {
                         data={result.audience_segments}
                         provenance={result.provenance}
                       />
-
-                      {/* Google Trends panel */}
-                      {result.google_trends && (
-                        <CollapsiblePanel
-                          title="Google Trends"
-                          defaultOpen={false}
-                        >
-                          <p className="text-on-surface-variant text-sm leading-relaxed whitespace-pre-wrap">
-                            {result.google_trends}
-                          </p>
-                          {/* Google Trends has no markdown heading of its own,
-                              so its source line lives on the panel. */}
-                          <ProvenanceFooter
-                            entries={result.provenance}
-                            section={PROVENANCE_SECTIONS.googleTrends}
-                          />
-                        </CollapsiblePanel>
-                      )}
 
                       {/* Client Brief panel */}
                       {result.client_brief_summary &&

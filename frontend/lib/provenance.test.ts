@@ -34,7 +34,26 @@ describe("provenanceFor", () => {
   });
 
   it("returns null for a section the brief did not render", () => {
-    expect(provenanceFor([SEGMENTS], "Google Trends")).toBeNull();
+    expect(provenanceFor([SEGMENTS], "Recommended Products")).toBeNull();
+  });
+
+  it("passes over an entry for a section the product no longer has", () => {
+    // A brief generated before Google Trends was removed (#176) still carries
+    // its provenance entry, because the stored payload is the faithful record
+    // of what that run produced and is never rewritten. Nothing asks for the
+    // section any more, so the entry is simply never looked up — and looking
+    // up the sections that remain must still work with it sitting there.
+    const legacy: ProvenanceEntry = {
+      section: "Google Trends",
+      source: "Google Trends, queried live",
+      as_at: "2026-08-05",
+      coverage: "External to the network",
+      period: "Rolling 12 months",
+      cadence: "Queried live on every brief run",
+    };
+    expect(
+      provenanceFor([legacy, SEGMENTS], PROVENANCE_SECTIONS.audienceSegments),
+    ).toBe(SEGMENTS);
   });
 
   it("returns null for a brief saved before provenance existed", () => {
@@ -51,7 +70,6 @@ describe("PROVENANCE_SECTIONS", () => {
     expect(Object.values(PROVENANCE_SECTIONS)).toEqual([
       "Audience Segments & Reach",
       "Client Relationship",
-      "Google Trends",
       "Historical Research",
     ]);
   });

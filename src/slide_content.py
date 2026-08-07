@@ -24,8 +24,14 @@ DECK_CONTENT_MODEL = getattr(config, "DECK_CONTENT_MODEL", "gpt-4o-mini")
 SEGMENT_TILES = 4
 PRODUCT_TILES = 3
 INSIGHT_TILES = 3
-# Appendix source lines — one per data section a brief can carry (#156).
-PROVENANCE_TILES = 6
+# Appendix source lines — one per data section a brief can carry (#156). The
+# template draws six; Google Trends leaving the registry (#176) makes the sixth
+# permanently spare, and it blanks like any other unfilled marker. Counting to
+# the registry rather than to the template is what keeps a legacy brief's
+# retired source line off a client-facing slide — though the count is the
+# second guard, not the first: `drop_retired_sections()` has already removed it,
+# because a brief with no research match would otherwise land it inside five.
+PROVENANCE_TILES = 5
 
 # Content caps that keep text inside its tile. Sizes and fonts are the
 # template's business — these are purely about length.

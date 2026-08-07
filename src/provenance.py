@@ -17,7 +17,7 @@ the number.
 
 Two sections are per-brief rather than per-registry and are resolved here:
 Historical Research takes its dates and base from the study the brief matched,
-and the live sources (web research, Google Trends) are dated with the run date.
+and live sources (the advertiser web research) are dated with the run date.
 """
 import csv
 import logging
@@ -40,8 +40,6 @@ RUN_DATE_TOKEN = "{run_date}"
 # Its provenance comes from the matched study rather than the registry row,
 # which holds only the defaults used before a study is known.
 HISTORICAL_SECTION = "Historical Research"
-# Read live, and only when the brief asked for it.
-TRENDS_SECTION = "Google Trends"
 
 # Label shown against each field, in render order.
 _LABELS = (
@@ -80,15 +78,15 @@ def load_provenance(csv_path=None):
     return entries
 
 
-def build_provenance(historical_research=None, include_google_trends=True,
-                     run_date=None, csv_path=None):
-    # type: (dict, bool, datetime.date, str) -> list
+def build_provenance(historical_research=None, run_date=None, csv_path=None):
+    # type: (dict, datetime.date, str) -> list
     """Resolve the registry against one brief run.
 
-    Two sections are conditional, because the brief itself omits them: Google
-    Trends when the run did not request it, and Historical Research when no
-    study matched. A source line for a section that is not there would be its
-    own kind of untraceable.
+    One section is conditional, because the brief itself omits it: Historical
+    Research, when no study matched. A source line for a section that is not
+    there would be its own kind of untraceable. (Google Trends was the other,
+    omitted when a run declined to fetch it; #176 removed the feature and this
+    branch with it.)
 
     The rest are unconditional, including on an empty result. A brief that
     found no direct campaign history, or no strongly-matched segments, still
@@ -108,8 +106,6 @@ def build_provenance(historical_research=None, include_google_trends=True,
     for entry in load_provenance(csv_path):
         section = entry["section"]
 
-        if section == TRENDS_SECTION and not include_google_trends:
-            continue
         if section == HISTORICAL_SECTION:
             entry = _resolve_historical(entry, historical_research)
             if entry is None:
@@ -161,6 +157,31 @@ def _resolve_historical(entry, research):
         coverage=coverage,
         period=("Fieldwork %s" % fieldwork) if fieldwork else "",
     )
+
+
+def drop_retired_sections(entries, csv_path=None):
+    # type: (list, str) -> list
+    """The posted-back entries for sections this product still has.
+
+    A brief is stored as the whole payload its run produced and is never
+    rewritten, so one saved before Google Trends was removed (#176) still
+    carries a source line for it. Keeping that in storage is the point — the
+    record should say what the run actually did. Rendering it is a different
+    question, and the answer is no: the deck's appendix and the email footer
+    both reach clients, and a source line for a section the brief no longer
+    contains describes nothing the reader can find.
+
+    The browser gets this for free, because it looks provenance up by section
+    name and simply never asks for the retired one. These two surfaces place
+    every entry they are given in order, so they need the rule stated.
+
+    It is the registry that decides, not a list of retired names, so a section
+    removed later needs no second edit here.
+    """
+    if not entries:
+        return entries
+    known = set(e["section"] for e in load_provenance(csv_path))
+    return [e for e in entries if e.get("section") in known]
 
 
 def provenance_for(entries, section):

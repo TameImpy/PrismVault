@@ -22,6 +22,7 @@ from src.provenance import (
     FIELDS,
     RUN_DATE_TOKEN,
     build_provenance,
+    drop_retired_sections,
     format_provenance_block,
     format_provenance_line,
     format_provenance_row,
@@ -37,7 +38,6 @@ EXPECTED_SECTIONS = [
     "Audience Segments & Reach",
     "Recommended Products",
     "Historical Research",
-    "Google Trends",
 ]
 
 
@@ -114,20 +114,31 @@ def test_campaign_history_names_the_export_not_the_ad_server():
     assert "ad server" in entry["source"].lower() or "ad manager" in entry["source"].lower()
 
 
+def test_the_registry_carries_no_google_trends_row():
+    """Google Trends left the product entirely (#176).
+
+    The row is checked for by name rather than only by absence from
+    EXPECTED_SECTIONS, because a stray row would be rendered — the builder
+    resolves whatever the registry holds — and would tell a reader the brief
+    was sourced from something it never queried.
+    """
+    for entry in load_provenance():
+        assert "trends" not in entry["section"].lower()
+        assert "trends" not in entry["source"].lower()
+
+
 def test_the_brief_still_writes_the_headings_the_footers_bind_to():
     """The UI attaches a section's footer by matching the registry's section
     name against the brief's `## ` heading — which the model writes. If a
     prompt edit renames a heading the footer silently vanishes, so the two are
     pinned together here rather than discovered in production.
 
-    Google Trends is exempt: it has no heading of its own and its footer is
-    attached to the panel by name (`lib/provenance.ts PROVENANCE_SECTIONS`).
+    Every row is checked: with Google Trends gone (#176) the registry no longer
+    holds a section that has no heading of its own.
     """
     from src.prompts import SYSTEM_PROMPT
 
     for entry in load_provenance():
-        if entry["section"] == "Google Trends":
-            continue
         assert "## %s" % entry["section"] in SYSTEM_PROMPT, (
             "the brief no longer has a '%s' heading for its provenance footer "
             "to attach to" % entry["section"]
@@ -168,25 +179,73 @@ def test_missing_registry_degrades_to_nothing(tmp_path):
 def test_live_sources_are_dated_with_the_run_date(tmp_path):
     """The run-date token resolves to the date the brief was generated."""
     path = _write_csv(tmp_path, [
-        {"section": "Google Trends", "source": "Google Trends", "as_at": RUN_DATE_TOKEN,
-         "coverage": "Worldwide", "period": "12 months", "cadence": "Live"},
+        {"section": "Advertiser Overview", "source": "Live public web search",
+         "as_at": RUN_DATE_TOKEN, "coverage": "External to the network",
+         "period": "As published", "cadence": "Live"},
     ])
     entries = build_provenance(run_date=datetime.date(2026, 8, 5), csv_path=path)
     assert entries[0]["as_at"] == "2026-08-05"
 
 
-def test_google_trends_is_dropped_when_not_requested(tmp_path):
-    """A brief run without trends carries no trends provenance."""
+def test_historical_research_is_the_only_conditional_section(tmp_path):
+    """Every row but Historical Research is rendered unconditionally.
+
+    Google Trends used to be conditional too, because the run could decline to
+    fetch it (#176 removed the feature and with it the branch). Nothing else
+    may acquire that behaviour by accident: an absent source line is how a
+    reviewer is told a section was never sourced, and a section that renders
+    on an empty result must still say what was searched.
+    """
     path = _write_csv(tmp_path, [
-        {"section": "Google Trends", "source": "Google Trends", "as_at": RUN_DATE_TOKEN,
-         "coverage": "Worldwide", "period": "12 months", "cadence": "Live"},
+        {"section": "Advertiser Overview", "source": "Live public web search",
+         "as_at": RUN_DATE_TOKEN, "coverage": "External", "period": "As published",
+         "cadence": "Live"},
         {"section": "Recommended Products", "source": "Benchmarking sheet",
          "as_at": "2026-07-20", "coverage": "Whole network", "period": "12 months",
          "cadence": "Monthly"},
     ])
-    sections = [e["section"] for e in build_provenance(
-        include_google_trends=False, csv_path=path)]
-    assert sections == ["Recommended Products"]
+    sections = [e["section"] for e in build_provenance(csv_path=path)]
+    assert sections == ["Advertiser Overview", "Recommended Products"]
+
+
+def test_build_provenance_takes_no_trends_flag():
+    """The parameter went with the feature, rather than lingering as a no-op
+    that a caller could still pass and believe was doing something."""
+    import inspect
+
+    assert "include_google_trends" not in inspect.signature(
+        build_provenance).parameters
+
+
+def test_a_retired_sections_line_is_not_rendered_to_a_client(tmp_path):
+    """A brief saved before Google Trends was removed still carries its source
+    line (#176). Storage keeps it — the payload is the record of what that run
+    did — but the deck appendix and the email footer reach clients, and a
+    source line for a section the brief no longer contains describes nothing.
+    """
+    path = _write_csv(tmp_path, [
+        {"section": "Recommended Products", "source": "Benchmarking sheet",
+         "as_at": "2026-07-20", "coverage": "Whole network", "period": "12 months",
+         "cadence": "Monthly"},
+    ])
+    legacy = [
+        {"section": "Recommended Products", "source": "Benchmarking sheet"},
+        {"section": "Google Trends", "source": "Google Trends, queried live"},
+    ]
+    kept = drop_retired_sections(legacy, csv_path=path)
+    assert [e["section"] for e in kept] == ["Recommended Products"]
+
+
+def test_dropping_retired_sections_leaves_a_current_brief_untouched():
+    """Every section of a brief run today survives, in order."""
+    entries = build_provenance(historical_research=MATCHED_RESEARCH)
+    assert drop_retired_sections(entries) == entries
+
+
+def test_dropping_retired_sections_passes_an_absent_list_through():
+    """A brief saved before provenance existed carries none at all."""
+    assert drop_retired_sections(None) is None
+    assert drop_retired_sections([]) == []
 
 
 def test_historical_research_is_dropped_when_nothing_matched():

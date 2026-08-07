@@ -25,8 +25,6 @@ export interface BriefDraft {
   advertiser: string;
   kpi: string;
   clientBrief: string;
-  /** Mirrors the Google Trends checkbox, which starts ticked. */
-  includeTrends: boolean;
   /**
    * True while a generation is running. Persisted so that a reload mid-run can
    * say what happened rather than silently presenting a full form the user has
@@ -46,7 +44,6 @@ export const EMPTY_DRAFT: BriefDraft = {
   advertiser: "",
   kpi: "",
   clientBrief: "",
-  includeTrends: true,
   generating: false,
 };
 
@@ -63,8 +60,7 @@ export function isEmptyDraft(draft: BriefDraft): boolean {
     draft.topic.trim() === "" &&
     draft.advertiser.trim() === "" &&
     draft.kpi.trim() === "" &&
-    draft.clientBrief.trim() === "" &&
-    draft.includeTrends === EMPTY_DRAFT.includeTrends
+    draft.clientBrief.trim() === ""
   );
 }
 
@@ -87,8 +83,7 @@ export function sameInput(a: BriefDraft, b: BriefDraft): boolean {
     a.topic === b.topic &&
     a.advertiser === b.advertiser &&
     a.kpi === b.kpi &&
-    a.clientBrief === b.clientBrief &&
-    a.includeTrends === b.includeTrends
+    a.clientBrief === b.clientBrief
   );
 }
 
@@ -109,6 +104,13 @@ function booleanOr(value: unknown, fallback: boolean): boolean {
  * that refuses to answer (Safari private browsing), or no storage at all. A
  * draft is a convenience, and no convenience should be able to stop the page
  * from rendering.
+ *
+ * The draft is rebuilt field by field rather than cast from what was stored,
+ * which is also what makes a *dropped* field safe: the value written by the
+ * version before Google Trends was removed still carries `includeTrends`, and
+ * a key nothing asks for is simply never read. A key living in sessionStorage
+ * outlives the deploy that stopped writing it, so the first load after any
+ * such change reads a shape this code no longer knows (#176).
  */
 export function readDraft(
   storage: DraftStorage | null | undefined,
@@ -139,7 +141,6 @@ export function readDraft(
     advertiser: stringOr(raw.advertiser, EMPTY_DRAFT.advertiser),
     kpi: stringOr(raw.kpi, EMPTY_DRAFT.kpi),
     clientBrief: stringOr(raw.clientBrief, EMPTY_DRAFT.clientBrief),
-    includeTrends: booleanOr(raw.includeTrends, EMPTY_DRAFT.includeTrends),
     generating: booleanOr(raw.generating, EMPTY_DRAFT.generating),
   };
 

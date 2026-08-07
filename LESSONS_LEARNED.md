@@ -1054,3 +1054,81 @@ suite is structurally incapable of catching it. Pass a wrapper
 (`(...args) => fetch(...args)`), not the reference. Any DI boundary that
 crosses from browser globals into Node tests has this shape: the test
 environment is precisely where the bug cannot appear.
+
+---
+
+## 6 Aug 2026 — Removing a data source turned out to be a geometry problem too (#176)
+
+**What went wrong:** deleting the `Google Trends` row from `data/provenance.csv`
+broke a deck test with nothing to do with Trends —
+`test_populated_runs_keep_the_template_run_formatting`, which asserts every
+marker run in the PowerPoint template survives into the built deck with
+byte-identical run properties. It reported that a run had "vanished".
+
+**Why:** the template's Appendix slide draws **six** provenance lines
+(`PROVENANCE_TILES = 6`), and the test's fixture happened to supply exactly six
+entries, so every slot was filled. Drop the registry to five and the sixth
+marker resolves to `""` — and `_drop_empty_runs()` then deletes that run
+outright, because an empty `<a:t/>` reads as corrupt to PowerPoint. Nothing was
+broken; the test had been resting on a coincidence between fixture length and
+tile count.
+
+**How it was fixed:** the test now skips runs whose markers the brief supplied
+no value for, which is what "populated runs" meant all along.
+
+**The wrong turn, and what corrected it.** My first answer was to keep
+`PROVENANCE_TILES` at 6, reasoning that a brief saved _before_ the removal
+carries six entries and narrowing the loop would drop its last source line —
+"the payload is the faithful record, so render all of it". Code review caught
+that this was the wrong trade, and a direct check confirmed it: a deck exported
+from a pre-change brief printed `Google Trends — Source: Google Trends, queried
+live` onto the **client-facing** appendix. The ticket had said plainly that for
+such briefs "the provenance entry is ignored".
+
+The confusion was between _keeping_ old data and _rendering_ it. Not writing a
+migration means storage keeps the record; it does not mean every surface must
+display it. The browser had this right for free — it looks provenance up by
+section name, so it never asks for the retired one. The deck and the email
+place whatever list they are handed, in order, so they had to be told:
+`drop_retired_sections()` in `src/provenance.py`, applied at
+`api/main._provenance_dicts()`, the one choke point both surfaces pass through.
+
+**The part worth remembering:** the tile count was never the real guard. A brief
+that matched no historical research carries only five entries, so the Trends
+line lands at tile **5** — any cap of 5 or 6 renders it. Filtering by section
+name is the only thing that actually works; `PROVENANCE_TILES = 5` is a second
+line of defence, not the first. When you catch yourself sizing a container to
+exclude bad data, check whether the data's position is actually fixed.
+
+**Transferable point:** in this repo a "content" change can be a layout change.
+Anything counted against the template — appendix lines, product tiles, insight
+tiles — has a fixed capacity, and both under- and over-filling it has visible
+effects. It is the same lesson as
+[[overlapping-deck-text-the-renderer-not-the-file]] from another direction: the
+.pptx is a fixed-size grid pretending to be a document.
+
+---
+
+## 6 Aug 2026 — Dropping a field from a persisted shape is free only if you never cast (#176)
+
+**The trap:** the same ticket removed `includeTrends` from the brief draft
+mirrored into sessionStorage (`frontend/lib/briefDraft.ts`). A sessionStorage
+key outlives the deploy that stopped writing it, so the first load after the
+change reads a value carrying a field the parser no longer knows about.
+
+**Why it was already safe:** `readDraft` rebuilds the draft field by field
+(`stringOr(raw.topic, …)`) rather than casting the parsed JSON to `BriefDraft`.
+That was written for corrupt values and wrong types (#160), but it makes
+_removed_ fields safe for the same reason — a key nothing asks for is never
+read. Had it cast, or validated against an exact key set, the stale value would
+have thrown or been rejected, losing exactly the input the draft exists to
+protect.
+
+**The same shape on the server:** briefs are persisted as the whole synthesiser
+payload, so every brief in the database still carries `google_trends`. Nothing
+reads it, nothing migrates it, and it costs nothing to leave. A migration to
+strip it would have been the expensive way to achieve exactly the same screen.
+
+**Transferable point:** parse into your shape, don't cast onto it. It buys
+forwards _and_ backwards compatibility from the same few lines, and it is the
+difference between a schema change being a migration and being a no-op.

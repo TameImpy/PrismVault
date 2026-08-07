@@ -34,7 +34,6 @@ export interface ProvenanceField {
 export const PROVENANCE_SECTIONS = {
   audienceSegments: "Audience Segments & Reach",
   clientRelationship: "Client Relationship",
-  googleTrends: "Google Trends",
   historicalResearch: "Historical Research",
 } as const;
 
@@ -51,6 +50,12 @@ const FIELD_LABELS: [keyof ProvenanceEntry, string][] = [
  * The provenance for one section, or null when there is none. Briefs saved
  * before provenance existed carry no entries at all, which is why the list is
  * optional rather than assumed.
+ *
+ * The reverse also happens: a brief saved before Google Trends was removed
+ * (#176) carries an entry for a section nothing renders any more. Lookup is by
+ * name, so that entry is simply never asked for — the stored payload stays the
+ * faithful record of what its run produced rather than being rewritten to
+ * match today's feature set.
  */
 export function provenanceFor(
   entries: ProvenanceEntry[] | undefined | null,

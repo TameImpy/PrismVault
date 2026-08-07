@@ -8,7 +8,6 @@ import config
 # from src.vectorstore import search_transcripts
 from src.web_search import research_advertiser
 from src.audience import expand_query, recommend_segments, format_audience_segments
-from src.trends import get_trend_data
 from src.brief import summarise_brief
 from src.formats import (
     load_format_data,
@@ -124,14 +123,13 @@ def generate_insights(
     topic: str,
     advertiser: str,
     kpi: str,
-    include_google_trends: bool = True,
     client_brief: str = "",
 ) -> dict:
     """Main pipeline: gather data from all sources, synthesise with GPT-4o.
 
     Returns dict with keys: content, sources, research_skills,
-    audience_segments, google_trends, format_recommendations,
-    campaign_history, client_brief_summary, historical_research, provenance.
+    audience_segments, format_recommendations, campaign_history,
+    client_brief_summary, historical_research, provenance.
     """
     # 1. Editorial vector search disabled for now (Phase 2). `sources` stays an
     #    empty list so the return contract is unchanged for the API/frontend.
@@ -157,12 +155,8 @@ def generate_insights(
     audience_segments = recommend_segments(advertiser, topic, client_brief, expansion=expansion)
     audience_segments_text = format_audience_segments(audience_segments)
 
-    # 4. Optionally pull Google Trends
-    if include_google_trends:
-        trend_data = get_trend_data(topic)
-        google_trends = trend_data["summary"]
-    else:
-        google_trends = "Google Trends data not requested."
+    # 4. (Google Trends removed, #176 — the brief is synthesised from the
+    #    sources below and no longer reasons about search interest.)
 
     # 5. Load the format catalogue. The prompt takes the prose rendering; the
     #    structured rows are narrowed to the recommended formats at step 11 and
@@ -204,7 +198,6 @@ def generate_insights(
         advertiser_kpi=kpi,
         advertiser_research=advertiser_research,
         audience_segments=audience_segments_text,
-        google_trends=google_trends,
         format_recommendations=format_recommendations_text,
         campaign_history=campaign_history,
         client_brief=client_brief_summary,
@@ -250,17 +243,13 @@ def generate_insights(
     #     from the registry, not the model — the model is never asked to state a
     #     source, so a provenance line cannot drift from what produced the
     #     number. Sections this run did not render carry no line.
-    provenance = build_provenance(
-        historical_research=historical_research,
-        include_google_trends=include_google_trends,
-    )
+    provenance = build_provenance(historical_research=historical_research)
 
     return {
         "content": content,
         "sources": sources,
         "research_skills": skill_results,
         "audience_segments": audience_segments,
-        "google_trends": google_trends,
         "format_recommendations": format_recommendations,
         "campaign_history": campaign_history,
         "client_brief_summary": client_brief_summary,

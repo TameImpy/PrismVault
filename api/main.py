@@ -23,6 +23,7 @@ from src.synthesiser import generate_insights
 from src.email_drafter import draft_email
 from src.slide_content import generate_slide_content
 from src.deck_builder import build_deck
+from src.provenance import drop_retired_sections
 from src.assistant import chat as assistant_chat, chat_stream as assistant_chat_stream
 from api.database import (
     connect, disconnect, init_db, get_email_samples,
@@ -84,10 +85,19 @@ class ProvenanceEntry(BaseModel):
 
 
 class InsightsRequest(BaseModel):
+    """What the New Brief form posts.
+
+    A browser holding the bundle from before #176 still posts
+    `include_google_trends`. Pydantic ignores unknown fields by default and
+    that default is doing real work here: rejecting the extra field would turn
+    a tab left open across the deploy into a 422 the user cannot read their way
+    out of, on a form that looks entirely valid. It is dropped rather than
+    forwarded — `generate_insights()` no longer takes it — and
+    `tests/test_api.py` pins both halves.
+    """
     topic: str
     advertiser: str
     kpi: str
-    include_google_trends: bool = True
     client_brief: str = ""
 
 
@@ -104,7 +114,6 @@ async def create_insights(req: InsightsRequest, user: dict = Depends(get_current
                 topic=req.topic,
                 advertiser=req.advertiser,
                 kpi=req.kpi,
-                include_google_trends=req.include_google_trends,
                 client_brief=req.client_brief,
             ),
         )
@@ -170,8 +179,16 @@ class DownloadDeckRequest(BaseModel):
 
 
 def _provenance_dicts(entries):
-    """Validated provenance back to the plain dicts src/provenance.py reads."""
-    return [e.model_dump() for e in entries] if entries else None
+    """Validated provenance back to the plain dicts src/provenance.py reads.
+
+    Entries naming a section the product has retired are dropped here rather
+    than at either call site, because both of them — the deck appendix and the
+    email footer — reach clients, and this is the one place the posted-back
+    list passes through on its way to them (#176).
+    """
+    if not entries:
+        return None
+    return drop_retired_sections([e.model_dump() for e in entries])
 
 
 def _sanitize_filename(text):
