@@ -1132,3 +1132,39 @@ strip it would have been the expensive way to achieve exactly the same screen.
 **Transferable point:** parse into your shape, don't cast onto it. It buys
 forwards _and_ backwards compatibility from the same few lines, and it is the
 difference between a schema change being a migration and being a no-op.
+
+---
+
+## 7 Aug 2026 — `hyphens: auto` is not a wrapping strategy you can rely on (#175)
+
+**What went wrong:** the landing page's data-source cards were replaced, and one
+new title — "Format Recommendations" — ran out of its card on a phone. The grid
+is `grid-cols-2` at every width, so at a 390px viewport a card offers about 98px
+of text, while "Recommendations" set in 18px Montserrat measures 179px. No font
+size the heading could plausibly take fits it: even at 14px it needs 139px.
+
+**What did not fix it:** `hyphens-auto`. Chrome, on macOS, with `lang="en"` set
+on `<html>`, left the word overflowing its box untouched — measured, not
+assumed: `scrollWidth` 179 against `clientWidth` 98. Adding `break-words`
+stopped the overflow but broke mid-syllable with no hyphen at all, rendering
+"Recomme / ndations" on a marketing page.
+
+**The fix:** soft hyphens (`­`) in the title itself, in
+`frontend/lib/landingContent.ts`. They are invisible at desktop width, where the
+title fits on one line, and mark where the word may break when it cannot. Since
+the character is invisible, a `plainTitle()` helper strips it so tests can
+assert the real name, and a test caps every unbreakable run in a title at ten
+characters — derived from the measured 98px box, where "Historical" (89px) is
+the widest real word that fits.
+
+**How it was caught:** by measuring in a real browser at a real width, not by
+reading the JSX. `npm run build` passes either way, and the repo has no DOM
+harness, so nothing in the test suite could have seen it. Rendering the page in
+a 390px iframe and reading `scrollWidth` vs `clientWidth` per card is the cheap
+version of the check.
+
+**Transferable point:** the same one as
+[[overlapping-deck-text-the-renderer-not-the-file]] — a text box has a fixed
+capacity, and whether a string fits is a question about a specific string in a
+specific box. Measure it; do not delegate it to a CSS property that degrades
+silently.

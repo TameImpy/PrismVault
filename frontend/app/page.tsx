@@ -7,6 +7,7 @@ import StatusDot from "@/components/StatusDot";
 import SectionHeading from "@/components/SectionHeading";
 import Link from "next/link";
 import { useAnalytics } from "@/components/AnalyticsProvider";
+import { DATA_SOURCES, DATA_SOURCES_HEADING } from "@/lib/landingContent";
 
 export default function LandingPage() {
   const { track } = useAnalytics();
@@ -152,11 +153,11 @@ export default function LandingPage() {
                 </svg>
               </div>
               <h3 className="font-headline text-2xl font-bold mb-4 relative z-10">
-                Audience & Trends
+                Audience Behaviour
               </h3>
               <p className="text-slate-400 leading-relaxed relative z-10">
-                Behavioural data and real-time Google Trends signals to identify
-                when and how your audience is most engaged.
+                First-party behavioural data to identify which segments to
+                reach, at what scale, and when they are most engaged.
               </p>
             </div>
           </div>
@@ -169,45 +170,29 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
             <div>
               <h2 className="text-4xl md:text-5xl font-headline font-bold leading-tight mb-6">
-                Four data sources.{" "}
-                <span className="text-accent-cyan">One unified strategy.</span>
+                {DATA_SOURCES_HEADING}
               </h2>
               <p className="text-xl text-slate-400 leading-relaxed">
-                Every Prism Plan synthesises editorial expertise, brand
-                intelligence, audience behaviour, and live trend data into a
+                Every Prism Plan synthesises brand intelligence, audience
+                behaviour, format benchmarks, and campaign history into a
                 single, actionable advertising recommendation.
               </p>
             </div>
 
             {/* Data source cards */}
             <div className="grid grid-cols-2 gap-8">
-              {[
-                {
-                  title: "Editorial Transcripts",
-                  description:
-                    "In-depth editor interviews surfacing themes, angles, and audience sentiment.",
-                },
-                {
-                  title: "Brand Research",
-                  description:
-                    "Automated web research into advertiser positioning, campaigns, and competitors.",
-                },
-                {
-                  title: "Audience Segments & Reach",
-                  description:
-                    "The most relevant targetable segments per platform, each with real reach.",
-                },
-                {
-                  title: "Google Trends",
-                  description:
-                    "Real-time search interest, related queries, and multi-timeframe analysis.",
-                },
-              ].map((source) => (
+              {DATA_SOURCES.map((source) => (
                 <div
                   key={source.title}
                   className="p-6 bg-surface-container-low rounded-xl border border-white/5 hover:border-accent-cyan/20 transition-all duration-300"
                 >
-                  <h4 className="font-headline font-bold text-lg mb-2">
+                  {/*
+                   * Titles carry soft hyphens because this grid stays two-up on
+                   * a phone — see `SHY` in `lib/landingContent.ts`. break-words
+                   * is the backstop for a narrower phone still, where even a
+                   * syllable overruns.
+                   */}
+                  <h4 className="font-headline font-bold text-lg mb-2 break-words">
                     {source.title}
                   </h4>
                   <p className="text-slate-500 text-sm leading-relaxed">
