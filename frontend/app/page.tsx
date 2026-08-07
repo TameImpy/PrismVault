@@ -36,7 +36,7 @@ export default function LandingPage() {
             <p className="text-xl md:text-2xl text-slate-400 max-w-2xl font-light leading-relaxed mb-12">
               The 1st party planning tool that draws on our extensive
               behavioural data, in house research, advertiser understanding and
-              deep editorial expertise for{" "}
+              proven campaign history for{" "}
               <span className="text-accent-cyan font-medium">
                 tailored recommendations
               </span>{" "}
@@ -83,7 +83,7 @@ export default function LandingPage() {
             Planning.
           </SectionHeading>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Editorial Intelligence */}
+            {/* Campaign History */}
             <div className="group bg-surface-container-lowest p-10 rounded-2xl border border-white/5 hover:border-accent-cyan/20 transition-all duration-500 relative overflow-hidden">
               <div className="mb-8 inline-flex p-4 rounded-xl bg-accent-cyan/10 text-accent-cyan group-hover:bg-accent-cyan group-hover:text-white transition-colors relative z-10">
                 <svg
@@ -96,16 +96,17 @@ export default function LandingPage() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={1.5}
-                    d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
+                    d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
               </div>
               <h3 className="font-headline text-2xl font-bold mb-4 relative z-10">
-                Editorial Intelligence
+                Campaign History
               </h3>
               <p className="text-slate-400 leading-relaxed relative z-10">
-                Draws on in-house editorial expertise and transcripts to surface
-                the themes and angles that resonate with your audience.
+                Real delivery data from the advertiser&apos;s past campaigns and
+                comparable brands, so a recommendation starts from what has
+                already worked.
               </p>
             </div>
 
@@ -213,7 +214,7 @@ export default function LandingPage() {
             Build your Prism Plan
           </h2>
           <p className="text-xl text-slate-400 mb-12 max-w-2xl mx-auto">
-            Turn editorial insight, audience data, and brand research into
+            Turn campaign history, audience data, and brand research into
             actionable strategy in seconds.
           </p>
           <Link href="/app" onClick={() => trackCta("Get Started")}>
