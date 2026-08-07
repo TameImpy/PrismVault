@@ -4,6 +4,7 @@ import {
   DATA_SOURCES,
   DATA_SOURCES_HEADING,
   plainTitle,
+  titleRuns,
 } from "./landingContent";
 
 const landingPage = () =>
@@ -40,20 +41,33 @@ describe("the data sources the landing page advertises (#175)", () => {
   });
 
   /**
-   * The grid is two-up at every width, so on a phone a card holds about 98px
-   * of text — ten characters of 18px Montserrat ("Historical", measured at
-   * 89px, is the widest real word and fits). A longer unbreakable run leaves
-   * its card, so it has to arrive carrying soft hyphens.
+   * The grid is two-up at every width, so on a phone a card holds about 98px of
+   * text, and a run that cannot break inside it leaves the card.
+   *
+   * This cap is a **heuristic, not a measurement**, and deliberately unlike
+   * `tests/test_tile_fit.py`, which measures real Barlow advance widths because
+   * the question there is whether a specific string fits a specific box. There
+   * is no font-metrics harness on this side of the repo, and adding one to
+   * guard four marketing titles would cost more than it protects. So: a
+   * character count is not monotonic in a proportional face — "Wwwwwwwwww" is
+   * far wider than "Historical" at the same ten characters — and this test can
+   * be passed by a string that still overflows.
+   *
+   * What it is worth is the case it was written for. The cap comes from the
+   * browser measurement in LESSONS_LEARNED.md: at 390px the card offers 98px,
+   * where "Historical" (10 characters, 89px of 18px Montserrat) is the widest
+   * real word that fits and "Recommendations" (15, 179px) is the one that did
+   * not. A title arriving without break opportunities is the regression; a
+   * pathological all-W title is not a thing marketing copy does.
    */
   it("gives every title a break opportunity inside the mobile card", () => {
-    const MOBILE_CARD_CHARS = 10;
+    const WIDEST_FITTING_TITLE_RUN = "Historical".length;
     for (const source of DATA_SOURCES) {
-      const runs = source.title.split(/[\s­]+/).filter(Boolean);
-      for (const run of runs) {
+      for (const run of titleRuns(source.title)) {
         expect(
           run.length,
           `"${run}" in "${plainTitle(source.title)}" cannot break`,
-        ).toBeLessThanOrEqual(MOBILE_CARD_CHARS);
+        ).toBeLessThanOrEqual(WIDEST_FITTING_TITLE_RUN);
       }
     }
   });
@@ -84,7 +98,15 @@ describe("the landing page does not advertise a removed feature (#175)", () => {
     expect(landingPage()).not.toMatch(/trend data/i);
   });
 
-  it("does not promise editorial transcripts", () => {
+  /**
+   * Scoped to the phrase, and it should not be read as more than that. The
+   * Editorial Intelligence feature card still says "editorial expertise and
+   * transcripts", which no phrase match can catch and which #175 did not ask
+   * to change — it names three things to change and this is not one. If
+   * editorial really is Phase 2 material, that card is a separate ticket, and
+   * this test is not the thing standing between it and a visitor.
+   */
+  it("does not promise editorial transcripts by that name", () => {
     expect(landingPage()).not.toMatch(/editorial transcripts/i);
   });
 

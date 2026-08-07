@@ -8,10 +8,10 @@
  * both advertised here after they stopped being true. As data in `lib/`, the
  * claim can be tested; as JSX it could only be grepped.
  */
-export type DataSource = {
+export interface DataSource {
   title: string;
   description: string;
-};
+}
 
 /**
  * A soft hyphen: invisible until the browser needs to break the word, at which
@@ -30,6 +30,15 @@ const SHY = "­";
 
 /** Strips the soft hyphens back out — a title's real text, for tests. */
 export const plainTitle = (title: string) => title.replaceAll(SHY, "");
+
+/**
+ * The pieces a title can break into: the runs between its spaces and its soft
+ * hyphens. Lives here beside `SHY` rather than in the test, so the one rule for
+ * where a title may break is stated once — the character is invisible, and a
+ * second copy of it in a regex is a copy no reviewer can see.
+ */
+export const titleRuns = (title: string) =>
+  title.split(new RegExp(`[\\s${SHY}]+`)).filter(Boolean);
 
 /**
  * The heading over the cards. It states a count, so it is only true for as

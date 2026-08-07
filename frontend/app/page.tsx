@@ -187,11 +187,10 @@ export default function LandingPage() {
                   className="p-6 bg-surface-container-low rounded-xl border border-white/5 hover:border-accent-cyan/20 transition-all duration-300"
                 >
                   {/*
-                   * The grid stays two-up at every width, so a card is ~98px
-                   * of content on a phone — narrower than the single word
-                   * "Recommendations". The titles carry soft hyphens for that
-                   * (see `landingContent.ts`); break-words is the backstop for
-                   * a narrower phone still, where even a syllable overruns.
+                   * Titles carry soft hyphens because this grid stays two-up on
+                   * a phone — see `SHY` in `lib/landingContent.ts`. break-words
+                   * is the backstop for a narrower phone still, where even a
+                   * syllable overruns.
                    */}
                   <h4 className="font-headline font-bold text-lg mb-2 break-words">
                     {source.title}
