@@ -99,15 +99,21 @@ describe("the landing page does not advertise a removed feature (#175)", () => {
   });
 
   /**
-   * Scoped to the phrase, and it should not be read as more than that. The
-   * Editorial Intelligence feature card still says "editorial expertise and
-   * transcripts", which no phrase match can catch and which #175 did not ask
-   * to change — it names three things to change and this is not one. If
-   * editorial really is Phase 2 material, that card is a separate ticket, and
-   * this test is not the thing standing between it and a visitor.
+   * Not scoped to a phrase, deliberately (#181). This started as a match on
+   * "editorial transcripts", which passed while the page still promised
+   * "editorial expertise and transcripts" in a feature card, "deep editorial
+   * expertise" in the hero and "editorial insight" in the closing CTA — three
+   * wordings of the one claim, none of them that phrase. A page-level promise
+   * needs a page-level guard, so this matches the word: editorial is Phase 2,
+   * and until it ships the marketing page may not offer it in any wording.
+   *
+   * The word is legitimate elsewhere in the product — the brief's Editorial
+   * Insights section, the transcripts pipeline in `src/` — and this test reads
+   * one file for that reason.
    */
-  it("does not promise editorial transcripts by that name", () => {
-    expect(landingPage()).not.toMatch(/editorial transcripts/i);
+  it("does not promise editorial, in any wording", () => {
+    expect(landingPage()).not.toMatch(/editorial/i);
+    expect(landingPage()).not.toMatch(/transcripts?/i);
   });
 
   it("drops the unified strategy claim", () => {

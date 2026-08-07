@@ -1168,3 +1168,34 @@ version of the check.
 capacity, and whether a string fits is a question about a specific string in a
 specific box. Measure it; do not delegate it to a CSS property that degrades
 silently.
+
+---
+
+## 7 Aug 2026 — A phrase-scoped test on a page-level claim reads as a guard and isn't (#175, #181)
+
+**What happened:** #175 required that "no occurrence of 'Google Trends',
+'editorial transcripts' or 'unified strategy' remains anywhere on the landing
+page", and the pin test matched exactly those phrases. It passed while the page
+still said "editorial expertise and transcripts" in a feature card, "deep
+editorial expertise" in the hero, and "editorial insight" in the closing CTA —
+three wordings of the claim the ticket was written to remove, none of them the
+phrase.
+
+**Why the test looked fine:** it was derived from the acceptance criterion
+verbatim, and the criterion named phrases. Both were really about a promise,
+and a promise has more than one wording. The gap only surfaced because a
+reviewer read the page rather than the assertion.
+
+**The fix (#181):** match the word, not the phrase — `not.toMatch(/editorial/i)`
+over the one file that makes the promise. Scope came from choosing the file,
+not from narrowing the pattern: "editorial" is legitimate everywhere else in
+this product (the brief's Editorial Insights section, the transcripts pipeline
+in `src/`), so a repo-wide match would have been unusable and a phrase match was
+unenforceable. One file, one broad pattern is the combination that works.
+
+**Transferable point:** when a requirement is "X is not claimed anywhere",
+a test enumerating today's wordings of X pins today's copy, not the
+requirement. Ask what the narrowest _scope_ is that lets the broadest
+_pattern_ hold — and if no broad pattern can hold, the test is documentation,
+so say so in it, as [[hyphens-auto-is-not-a-wrapping-strategy]] does about its
+character cap.
